@@ -13,8 +13,7 @@ RUN npm ci --ignore-scripts
 COPY packages/ ./packages/
 COPY apps/server/ ./apps/server/
 
-# Build types package first, then server
-RUN npm run build -w packages/types
+# Generate prisma client, then build server (types package has no build step)
 RUN cd apps/server && npx prisma generate
 RUN npm run build -w apps/server
 
