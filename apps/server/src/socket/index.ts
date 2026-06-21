@@ -25,11 +25,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
   })
 
   io.on('connection', (socket) => {
-    console.log(`[socket] connected: ${socket.id} origin=${socket.handshake.headers.origin}`)
-    socket.on('disconnect', () => console.log(`[socket] disconnected: ${socket.id}`))
-
     socket.on('join-overlay', async ({ token }: { token: string }) => {
-      console.log(`[socket] join-overlay token=${String(token).slice(0, 8)}... sid=${socket.id}`)
       if (!token) return
 
       const overlay = await prisma.streamerProfile.findUnique({
@@ -38,14 +34,12 @@ export function initSocket(httpServer: HttpServer): SocketServer {
       })
 
       if (!overlay) {
-        console.log(`[socket] invalid overlay token: ${String(token).slice(0, 8)}...`)
         socket.emit('overlay-error', { message: 'Invalid overlay token' })
         return
       }
 
       const room = `overlay:${token}`
       socket.join(room)
-      console.log(`[socket] joined room overlay:${String(token).slice(0, 8)}...`)
 
       const defaultSettings = {
         template: 'superchat', bgColor: '#1a1a2e', bgOpacity: 90,
