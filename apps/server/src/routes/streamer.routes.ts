@@ -297,6 +297,12 @@ router.post('/test-alert', async (req: AuthRequest, res: Response): Promise<void
   const testMessages = ['Keep streaming! 🔥', 'Love the content!', 'GGs only!', 'POG! 👑', 'Amazing stream!']
   const idx = Math.floor(Math.random() * testAmounts.length)
 
+  const { getIO } = await import('../socket')
+  const io = getIO()
+  const room = `overlay:${profile.overlayToken}`
+  const sockets = await io.in(room).fetchSockets()
+  console.log(`[test-alert] room=${room.slice(0, 20)}... sockets=${sockets.length}`)
+
   emitToDonationOverlay(profile.overlayToken, 'new-donation', {
     donationId: `test_${Date.now()}`,
     donorName: testNames[idx],
