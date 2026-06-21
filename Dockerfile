@@ -6,8 +6,8 @@ COPY package.json package-lock.json ./
 COPY packages/types/package.json ./packages/types/
 COPY apps/server/package.json ./apps/server/
 
-# Install all deps
-RUN npm ci
+# Install deps without postinstall (prisma generate needs schema, not copied yet)
+RUN npm ci --ignore-scripts
 
 # Copy source
 COPY packages/ ./packages/
