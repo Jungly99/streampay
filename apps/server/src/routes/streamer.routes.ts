@@ -215,7 +215,12 @@ router.put('/voice-tiers', async (req: AuthRequest, res: Response): Promise<void
 
   await prisma.voiceMessageTier.deleteMany({ where: { streamerId: profile.id } })
   const tiers = await prisma.voiceMessageTier.createMany({
-    data: parsed.data.map(t => ({ ...t, streamerId: profile.id })),
+    data: parsed.data.map(t => ({
+      streamerId: profile.id,
+      durationSeconds: t.durationSeconds,
+      minAmount: t.minAmount,
+      isEnabled: t.isEnabled,
+    })),
   })
   res.json(tiers)
 })
@@ -243,7 +248,12 @@ router.put('/goal', async (req: AuthRequest, res: Response): Promise<void> => {
 
   await prisma.overlayGoal.updateMany({ where: { streamerId: profile.id }, data: { isActive: false } })
   const goal = await prisma.overlayGoal.create({
-    data: { streamerId: profile.id, ...parsed.data, isActive: true },
+    data: {
+      streamer: { connect: { id: profile.id } },
+      title: parsed.data.title,
+      targetAmount: parsed.data.targetAmount,
+      isActive: true,
+    },
   })
   res.json(goal)
 })
