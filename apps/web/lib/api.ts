@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+// Client-side calls go through Next.js rewrite (/backend → backend server)
+// so the auth cookie is set on the Vercel domain and SSR can read it
+const API_URL = '/backend'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {

@@ -38,7 +38,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
   useEffect(() => {
     const saved = localStorage.getItem('streampay_donor_name')
     if (saved) setDonorName(saved)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/donations/leaderboard/${streamer.username}`)
+    fetch(`/backend/api/donations/leaderboard/${streamer.username}`)
       .then(r => r.json()).then(setLeaderboard).catch(() => {})
   }, [streamer.username])
 
