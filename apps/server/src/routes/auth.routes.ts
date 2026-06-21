@@ -9,10 +9,11 @@ import { env } from '../config/env'
 
 const router = Router()
 
+const IS_PROD = env.NODE_ENV === 'production'
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: IS_PROD,
+  sameSite: (IS_PROD ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 30 * 24 * 60 * 60 * 1000,
   path: '/',
 }
@@ -98,7 +99,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 })
 
 router.post('/logout', (_req: Request, res: Response): void => {
-  res.clearCookie('streampay_token', { path: '/' })
+  res.clearCookie('streampay_token', { path: '/', secure: IS_PROD, sameSite: IS_PROD ? 'none' : 'lax' })
   res.json({ ok: true })
 })
 
