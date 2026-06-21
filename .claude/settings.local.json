@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sleep 5 && tail -15 /tmp/streampay-web.log)",
+      "Read(//private/tmp/**)"
+    ]
+  }
+}

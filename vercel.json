@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "buildCommand": "npm install && npm run build -w packages/types && npm run build -w apps/web",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "rewrites": [
+    { "source": "/api/server/(.*)", "destination": "https://YOUR_RAILWAY_URL/api/$1" }
+  ]
+}

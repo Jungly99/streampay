@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  streamer
+  viewer
+}
+
+enum DonationStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum SettlementStatus {
+  INITIATED
+  SUCCESS
+  FAILED
+}
+
+enum OverlayTemplate {
+  superchat
+  colorful
+  custom
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  accountType  AccountType @map("account_type")
+  displayName  String?     @map("display_name")
+  avatarUrl    String?     @map("avatar_url")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  streamerProfile StreamerProfile?
+  viewerProfile   ViewerProfile?
+  donations       Donation[]       @relation("ViewerDonations")
+  follows         Follow[]
+
+  @@map("users")
+}
+
+model StreamerProfile {
+  id       String  @id @default(uuid())
+  userId   String  @unique @map("user_id")
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  username              String?  @unique
+  channelName           String?  @map("channel_name")
+  channelLink           String?  @map("channel_link")
+  bio                   String?
+  avatarUrl             String?  @map("avatar_url")
+  socialTwitter         String?  @map("social_twitter")
+  socialInstagram       String?  @map("social_instagram")
+  socialYoutube         String?  @map("social_youtube")
+  socialTwitch          String?  @map("social_twitch")
+  socialDiscord         String?  @map("social_discord")
+  socialKick            String?  @map("social_kick")
+  isVerified            Boolean  @default(false) @map("is_verified")
+  isActive              Boolean  @default(true) @map("is_active")
+  minDonationAmount     Int      @default(11) @map("min_donation_amount")
+  overlayToken          String?  @unique @map("overlay_token")
+  cashfreeBeneficiaryId String?  @map("cashfree_beneficiary_id")
+  discordWebhookUrl     String?  @map("discord_webhook_url")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  bankDetails   StreamerBankDetails?
+  alertSettings AlertSettings?
+  voiceTiers    VoiceMessageTier[]
+  goals         OverlayGoal[]
+  donations     Donation[]           @relation("StreamerDonations")
+  settlements   Settlement[]
+  invoices      Invoice[]
+  followers     Follow[]
+
+  @@map("streamer_profiles")
+}
+
+model StreamerBankDetails {
+  id                  String   @id @default(uuid())
+  streamerId          String   @unique @map("streamer_id")
+  streamer            StreamerProfile @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+
+  accountHolderName   String?  @map("account_holder_name")
+  accountNumber       String?  @map("account_number")
+  ifscCode            String?  @map("ifsc_code")
+  bankName            String?  @map("bank_name")
+  invoiceName         String?  @map("invoice_name")
+  streetAddress       String?  @map("street_address")
+  city                String?
+  state               String?
+  pincode             String?
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("streamer_bank_details")
+}
+
+model AlertSettings {
+  id          String          @id @default(uuid())
+  streamerId  String          @unique @map("streamer_id")
+  streamer    StreamerProfile @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+
+  template             OverlayTemplate @default(superchat)
+  bgColor              String          @default("#1a1a2e") @map("bg_color")
+  bgOpacity            Int             @default(100) @map("bg_opacity")
+  textColor            String          @default("#ffffff") @map("text_color")
+  fontSize             Int             @default(24) @map("font_size")
+  fontStyle            String          @default("Arial") @map("font_style")
+  textBold             Boolean         @default(true) @map("text_bold")
+  textItalic           Boolean         @default(false) @map("text_italic")
+  textUnderline        Boolean         @default(false) @map("text_underline")
+  animationStyle       String          @default("slideDown") @map("animation_style")
+  enableBorder         Boolean         @default(false) @map("enable_border")
+  ttsEnabled           Boolean         @default(true) @map("tts_enabled")
+  ttsVolume            Int             @default(100) @map("tts_volume")
+  ttsVoice             String          @default("en-IN") @map("tts_voice")
+  voiceMessagesEnabled Boolean         @default(false) @map("voice_messages_enabled")
+  alertDuration        Int             @default(8) @map("alert_duration")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  @@map("alert_settings")
+}
+
+model VoiceMessageTier {
+  id              String          @id @default(uuid())
+  streamerId      String          @map("streamer_id")
+  streamer        StreamerProfile @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+
+  durationSeconds Int     @map("duration_seconds")
+  minAmount       Int     @map("min_amount")
+  isEnabled       Boolean @default(true) @map("is_enabled")
+
+  @@map("voice_message_tiers")
+}
+
+model OverlayGoal {
+  id            String          @id @default(uuid())
+  streamerId    String          @map("streamer_id")
+  streamer      StreamerProfile @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+
+  title         String
+  targetAmount  Int     @map("target_amount")
+  currentAmount Int     @default(0) @map("current_amount")
+  isActive      Boolean @default(false) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("overlay_goals")
+}
+
+model Donation {
+  id         String          @id @default(uuid())
+  streamerId String          @map("streamer_id")
+  streamer   StreamerProfile @relation("StreamerDonations", fields: [streamerId], references: [id])
+  viewerId   String?         @map("viewer_id")
+  viewer     User?           @relation("ViewerDonations", fields: [viewerId], references: [id])
+
+  donorName       String         @map("donor_name")
+  message         String?
+  voiceMessageUrl String?        @map("voice_message_url")
+  amount          Int
+  platformFeePct  Decimal        @default(5.00) @map("platform_fee_pct") @db.Decimal(5, 2)
+  feeAmount       Decimal?       @map("fee_amount") @db.Decimal(10, 2)
+  netAmount       Decimal?       @map("net_amount") @db.Decimal(10, 2)
+  cfOrderId       String         @unique @map("cf_order_id")
+  cfPaymentId     String?        @map("cf_payment_id")
+  status          DonationStatus @default(PENDING)
+  alertSent       Boolean        @default(false) @map("alert_sent")
+  settled         Boolean        @default(false)
+  settlementId    String?        @map("settlement_id")
+  settlement      Settlement?    @relation(fields: [settlementId], references: [id])
+  createdAt       DateTime       @default(now()) @map("created_at")
+  paidAt          DateTime?      @map("paid_at")
+
+  @@map("donations")
+}
+
+model Settlement {
+  id         String          @id @default(uuid())
+  streamerId String          @map("streamer_id")
+  streamer   StreamerProfile @relation(fields: [streamerId], references: [id])
+
+  grossAmount    Int              @map("gross_amount")
+  feePct         Decimal          @default(5.00) @map("fee_pct") @db.Decimal(5, 2)
+  feeAmount      Decimal          @map("fee_amount") @db.Decimal(10, 2)
+  netAmount      Decimal          @map("net_amount") @db.Decimal(10, 2)
+  cfTransferId   String?          @map("cf_transfer_id")
+  status         SettlementStatus @default(INITIATED)
+  initiatedAt    DateTime         @default(now()) @map("initiated_at")
+  settledAt      DateTime?        @map("settled_at")
+  failureReason  String?          @map("failure_reason")
+
+  donations Donation[]
+  invoice   Invoice?
+
+  @@map("settlements")
+}
+
+model Invoice {
+  id            String          @id @default(uuid())
+  streamerId    String          @map("streamer_id")
+  streamer      StreamerProfile @relation(fields: [streamerId], references: [id])
+  settlementId  String          @unique @map("settlement_id")
+  settlement    Settlement      @relation(fields: [settlementId], references: [id])
+
+  invoiceNumber String   @unique @map("invoice_number")
+  grossAmount   Decimal  @map("gross_amount") @db.Decimal(10, 2)
+  feeAmount     Decimal  @map("fee_amount") @db.Decimal(10, 2)
+  netAmount     Decimal  @map("net_amount") @db.Decimal(10, 2)
+  gstDetails    Json?    @map("gst_details")
+  generatedAt   DateTime @default(now()) @map("generated_at")
+  periodStart   DateTime @map("period_start")
+  periodEnd     DateTime @map("period_end")
+
+  @@map("invoices")
+}
+
+model ViewerProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName String?  @map("display_name")
+  avatarUrl   String?  @map("avatar_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("viewer_profiles")
+}
+
+model Follow {
+  id         String          @id @default(uuid())
+  viewerId   String          @map("viewer_id")
+  viewer     User            @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  streamerId String          @map("streamer_id")
+  streamer   StreamerProfile @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@unique([viewerId, streamerId])
+  @@map("follows")
+}

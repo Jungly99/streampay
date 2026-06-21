@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@streampay/web",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -11,10 +11,28 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.7",
+    "@hookform/resolvers": "^5.4.0",
     "@repo/ui": "*",
+    "@streampay/types": "^0.1.0",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@tsparticles/react": "^4.2.1",
+    "@tsparticles/slim": "^4.2.1",
+    "date-fns": "^4.4.0",
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^1.21.0",
     "next": "16.2.0",
+    "postcss": "^8.4.31",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.80.0",
+    "react-hot-toast": "^2.6.0",
+    "recharts": "^3.8.1",
+    "socket.io-client": "^4.8.3",
+    "tailwindcss": "^4.3.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",

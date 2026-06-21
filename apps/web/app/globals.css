@@ -1,50 +1,132 @@
+@import "tailwindcss";
+
+/* ── Design tokens ─────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:        #06060f;
+  --surface:   rgba(255,255,255,0.03);
+  --surface-2: rgba(255,255,255,0.06);
+  --border:    rgba(255,255,255,0.07);
+  --border-2:  rgba(255,255,255,0.12);
+  --purple:    #7c3aed;
+  --purple-l:  #8b5cf6;
+  --pink:      #db2777;
+  --pink-l:    #ec4899;
+  --text-1:    #f8fafc;
+  --text-2:    #94a3b8;
+  --text-3:    #475569;
+  --radius:    14px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; padding: 0; margin: 0; }
 
-html,
-body {
-  max-width: 100vw;
+html, body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+a { color: inherit; text-decoration: none; }
+
+/* ── Glass surfaces ─────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.card-hover {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.2s, background 0.2s;
+}
+.card-hover:hover {
+  border-color: rgba(124,58,237,0.3);
+  background: rgba(124,58,237,0.04);
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* ── Gradient text ──────────────────────────────────── */
+.g-text {
+  background: linear-gradient(135deg, var(--purple-l), var(--pink-l));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* ── Buttons ────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover  { opacity: 0.88; }
+.btn-primary:active { transform: scale(0.985); }
+
+/* ── Custom toggle ──────────────────────────────────── */
+.toggle-track {
+  position: relative; width: 44px; height: 24px;
+  border-radius: 12px; cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white; transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.toggle-track.on  { background: linear-gradient(135deg,#7c3aed,#db2777); }
+.toggle-track.off { background: rgba(255,255,255,0.12); }
+.toggle-track.on .toggle-thumb { transform: translateX(20px); }
+
+/* ── Ambient background blobs ───────────────────────── */
+.ambient {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+}
+.ambient::before {
+  content: '';
+  position: absolute; top: -15%; left: -10%;
+  width: 55vw; height: 55vw; border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,0.09) 0%, transparent 65%);
+  animation: drift 12s ease-in-out infinite;
+}
+.ambient::after {
+  content: '';
+  position: absolute; bottom: -20%; right: -10%;
+  width: 50vw; height: 50vw; border-radius: 50%;
+  background: radial-gradient(circle, rgba(219,39,119,0.07) 0%, transparent 65%);
+  animation: drift 15s ease-in-out infinite reverse;
+}
+@keyframes drift {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(2%,3%) scale(1.04); }
 }
 
-.imgDark {
-  display: none;
+/* ── Range input ────────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.1); outline: none; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--purple-l); cursor: pointer;
+  box-shadow: 0 0 8px rgba(139,92,246,0.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* ── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 2px; }
 
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
+/* ── Legacy aliases (used in some pages) ────────────── */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
+.gradient-text { } /* handled by g-text */

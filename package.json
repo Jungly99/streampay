@@ -1,5 +1,5 @@
 {
-  "name": "suoertip",
+  "name": "streampay",
   "private": true,
   "scripts": {
     "build": "turbo run build",

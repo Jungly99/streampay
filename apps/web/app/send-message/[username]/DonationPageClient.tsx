@@ -1,0 +1,293 @@
+'use client'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
+import { api } from '../../../lib/api'
+import { formatINR } from '../../../lib/utils'
+import type { DonationPageStreamer } from '@streampay/types'
+
+const QUICK_AMOUNTS = [25, 51, 101, 251, 501, 1001]
+
+const inp: React.CSSProperties = {
+  width: '100%', padding: '11px 14px', borderRadius: 10, fontSize: 13,
+  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+  color: '#f8fafc', outline: 'none', boxSizing: 'border-box',
+}
+
+export default function DonationPageClient({ streamer }: { streamer: DonationPageStreamer & { activeGoal?: any } }) {
+  const router = useRouter()
+  const [amount, setAmount] = useState<number | ''>('')
+  const [customAmount, setCustomAmount] = useState('')
+  const [donorName, setDonorName] = useState('')
+  const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState<'text' | 'voice'>('text')
+  const [recording, setRecording] = useState(false)
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [audioUrl, setAudioUrl] = useState('')
+  const [loading, setLoading] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [leaderboard, setLeaderboard] = useState<any[]>([])
+
+  const finalAmount = amount || Number(customAmount) || 0
+  const allowedVoiceDuration = streamer.voiceTiers
+    ?.filter(t => t.isEnabled && finalAmount >= t.minAmount)
+    ?.reduce((max, t) => Math.max(max, t.durationSeconds), 0) ?? 0
+
+  useEffect(() => {
+    const saved = localStorage.getItem('streampay_donor_name')
+    if (saved) setDonorName(saved)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/donations/leaderboard/${streamer.username}`)
+      .then(r => r.json()).then(setLeaderboard).catch(() => {})
+  }, [streamer.username])
+
+  function selectAmount(a: number) { setAmount(a); setCustomAmount('') }
+
+  async function startRecording() {
+    if (!allowedVoiceDuration) { toast.error(`Donate ₹${streamer.voiceTiers?.[0]?.minAmount ?? 100}+ to unlock voice`); return }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      mediaRecorderRef.current = mr
+      const chunks: Blob[] = []
+      mr.ondataavailable = e => chunks.push(e.data)
+      mr.onstop = () => { const blob = new Blob(chunks, { type: 'audio/webm' }); setAudioBlob(blob); setAudioUrl(URL.createObjectURL(blob)) }
+      mr.start(); setRecording(true); setRecordingTime(0)
+      const iv = setInterval(() => setRecordingTime(t => t + 1), 1000)
+      timerRef.current = setTimeout(() => { stopRecording(); clearInterval(iv) }, allowedVoiceDuration * 1000)
+    } catch { toast.error('Microphone access denied') }
+  }
+
+  function stopRecording() { mediaRecorderRef.current?.stop(); if (timerRef.current) clearTimeout(timerRef.current); setRecording(false) }
+
+  async function handlePay() {
+    if (!finalAmount || finalAmount < streamer.minDonationAmount) { toast.error(`Minimum: ${formatINR(streamer.minDonationAmount)}`); return }
+    if (!donorName.trim()) { toast.error('Please enter your name'); return }
+    localStorage.setItem('streampay_donor_name', donorName.trim())
+    setLoading(true)
+    try {
+      const res = await api.post<{ donationId: string; orderId: string; paymentSessionId: string | null }>(
+        '/api/donations/create-order',
+        { streamerId: streamer.id, donorName: donorName.trim(), message: message.trim() || undefined, amount: finalAmount }
+      )
+      if (res.paymentSessionId && typeof window !== 'undefined') {
+        const { load } = await import('@cashfreepayments/cashfree-js')
+        const cashfree = await load({ mode: (process.env.NEXT_PUBLIC_CASHFREE_ENV ?? 'sandbox') as 'sandbox' | 'production' })
+        await cashfree.checkout({ paymentSessionId: res.paymentSessionId, redirectTarget: '_modal' })
+      } else {
+        toast.error('Payment gateway requires HTTPS. Please access via a deployed URL or use ngrok for local testing.')
+      }
+    } catch (e: any) { toast.error(e.message) } finally { setLoading(false) }
+  }
+
+  const card: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16 }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#06060f', color: '#f8fafc', padding: '40px 20px' }}>
+
+      {/* Top bar */}
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <span style={{ fontSize: 12, color: '#334155' }}>Powered by </span>
+        <span style={{ fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,#a78bfa,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>StreamPay</span>
+        <span style={{ fontSize: 12, color: '#334155' }}> · 0% fee on viewers · Secure via Cashfree</span>
+      </div>
+
+      <div style={{ maxWidth: 860, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+        {/* Left: Streamer + Amount + Leaderboard */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Streamer card */}
+          <div style={{ ...card, padding: '28px 24px', textAlign: 'center' }}>
+            {/* Avatar */}
+            {streamer.avatarUrl ? (
+              <img src={streamer.avatarUrl} alt={streamer.channelName} style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px', display: 'block', border: '3px solid rgba(124,58,237,0.4)', boxShadow: '0 0 30px rgba(124,58,237,0.3)' }} />
+            ) : (
+              <div style={{ width: 80, height: 80, borderRadius: '50%', margin: '0 auto 16px', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, color: 'white', boxShadow: '0 0 30px rgba(124,58,237,0.3)' }}>
+                {streamer.channelName?.[0]?.toUpperCase() ?? 'S'}
+              </div>
+            )}
+
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc', marginBottom: 4 }}>Support {streamer.channelName}</h1>
+
+            {/* Badges */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' as const }}>
+              {streamer.isVerified && <span style={{ fontSize: 11, fontWeight: 600, color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', padding: '2px 8px', borderRadius: 20 }}>✓ Verified</span>}
+              <span style={{ fontSize: 11, color: '#475569' }}>· No account required</span>
+            </div>
+
+            {/* Bio */}
+            {streamer.bio && (
+              <p style={{ fontSize: 13, color: '#64748b', marginTop: 12, lineHeight: 1.6, textAlign: 'left' }}>{streamer.bio}</p>
+            )}
+
+            {/* Channel link */}
+            {streamer.channelLink && (
+              <a href={streamer.channelLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, fontSize: 12, color: '#a78bfa', fontWeight: 600, textDecoration: 'none' }}>
+                🔗 Visit Channel
+              </a>
+            )}
+
+            {/* Social links */}
+            {(() => {
+              const socials = [
+                { url: streamer.socialTwitter,   label: '𝕏',       color: '#e7e7e7', bg: 'rgba(231,231,231,0.08)' },
+                { url: streamer.socialInstagram,  label: 'Insta',   color: '#e1306c', bg: 'rgba(225,48,108,0.08)' },
+                { url: streamer.socialYoutube,    label: 'YT',      color: '#ff0000', bg: 'rgba(255,0,0,0.08)' },
+                { url: streamer.socialTwitch,     label: 'Twitch',  color: '#9146ff', bg: 'rgba(145,70,255,0.08)' },
+                { url: streamer.socialDiscord,    label: 'Discord', color: '#5865f2', bg: 'rgba(88,101,242,0.08)' },
+                { url: streamer.socialKick,       label: 'Kick',    color: '#53fc18', bg: 'rgba(83,252,24,0.08)' },
+              ].filter(s => s.url)
+              return socials.length > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 14, flexWrap: 'wrap' as const }}>
+                  {socials.map(s => (
+                    <a key={s.url} href={s.url!} target="_blank" rel="noopener noreferrer" style={{
+                      padding: '5px 12px', borderRadius: 20, display: 'inline-flex', alignItems: 'center',
+                      background: s.bg, border: `1px solid ${s.color}33`,
+                      fontSize: 11, fontWeight: 700, textDecoration: 'none', color: s.color,
+                      letterSpacing: '0.02em', transition: 'all 0.15s',
+                    }}>
+                      {s.label}
+                    </a>
+                  ))}
+                </div>
+              ) : null
+            })()}
+          </div>
+
+          {/* Amount selector */}
+          <div style={{ ...card, padding: '20px 22px' }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>Select Amount</p>
+
+            <div style={{ marginBottom: 14 }}>
+              <input type="number" value={customAmount} min={streamer.minDonationAmount} max={10000}
+                onChange={e => { setCustomAmount(e.target.value); setAmount('') }}
+                placeholder={`Custom amount (₹${streamer.minDonationAmount} – ₹10,000)`}
+                style={inp} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+              {QUICK_AMOUNTS.map(a => (
+                <button key={a} onClick={() => selectAmount(a)} style={{
+                  padding: '11px 0', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  background: amount === a ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.04)',
+                  border: amount === a ? 'none' : '1px solid rgba(255,255,255,0.09)',
+                  color: amount === a ? 'white' : '#94a3b8', transition: 'all 0.15s',
+                  boxShadow: amount === a ? '0 0 20px rgba(124,58,237,0.3)' : 'none',
+                }}>₹{a}</button>
+              ))}
+            </div>
+
+            {finalAmount > 0 && (
+              <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.18)', textAlign: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#10b981' }}>Sending {formatINR(finalAmount)}</span>
+                <span style={{ fontSize: 12, color: '#334155' }}> · 100% goes to streamer</span>
+              </div>
+            )}
+          </div>
+
+          {/* Leaderboard */}
+          {leaderboard.length > 0 && (
+            <div style={{ ...card, padding: '20px 22px' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>Top Supporters</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {leaderboard.slice(0, 5).map((l, i) => (
+                  <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ width: 20, fontSize: 12, color: i === 0 ? '#f59e0b' : '#334155', fontWeight: 700 }}>#{l.rank}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, color: '#94a3b8' }}>{l.name}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa' }}>{formatINR(l.total)}</span>
+                      </div>
+                      <div style={{ height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 3 }}>
+                        <div style={{ height: 3, borderRadius: 3, background: 'linear-gradient(90deg,#7c3aed,#db2777)', width: `${(l.total / leaderboard[0].total) * 100}%`, transition: 'width 0.5s' }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Message + Pay */}
+        <div style={{ ...card, padding: '24px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc' }}>Your Message</p>
+
+          {/* Name */}
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>YOUR NAME</label>
+            <input value={donorName} onChange={e => setDonorName(e.target.value)} maxLength={30} placeholder="Enter your name" style={inp} />
+            <p style={{ fontSize: 11, color: '#334155', marginTop: 5 }}>{donorName.length}/30 · Saved for next visit · No account needed</p>
+          </div>
+
+          {/* Message type toggle */}
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10 }}>MESSAGE TYPE</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+              <button onClick={() => setMessageType('text')} style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', background: messageType === 'text' ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.03)', border: `2px solid ${messageType === 'text' ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.07)'}`, color: messageType === 'text' ? '#f8fafc' : '#64748b', fontSize: 13, fontWeight: 700 }}>
+                Text
+              </button>
+              <button onClick={() => setMessageType('voice')} style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', background: messageType === 'voice' ? 'rgba(219,39,119,0.12)' : 'rgba(255,255,255,0.03)', border: `2px solid ${messageType === 'voice' ? 'rgba(219,39,119,0.4)' : 'rgba(255,255,255,0.07)'}`, color: messageType === 'voice' ? '#f8fafc' : '#64748b', fontSize: 13, fontWeight: 700, position: 'relative' }}>
+                Voice
+                <span style={{ position: 'absolute', top: -6, right: -4, fontSize: 9, fontWeight: 800, background: '#db2777', color: 'white', padding: '1px 5px', borderRadius: 10 }}>NEW</span>
+              </button>
+            </div>
+
+            {messageType === 'text' && (
+              <div>
+                <textarea value={message} onChange={e => setMessage(e.target.value.slice(0, 10))} rows={3}
+                  placeholder="Send a message to the streamer…"
+                  style={{ ...inp, resize: 'none' as const }} />
+                <p style={{ fontSize: 11, color: '#334155', marginTop: 5 }}>{message.length}/10 characters</p>
+              </div>
+            )}
+
+            {messageType === 'voice' && (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                {!audioUrl ? (
+                  <>
+                    <button onClick={recording ? stopRecording : startRecording} style={{
+                      width: 72, height: 72, borderRadius: '50%', cursor: 'pointer', fontSize: 24, border: 'none',
+                      background: recording ? '#dc2626' : 'linear-gradient(135deg,#7c3aed,#db2777)',
+                      boxShadow: recording ? '0 0 20px rgba(220,38,38,0.4)' : '0 0 20px rgba(124,58,237,0.4)',
+                    }}>
+                      {recording ? '⏹' : '🎙'}
+                    </button>
+                    <p style={{ fontSize: 13, color: recording ? '#f87171' : '#475569', marginTop: 12 }}>
+                      {recording ? `Recording… ${recordingTime}s / ${allowedVoiceDuration}s` : allowedVoiceDuration ? `Tap to record up to ${allowedVoiceDuration}s` : 'Increase donation to unlock voice'}
+                    </p>
+                  </>
+                ) : (
+                  <div>
+                    <audio src={audioUrl} controls style={{ width: '100%', borderRadius: 10 }} />
+                    <button onClick={() => { setAudioBlob(null); setAudioUrl('') }} style={{ fontSize: 12, color: '#f87171', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer' }}>
+                      Record again
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Pay button */}
+          <div style={{ marginTop: 'auto' }}>
+            <button onClick={handlePay} disabled={loading || !finalAmount || !donorName.trim()} style={{
+              width: '100%', padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: !finalAmount || !donorName.trim() ? 'not-allowed' : 'pointer',
+              background: !finalAmount || !donorName.trim() ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#7c3aed,#db2777)',
+              border: 'none', color: !finalAmount || !donorName.trim() ? '#334155' : 'white',
+              boxShadow: !finalAmount || !donorName.trim() ? 'none' : '0 0 30px rgba(124,58,237,0.35)',
+              opacity: loading ? 0.7 : 1, transition: 'all 0.15s',
+            }}>
+              {loading ? 'Processing…' : `Pay ${finalAmount ? formatINR(finalAmount) : '₹___'} →`}
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
+              <span style={{ fontSize: 11, color: '#1e293b' }}>🔒 Secured by Cashfree · No viewer account needed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
