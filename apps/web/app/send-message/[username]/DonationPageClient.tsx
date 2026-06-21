@@ -67,18 +67,37 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
     localStorage.setItem('streampay_donor_name', donorName.trim())
     setLoading(true)
     try {
-      const res = await api.post<{ donationId: string; orderId: string; paymentSessionId: string | null }>(
+      const res = await api.post<{ donationId: string; razorpayOrderId: string; amount: number; currency: string }>(
         '/api/donations/create-order',
         { streamerId: streamer.id, donorName: donorName.trim(), message: message.trim() || undefined, amount: finalAmount }
       )
-      if (res.paymentSessionId && typeof window !== 'undefined') {
-        const { load } = await import('@cashfreepayments/cashfree-js')
-        const cashfree = await load({ mode: (process.env.NEXT_PUBLIC_CASHFREE_ENV ?? 'sandbox') as 'sandbox' | 'production' })
-        await cashfree.checkout({ paymentSessionId: res.paymentSessionId, redirectTarget: '_modal' })
-      } else {
-        toast.error('Payment gateway requires HTTPS. Please access via a deployed URL or use ngrok for local testing.')
-      }
-    } catch (e: any) { toast.error(e.message) } finally { setLoading(false) }
+
+      // Load Razorpay script
+      await new Promise<void>((resolve, reject) => {
+        if ((window as any).Razorpay) { resolve(); return }
+        const s = document.createElement('script')
+        s.src = 'https://checkout.razorpay.com/v1/checkout.js'
+        s.onload = () => resolve()
+        s.onerror = () => reject(new Error('Failed to load payment gateway'))
+        document.head.appendChild(s)
+      })
+
+      const rzp = new (window as any).Razorpay({
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: res.amount,
+        currency: res.currency,
+        name: 'StreamPay',
+        description: `Donation to ${streamer.channelName}`,
+        order_id: res.razorpayOrderId,
+        handler: () => {
+          window.location.href = `/payment/success?order_id=${res.donationId}`
+        },
+        prefill: { name: donorName.trim(), email: 'donor@streampay.in', contact: '9999999999' },
+        theme: { color: '#7c3aed' },
+        modal: { ondismiss: () => setLoading(false) },
+      })
+      rzp.open()
+    } catch (e: any) { toast.error(e.message); setLoading(false) }
   }
 
   const card: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16 }
@@ -90,7 +109,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <span style={{ fontSize: 12, color: '#334155' }}>Powered by </span>
         <span style={{ fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,#a78bfa,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>StreamPay</span>
-        <span style={{ fontSize: 12, color: '#334155' }}> · 0% fee on viewers · Secure via Cashfree</span>
+        <span style={{ fontSize: 12, color: '#334155' }}> · 0% fee on viewers · Secure via Razorpay</span>
       </div>
 
       <div style={{ maxWidth: 860, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -283,7 +302,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
               {loading ? 'Processing…' : `Pay ${finalAmount ? formatINR(finalAmount) : '₹___'} →`}
             </button>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
-              <span style={{ fontSize: 11, color: '#1e293b' }}>🔒 Secured by Cashfree · No viewer account needed</span>
+              <span style={{ fontSize: 11, color: '#1e293b' }}>🔒 Secured by Razorpay · No viewer account needed</span>
             </div>
           </div>
         </div>

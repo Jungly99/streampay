@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { z } from 'zod'
+import Razorpay from 'razorpay'
 import { prisma } from '../db/prisma'
 import { requireStreamer, AuthRequest } from '../middleware/auth'
 import { generateOrderId } from '../utils/generateToken'
@@ -100,55 +101,23 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
     },
   })
 
-  // Create Cashfree order
-  let paymentSessionId: string | null = null
-  if (env.CASHFREE_APP_ID && env.CASHFREE_SECRET_KEY) {
+  // Create Razorpay order
+  let razorpayOrderId: string | null = null
+  if (env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET) {
     try {
-      const cfRes = await fetch(
-        env.CASHFREE_ENV === 'production'
-          ? 'https://api.cashfree.com/pg/orders'
-          : 'https://sandbox.cashfree.com/pg/orders',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-client-id': env.CASHFREE_APP_ID,
-            'x-client-secret': env.CASHFREE_SECRET_KEY,
-            'x-api-version': '2023-08-01',
-          },
-          body: JSON.stringify({
-            order_id: cfOrderId,
-            order_amount: amount,
-            order_currency: 'INR',
-            customer_details: {
-              customer_id: `anon_${Date.now()}`,
-              customer_name: donorName,
-              customer_phone: '9999999999',
-              customer_email: 'donor@streampay.in',
-            },
-            order_meta: {
-              return_url: `${env.FRONTEND_URL}/payment/success?order_id=${cfOrderId}`,
-              notify_url: `${env.FRONTEND_URL?.replace('3000', '4000') || 'http://localhost:4000'}/api/webhooks/cashfree`,
-            },
-          }),
-        }
-      )
-      const cfData = await cfRes.json() as { payment_session_id?: string; message?: string; code?: string }
-      if (cfData.payment_session_id) {
-        paymentSessionId = cfData.payment_session_id
-      } else {
-        console.error('Cashfree order failed:', cfData.code, cfData.message)
-        res.status(502).json({ error: `Payment gateway error: ${cfData.message ?? cfData.code ?? 'unknown'}` })
-        return
-      }
+      const rzp = new Razorpay({ key_id: env.RAZORPAY_KEY_ID, key_secret: env.RAZORPAY_KEY_SECRET })
+      const order = await rzp.orders.create({ amount: amount * 100, currency: 'INR', receipt: cfOrderId })
+      razorpayOrderId = order.id as string
+      // Store Razorpay order ID in cfOrderId field
+      await prisma.donation.update({ where: { id: donation.id }, data: { cfOrderId: razorpayOrderId } })
     } catch (e) {
-      console.error('Cashfree order creation failed:', e)
+      console.error('Razorpay order creation failed:', e)
       res.status(502).json({ error: 'Payment gateway unavailable. Please try again.' })
       return
     }
   }
 
-  res.status(201).json({ donationId: donation.id, orderId: cfOrderId, paymentSessionId })
+  res.status(201).json({ donationId: donation.id, razorpayOrderId, amount: amount * 100, currency: 'INR' })
 })
 
 // Public: poll donation status

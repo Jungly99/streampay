@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(sleep 5 && tail -15 /tmp/streampay-web.log)",
-      "Read(//private/tmp/**)"
+      "Read(//private/tmp/**)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Fix vercel.json: remove types build step \\(no build script\\) *)",
+      "Bash(git push *)"
     ]
   }
 }

@@ -5,9 +5,9 @@ const schema = z.object({
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string(),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
-  CASHFREE_APP_ID: z.string().optional(),
-  CASHFREE_SECRET_KEY: z.string().optional(),
-  CASHFREE_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 })
 
