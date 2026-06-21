@@ -108,13 +108,26 @@ export default function OverlayClient({ token }: { token: string }) {
   useEffect(() => {
     const socket = getSocket()
     socket.connect()
-    socket.on('connect', () => socket.emit('join-overlay', { token }))
+
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
+    socket.on('connect', () => {
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null }
+      socket.emit('join-overlay', { token })
+    })
+    socket.on('disconnect', () => {
+      // If still disconnected after 30s, reload the page to force a fresh connection
+      reconnectTimer = setTimeout(() => window.location.reload(), 30_000)
+    })
     socket.on('overlay-joined', ({ settings: s }: { settings: AlertSettings }) => setSettings(s))
     socket.on('new-donation', (data: NewDonationEvent) => {
       setQueue(q => [...q, { ...data, id: `${Date.now()}-${Math.random()}` }])
     })
     socket.on('goal-updated', (data: GoalUpdatedEvent) => setGoal(data))
-    return () => { socket.disconnect() }
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      socket.disconnect()
+    }
   }, [token])
 
   // Always inject transparent background styles
@@ -145,8 +158,8 @@ export default function OverlayClient({ token }: { token: string }) {
     <div style={{ position: 'fixed', inset: 0, background: 'transparent', overflow: 'hidden' }}>
       {transparentStyle}
 
-      {/* Alert — centered on screen */}
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 500, maxWidth: '90vw' }}>
+      {/* Alert — centered in 800×800 OBS source */}
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'min(500px, 90vw)' }}>
         <Confetti active={showConfetti} />
         <AnimatePresence>
           {current && tier && (
