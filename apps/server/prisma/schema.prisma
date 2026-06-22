@@ -249,3 +249,27 @@ model Follow {
   @@unique([viewerId, streamerId])
   @@map("follows")
 }
+
+model AdminRole {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  permissions Json        @default("{}")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  admins      AdminUser[]
+
+  @@map("admin_roles")
+}
+
+model AdminUser {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  googleId     String?    @unique @map("google_id")
+  name         String?
+  avatar       String?
+  isSuperAdmin Boolean    @default(false) @map("is_super_admin")
+  roleId       String?    @map("role_id")
+  role         AdminRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}

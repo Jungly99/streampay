@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express'
-import { verifyToken, JwtPayload } from '../utils/jwt'
-import { env } from '../config/env'
+import { verifyToken, verifyAdminToken, JwtPayload, AdminJwtPayload, AdminPermissions } from '../utils/jwt'
 
 export interface AuthRequest extends Request {
   user?: JwtPayload
+}
+
+export interface AdminRequest extends Request {
+  admin?: AdminJwtPayload
 }
 
 export function requireAuth(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -40,11 +43,32 @@ export function requireViewer(req: AuthRequest, res: Response, next: NextFunctio
   })
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
-  const secret = req.headers['x-admin-secret']
-  if (!secret || secret !== env.ADMIN_SECRET) {
+export function requireAdmin(req: AdminRequest, res: Response, next: NextFunction): void {
+  const token = req.cookies?.eztips_admin_token
+  if (!token) {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
+  try {
+    req.admin = verifyAdminToken(token)
+    next()
+  } catch {
+    res.status(401).json({ error: 'Invalid admin token' })
+  }
+}
+
+export function requireSuperAdmin(req: AdminRequest, res: Response, next: NextFunction): void {
+  if (!req.admin?.isSuperAdmin) {
+    res.status(403).json({ error: 'Super admin only' })
+    return
+  }
   next()
+}
+
+export function requirePermission(perm: keyof AdminPermissions) {
+  return (req: AdminRequest, res: Response, next: NextFunction) => {
+    if (!req.admin) { res.status(401).json({ error: 'Unauthorized' }); return }
+    if (req.admin.isSuperAdmin || req.admin.permissions[perm]) return next()
+    res.status(403).json({ error: `Requires ${perm} permission` })
+  }
 }

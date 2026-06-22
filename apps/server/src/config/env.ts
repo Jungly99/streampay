@@ -9,6 +9,7 @@ const schema = z.object({
   GOOGLE_CLIENT_ID: z.string().default(''),
   GOOGLE_CLIENT_SECRET: z.string().default(''),
   GOOGLE_CALLBACK_URL: z.string().default('http://localhost:4000/api/auth/google/callback'),
+  GOOGLE_ADMIN_CALLBACK_URL: z.string().default('http://localhost:4000/api/admin/auth/google/callback'),
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),

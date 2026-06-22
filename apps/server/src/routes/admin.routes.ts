@@ -1,5 +1,5 @@
-import { Router, Request, Response } from 'express'
-import { requireAdmin } from '../middleware/auth'
+import { Router, Response } from 'express'
+import { requireAdmin, requireSuperAdmin, requirePermission, AdminRequest } from '../middleware/auth'
 import { prisma } from '../db/prisma'
 import { nanoid } from 'nanoid'
 
@@ -7,7 +7,7 @@ const router = Router()
 router.use(requireAdmin)
 
 // ── STATS ──────────────────────────────────────────────────────────────────
-router.get('/stats', async (_req: Request, res: Response): Promise<void> => {
+router.get('/stats', requirePermission('overview'), async (_req: AdminRequest, res: Response): Promise<void> => {
   const [
     totalStreamers,
     totalViewers,
@@ -34,7 +34,7 @@ router.get('/stats', async (_req: Request, res: Response): Promise<void> => {
 })
 
 // ── USERS ──────────────────────────────────────────────────────────────────
-router.get('/users', async (req: Request, res: Response): Promise<void> => {
+router.get('/users', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { search } = req.query
   const users = await prisma.user.findMany({
     where: search
@@ -49,7 +49,7 @@ router.get('/users', async (req: Request, res: Response): Promise<void> => {
   res.json(users)
 })
 
-router.patch('/users/:id', async (req: Request, res: Response): Promise<void> => {
+router.patch('/users/:id', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
   const { email, displayName } = req.body as { email?: string; displayName?: string }
   const updated = await prisma.user.update({
@@ -59,13 +59,13 @@ router.patch('/users/:id', async (req: Request, res: Response): Promise<void> =>
   res.json(updated)
 })
 
-router.delete('/users/:id', async (req: Request, res: Response): Promise<void> => {
+router.delete('/users/:id', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
   await prisma.user.delete({ where: { id: req.params.id } })
   res.json({ ok: true })
 })
 
 // ── STREAMERS ──────────────────────────────────────────────────────────────
-router.get('/streamers', async (_req: Request, res: Response): Promise<void> => {
+router.get('/streamers', requirePermission('streamers'), async (_req: AdminRequest, res: Response): Promise<void> => {
   const streamers = await prisma.streamerProfile.findMany({
     include: {
       user: { select: { id: true, email: true, createdAt: true, displayName: true } },
@@ -117,15 +117,11 @@ router.get('/streamers', async (_req: Request, res: Response): Promise<void> => 
   })))
 })
 
-router.get('/streamers/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/streamers/:id', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
   const streamer = await prisma.streamerProfile.findUnique({
     where: { id: req.params.id },
     include: {
-      user: true,
-      bankDetails: true,
-      alertSettings: true,
-      voiceTiers: true,
-      goals: true,
+      user: true, bankDetails: true, alertSettings: true, voiceTiers: true, goals: true,
       _count: { select: { donations: true, settlements: true, followers: true } },
     },
   })
@@ -133,25 +129,21 @@ router.get('/streamers/:id', async (req: Request, res: Response): Promise<void> 
   res.json(streamer)
 })
 
-router.patch('/streamers/:id', async (req: Request, res: Response): Promise<void> => {
+router.patch('/streamers/:id', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
-  const {
-    channelName, bio, channelLink, username,
-    isActive, isVerified, minDonationAmount, discordWebhookUrl,
-  } = req.body as {
+  const { channelName, bio, channelLink, username, isActive, isVerified, minDonationAmount, discordWebhookUrl } = req.body as {
     channelName?: string; bio?: string; channelLink?: string; username?: string
     isActive?: boolean; isVerified?: boolean; minDonationAmount?: number; discordWebhookUrl?: string
   }
-
   const updated = await prisma.streamerProfile.update({
     where: { id },
     data: {
-      ...(channelName     !== undefined && { channelName }),
-      ...(bio             !== undefined && { bio }),
-      ...(channelLink     !== undefined && { channelLink }),
-      ...(username        !== undefined && { username }),
-      ...(isActive        !== undefined && { isActive }),
-      ...(isVerified      !== undefined && { isVerified }),
+      ...(channelName       !== undefined && { channelName }),
+      ...(bio               !== undefined && { bio }),
+      ...(channelLink       !== undefined && { channelLink }),
+      ...(username          !== undefined && { username }),
+      ...(isActive          !== undefined && { isActive }),
+      ...(isVerified        !== undefined && { isVerified }),
       ...(minDonationAmount !== undefined && { minDonationAmount }),
       ...(discordWebhookUrl !== undefined && { discordWebhookUrl }),
     },
@@ -159,30 +151,21 @@ router.patch('/streamers/:id', async (req: Request, res: Response): Promise<void
   res.json(updated)
 })
 
-router.post('/streamers/:id/reset-overlay', async (req: Request, res: Response): Promise<void> => {
+router.post('/streamers/:id/reset-overlay', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
   const token = `otk_${nanoid(32)}`
-  const updated = await prisma.streamerProfile.update({
-    where: { id: req.params.id },
-    data: { overlayToken: token },
-  })
+  const updated = await prisma.streamerProfile.update({ where: { id: req.params.id }, data: { overlayToken: token } })
   res.json({ overlayToken: updated.overlayToken })
 })
 
-// ── BANK DETAILS ───────────────────────────────────────────────────────────
-router.patch('/streamers/:id/bank', async (req: Request, res: Response): Promise<void> => {
+router.patch('/streamers/:id/bank', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
   const { accountHolderName, accountNumber, ifscCode, bankName, invoiceName, streetAddress, city, state, pincode } = req.body as {
     accountHolderName?: string; accountNumber?: string; ifscCode?: string; bankName?: string
     invoiceName?: string; streetAddress?: string; city?: string; state?: string; pincode?: string
   }
-
   const updated = await prisma.streamerBankDetails.upsert({
     where: { streamerId: id },
-    create: {
-      streamerId: id,
-      accountHolderName, accountNumber, ifscCode, bankName,
-      invoiceName, streetAddress, city, state, pincode,
-    },
+    create: { streamerId: id, accountHolderName, accountNumber, ifscCode, bankName, invoiceName, streetAddress, city, state, pincode },
     update: {
       ...(accountHolderName !== undefined && { accountHolderName }),
       ...(accountNumber     !== undefined && { accountNumber }),
@@ -199,34 +182,29 @@ router.patch('/streamers/:id/bank', async (req: Request, res: Response): Promise
 })
 
 // ── DONATIONS ──────────────────────────────────────────────────────────────
-router.get('/donations', async (req: Request, res: Response): Promise<void> => {
+router.get('/donations', requirePermission('donations'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { page = '1', limit = '50', status, search } = req.query
   const skip = (parseInt(page as string) - 1) * parseInt(limit as string)
-
   const where = {
     ...(status && { status: status as 'PENDING' | 'SUCCESS' | 'FAILED' }),
-    ...(search && {
-      OR: [
-        { donorName: { contains: search as string, mode: 'insensitive' as const } },
-        { message: { contains: search as string, mode: 'insensitive' as const } },
-      ],
-    }),
+    ...(search && { OR: [
+      { donorName: { contains: search as string, mode: 'insensitive' as const } },
+      { message:   { contains: search as string, mode: 'insensitive' as const } },
+    ]}),
   }
-
   const [donations, total] = await Promise.all([
     prisma.donation.findMany({
       where,
       include: { streamer: { select: { username: true, channelName: true } } },
       orderBy: { createdAt: 'desc' },
-      skip,
-      take: parseInt(limit as string),
+      skip, take: parseInt(limit as string),
     }),
     prisma.donation.count({ where }),
   ])
   res.json({ donations, total, page: parseInt(page as string) })
 })
 
-router.patch('/donations/:id', async (req: Request, res: Response): Promise<void> => {
+router.patch('/donations/:id', requirePermission('donations'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { status, message } = req.body as { status?: string; message?: string }
   const updated = await prisma.donation.update({
     where: { id: req.params.id },
@@ -239,17 +217,13 @@ router.patch('/donations/:id', async (req: Request, res: Response): Promise<void
 })
 
 // ── SETTLEMENTS ────────────────────────────────────────────────────────────
-router.get('/settlements', async (req: Request, res: Response): Promise<void> => {
+router.get('/settlements', requirePermission('settlements'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { status } = req.query
   const settlements = await prisma.settlement.findMany({
     where: status ? { status: status as 'INITIATED' | 'SUCCESS' | 'FAILED' } : undefined,
     include: {
       streamer: {
-        select: {
-          username: true, channelName: true,
-          user: { select: { email: true } },
-          bankDetails: true,
-        },
+        select: { username: true, channelName: true, user: { select: { email: true } }, bankDetails: true },
       },
     },
     orderBy: { initiatedAt: 'desc' },
@@ -257,7 +231,7 @@ router.get('/settlements', async (req: Request, res: Response): Promise<void> =>
   res.json(settlements)
 })
 
-router.patch('/settlements/:id/mark-paid', async (req: Request, res: Response): Promise<void> => {
+router.patch('/settlements/:id/mark-paid', requirePermission('settlements'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
   const { transferRef } = req.body as { transferRef?: string }
   const settlement = await prisma.settlement.findUnique({ where: { id } })
@@ -270,13 +244,87 @@ router.patch('/settlements/:id/mark-paid', async (req: Request, res: Response): 
   res.json(updated)
 })
 
-router.patch('/settlements/:id/mark-failed', async (req: Request, res: Response): Promise<void> => {
+router.patch('/settlements/:id/mark-failed', requirePermission('settlements'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { reason } = req.body as { reason?: string }
   const updated = await prisma.settlement.update({
     where: { id: req.params.id },
     data: { status: 'FAILED', failureReason: reason ?? 'Marked failed by admin' },
   })
   res.json(updated)
+})
+
+// ── ROLES (super admin only) ───────────────────────────────────────────────
+router.get('/roles', requireSuperAdmin, async (_req: AdminRequest, res: Response): Promise<void> => {
+  const roles = await prisma.adminRole.findMany({
+    include: { _count: { select: { admins: true } } },
+    orderBy: { createdAt: 'asc' },
+  })
+  res.json(roles)
+})
+
+router.post('/roles', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const { name, permissions } = req.body as { name: string; permissions: object }
+  if (!name) { res.status(400).json({ error: 'Role name required' }); return }
+  try {
+    const role = await prisma.adminRole.create({ data: { name, permissions } })
+    res.json(role)
+  } catch {
+    res.status(409).json({ error: 'Role name already exists' })
+  }
+})
+
+router.patch('/roles/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const { name, permissions } = req.body as { name?: string; permissions?: object }
+  const updated = await prisma.adminRole.update({
+    where: { id: req.params.id },
+    data: { ...(name && { name }), ...(permissions && { permissions }) },
+  })
+  res.json(updated)
+})
+
+router.delete('/roles/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  await prisma.adminRole.delete({ where: { id: req.params.id } })
+  res.json({ ok: true })
+})
+
+// ── ADMIN USERS (super admin only) ─────────────────────────────────────────
+router.get('/admin-users', requireSuperAdmin, async (_req: AdminRequest, res: Response): Promise<void> => {
+  const admins = await prisma.adminUser.findMany({
+    include: { role: true },
+    orderBy: { createdAt: 'asc' },
+  })
+  res.json(admins)
+})
+
+router.post('/admin-users', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const { email, roleId } = req.body as { email: string; roleId?: string }
+  if (!email) { res.status(400).json({ error: 'Email required' }); return }
+  try {
+    const admin = await prisma.adminUser.create({
+      data: { email, roleId: roleId ?? null },
+      include: { role: true },
+    })
+    res.json(admin)
+  } catch {
+    res.status(409).json({ error: 'Admin with this email already exists' })
+  }
+})
+
+router.patch('/admin-users/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const { roleId } = req.body as { roleId?: string | null }
+  const updated = await prisma.adminUser.update({
+    where: { id: req.params.id },
+    data: { roleId: roleId === null ? null : roleId },
+    include: { role: true },
+  })
+  res.json(updated)
+})
+
+router.delete('/admin-users/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const target = await prisma.adminUser.findUnique({ where: { id: req.params.id } })
+  if (target?.isSuperAdmin) { res.status(400).json({ error: 'Cannot remove super admin' }); return }
+  await prisma.adminUser.delete({ where: { id: req.params.id } })
+  res.json({ ok: true })
 })
 
 export default router

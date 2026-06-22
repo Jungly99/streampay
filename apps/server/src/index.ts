@@ -17,6 +17,7 @@ import overlayRoutes from './routes/overlay.routes'
 import viewerRoutes from './routes/viewer.routes'
 import webhookRoutes from './routes/webhooks.routes'
 import adminRoutes from './routes/admin.routes'
+import adminAuthRoutes from './routes/adminAuth.routes'
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -54,6 +55,7 @@ app.use('/api/settlements', settlementRoutes)
 app.use('/api/overlay', overlayRoutes)
 app.use('/api/viewer', viewerRoutes)
 app.use('/api/webhooks', webhookRoutes)
+app.use('/api/admin/auth', adminAuthRoutes)
 app.use('/api/admin', adminRoutes)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))
