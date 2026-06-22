@@ -183,12 +183,13 @@ router.patch('/alert-settings', async (req: AuthRequest, res: Response): Promise
   const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
   if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
 
+  // Strip read-only / relation fields so Prisma doesn't reject them
+  const { id: _id, streamerId: _sid, createdAt: _ca, updatedAt: _ua, streamer: _rel, ...updateData } = req.body
   const settings = await prisma.alertSettings.upsert({
     where: { streamerId: profile.id },
-    create: { streamerId: profile.id, ...req.body },
-    update: req.body,
+    create: { streamerId: profile.id, ...updateData },
+    update: updateData,
   })
-  // Push live settings update to any open overlay window
   if (profile.overlayToken) emitToDonationOverlay(profile.overlayToken, 'settings-updated', settings)
   res.json(settings)
 })

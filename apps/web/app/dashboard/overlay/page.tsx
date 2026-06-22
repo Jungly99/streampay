@@ -77,6 +77,7 @@ export default function OverlayPage() {
   const [manualAdd, setManualAdd] = useState('')
   const [overlayToken, setOverlayToken] = useState('')
   const [showToken, setShowToken] = useState(false)
+  const [showGoalToken, setShowGoalToken] = useState(false)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
 
@@ -86,7 +87,11 @@ export default function OverlayPage() {
       api.get<any>('/api/streamer/goal'),
       api.get<any>('/api/streamer/profile'),
     ]).then(([settings, g, profile]) => {
-      if (settings && Object.keys(settings).length) setS((p: any) => ({ ...p, ...settings }))
+      if (settings && Object.keys(settings).length) {
+        // Strip Prisma metadata fields before merging into local state
+        const { id: _id, streamerId: _sid, createdAt: _ca, updatedAt: _ua, ...clean } = settings
+        setS((p: any) => ({ ...p, ...clean }))
+      }
       if (g) setGoal(g)
       if (profile?.overlayToken) setOverlayToken(profile.overlayToken)
     }).catch(() => {})
@@ -123,8 +128,11 @@ export default function OverlayPage() {
   }
 
   const SITE = typeof window !== 'undefined' ? window.location.origin : 'https://eztips.live'
-  const overlayUrl = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
-  const maskedUrl  = overlayUrl.replace(/[a-zA-Z0-9]{6,}(?=[^/]*$)/, '•'.repeat(16))
+  const overlayUrl     = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
+  const goalOverlayUrl = overlayToken ? `${SITE}/overlay/${overlayToken}/goal` : ''
+  const maskUrl = (url: string) => overlayToken ? url.replace(overlayToken, '•'.repeat(16)) : url
+  const maskedUrl     = maskUrl(overlayUrl)
+  const maskedGoalUrl = maskUrl(goalOverlayUrl)
 
   const tabs: [Tab, string, string][] = [
     ['appearance','🎨','Appearance'],
@@ -394,15 +402,29 @@ export default function OverlayPage() {
             </div>
           )}
 
-          {/* OBS Link */}
-          {overlayUrl && (
+          {/* OBS Link — alert overlay (appearance / tts / safety) */}
+          {overlayUrl && (tab==='appearance'||tab==='tts'||tab==='safety') && (
             <div style={{ ...C, padding:'16px 20px' }}>
-              <p style={sH}><span>📡</span> OBS Overlay Link</p>
-              <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>Paste this into OBS as a Browser Source. Never share or show this on stream.</p>
+              <p style={sH}><span>📡</span> Alert Overlay — OBS Link</p>
+              <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>Add to OBS as a Browser Source (1920×1080, transparent). Never share on stream.</p>
               <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
                 <span style={{ flex:1, fontSize:12, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{showToken ? overlayUrl : maskedUrl}</span>
                 <button onClick={()=>setShowToken(t=>!t)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'#64748b', flexShrink:0 }}>{showToken?'🙈':'👁️'}</button>
                 <button onClick={()=>{ navigator.clipboard.writeText(overlayUrl); toast.success('Copied!') }} style={{ background:'rgba(124,58,237,0.12)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:7, cursor:'pointer', fontSize:12, color:'#a78bfa', padding:'5px 10px', fontWeight:700 }}>Copy</button>
+              </div>
+              <p style={{ fontSize:11, color:'#f59e0b', margin:'8px 0 0', display:'flex', alignItems:'center', gap:5 }}><span>⚠️</span> Separate from goal overlay — add both if you want both.</p>
+            </div>
+          )}
+
+          {/* OBS Link — goal overlay */}
+          {goalOverlayUrl && tab==='goal' && (
+            <div style={{ ...C, padding:'16px 20px' }}>
+              <p style={sH}><span>🎯</span> Goal Overlay — OBS Link</p>
+              <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>Add this as a <strong style={{ color:'#f1f5f9' }}>second separate</strong> Browser Source in OBS, positioned wherever you want the goal bar.</p>
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
+                <span style={{ flex:1, fontSize:12, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{showGoalToken ? goalOverlayUrl : maskedGoalUrl}</span>
+                <button onClick={()=>setShowGoalToken(t=>!t)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'#64748b', flexShrink:0 }}>{showGoalToken?'🙈':'👁️'}</button>
+                <button onClick={()=>{ navigator.clipboard.writeText(goalOverlayUrl); toast.success('Copied!') }} style={{ background:'rgba(124,58,237,0.12)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:7, cursor:'pointer', fontSize:12, color:'#a78bfa', padding:'5px 10px', fontWeight:700 }}>Copy</button>
               </div>
               <p style={{ fontSize:11, color:'#f59e0b', margin:'8px 0 0', display:'flex', alignItems:'center', gap:5 }}><span>⚠️</span> Only use in OBS Browser Source — not visible to viewers.</p>
             </div>
@@ -414,31 +436,82 @@ export default function OverlayPage() {
           <div style={{ ...C, padding:16 }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
               <div style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 6px #22c55e' }}/>
-              <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.06em', margin:0 }}>LIVE PREVIEW</p>
+              <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.06em', margin:0 }}>
+                {tab==='goal' ? 'GOAL PREVIEW' : tab==='leaderboard' ? 'LEADERBOARD PREVIEW' : 'ALERT PREVIEW'}
+              </p>
             </div>
-            <div style={{ background:'#000', borderRadius:10, minHeight:140, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflow:'hidden' }}>
-              <div style={{
-                borderRadius:14, padding:'12px 16px', textAlign:'center',
-                background: previewBg,
-                color: s.textColor, fontSize: s.fontSize * 0.52,
-                fontFamily: s.fontStyle,
-                fontWeight: s.textBold?'bold':'normal',
-                fontStyle: s.textItalic?'italic':'normal',
-                textDecoration: s.textUnderline?'underline':'none',
-                border: s.enableBorder?`2px solid ${s.textColor}50`:'none',
-                boxShadow: s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px rgba(0,0,0,${s.shadowOpacity/100})`:'none',
-              }}>
-                <p style={{ fontWeight:700, margin:0 }}>🎉 Arjun donated ₹500</p>
-                <p style={{ opacity:0.8, fontSize:'0.85em', margin:'4px 0 0' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
+
+            {/* Alert preview — appearance / tts / safety */}
+            {(tab==='appearance'||tab==='tts'||tab==='safety') && (
+              <div style={{ background:'#000', borderRadius:10, minHeight:140, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflow:'hidden' }}>
+                <div style={{
+                  borderRadius:14, padding:'12px 16px', textAlign:'center',
+                  background: previewBg,
+                  color: s.textColor, fontSize: s.fontSize * 0.52,
+                  fontFamily: s.fontStyle,
+                  fontWeight: s.textBold?'bold':'normal',
+                  fontStyle: s.textItalic?'italic':'normal',
+                  textDecoration: s.textUnderline?'underline':'none',
+                  border: s.enableBorder?`2px solid ${s.textColor}50`:'none',
+                  boxShadow: s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px rgba(0,0,0,${s.shadowOpacity/100})`:'none',
+                }}>
+                  <p style={{ fontWeight:700, margin:0 }}>🎉 Arjun donated ₹500</p>
+                  <p style={{ opacity:0.8, fontSize:'0.85em', margin:'4px 0 0' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Goal bar preview — updates live as goal settings change */}
+            {tab==='goal' && (
+              <div style={{ background:'#000', borderRadius:10, padding:18 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10, alignItems:'center' }}>
+                  <span style={{ color:'white', fontWeight:700, fontSize:13 }}>{goal.title || 'Donation Goal'}</span>
+                  <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>₹{goal.currentAmount??0} / ₹{goal.targetAmount}</span>
+                </div>
+                <div style={{ height:14, background:'rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
+                  <div style={{
+                    height:'100%',
+                    width:`${Math.min(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100,100)}%`,
+                    background:`linear-gradient(90deg,${s.goalBarColor},#ec4899)`,
+                    borderRadius:8,
+                    transition:'width 0.5s ease',
+                  }}/>
+                </div>
+                <p style={{ color:'rgba(255,255,255,0.35)', fontSize:10, margin:'8px 0 0', textAlign:'right' }}>
+                  {Math.round(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100)}% reached
+                </p>
+                {s.enableGoalCelebration && goal.currentAmount >= goal.targetAmount && goal.targetAmount > 0 && (
+                  <p style={{ color:'#fbbf24', fontSize:11, textAlign:'center', margin:'8px 0 0', fontWeight:700 }}>🎊 Goal reached!</p>
+                )}
+              </div>
+            )}
+
+            {/* Leaderboard placeholder preview */}
+            {tab==='leaderboard' && (
+              <div style={{ background:'#000', borderRadius:10, padding:18 }}>
+                <p style={{ color:'rgba(255,255,255,0.3)', fontSize:11, textAlign:'center', margin:0 }}>Leaderboard overlays</p>
+                <p style={{ color:'rgba(255,255,255,0.15)', fontSize:10, textAlign:'center', margin:'4px 0 0' }}>coming soon</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:14 }}>
+                  {[['🥇','Arjun K.','₹2,500'],['🥈','Priya M.','₹1,200'],['🥉','Rohan S.','₹800']].map(([e,n,a],i)=>(
+                    <div key={i} style={{ display:'flex', alignItems:'center', gap:8, opacity:0.4+i*0.1, filter:'blur(1px)' }}>
+                      <span style={{ fontSize:14 }}>{e}</span>
+                      <span style={{ flex:1, fontSize:11, color:'white' }}>{n}</span>
+                      <span style={{ fontSize:11, color:'#a78bfa', fontWeight:700 }}>{a}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p style={{ fontSize:10, color:'#374151', textAlign:'center', margin:'8px 0 0' }}>Updates as you edit</p>
           </div>
 
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            <button onClick={sendTest} disabled={testing} style={{ width:'100%', padding:11, borderRadius:10, fontSize:13, fontWeight:700, cursor:testing?'not-allowed':'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa', opacity:testing?0.7:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-              <span>🚀</span>{testing?'Sending…':'Send Test Alert'}
-            </button>
+            {(tab==='appearance'||tab==='tts'||tab==='safety') && (
+              <button onClick={sendTest} disabled={testing} style={{ width:'100%', padding:11, borderRadius:10, fontSize:13, fontWeight:700, cursor:testing?'not-allowed':'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa', opacity:testing?0.7:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                <span>🚀</span>{testing?'Sending…':'Send Test Alert'}
+              </button>
+            )}
             <button onClick={save} disabled={saving} style={{ width:'100%', padding:11, borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', background:'linear-gradient(135deg,#7c3aed,#ec4899)', border:'none', color:'white', boxShadow:'0 4px 18px rgba(124,58,237,0.3)', opacity:saving?0.7:1 }}>
               {saving?'Saving…':'💾 Save Settings'}
             </button>
