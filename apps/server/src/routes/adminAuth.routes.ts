@@ -80,7 +80,7 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
       await prisma.adminUser.update({ where: { id: adminUser.id }, data: { googleId, name, avatar } })
     }
 
-    const perms = (adminUser.role?.permissions ?? {}) as AdminPermissions
+    const perms = (adminUser.role?.permissions ?? {}) as unknown as AdminPermissions
     const token = signAdminToken({
       adminId: adminUser.id, email, name, avatar, isSuperAdmin: false, permissions: perms,
     })
