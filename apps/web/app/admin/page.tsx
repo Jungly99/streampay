@@ -65,6 +65,7 @@ export default function AdminDashboard() {
   const [roles, setRoles]           = useState<Role[]>([])
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
 
+  const [streamerSearch, setStreamerSearch]      = useState('')
   const [settlementFilter, setSettlementFilter] = useState('INITIATED')
   const [donationFilter, setDonationFilter]     = useState('')
   const [userSearch, setUserSearch]             = useState('')
@@ -326,8 +327,17 @@ export default function AdminDashboard() {
         {/* ═══ STREAMERS ═════════════════════════════════════════════════════════ */}
         {tab==='streamers' && (
           <div>
-            <h2 style={{margin:'0 0 16px',fontSize:18,fontWeight:700}}>Streamers ({streamers.length})</h2>
-            {streamers.map(s=>(
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16,flexWrap:'wrap'}}>
+              <h2 style={{margin:0,fontSize:18,fontWeight:700}}>Streamers ({streamers.filter(s=>!streamerSearch||[s.channelName,s.username,s.email,s.displayName].some(v=>v?.toLowerCase().includes(streamerSearch.toLowerCase()))).length})</h2>
+              <input
+                placeholder="Search by name, username or email…"
+                value={streamerSearch}
+                onChange={e=>setStreamerSearch(e.target.value)}
+                style={{...inp,width:280,flex:'0 0 auto'}}
+              />
+              {streamerSearch && <button onClick={()=>setStreamerSearch('')} style={{...ghostBtn,padding:'7px 12px',fontSize:12}}>✕ Clear</button>}
+            </div>
+            {streamers.filter(s=>!streamerSearch||[s.channelName,s.username,s.email,s.displayName].some(v=>v?.toLowerCase().includes(streamerSearch.toLowerCase()))).map(s=>(
               <div key={s.id} style={{...card,padding:'20px 24px',marginBottom:12}}>
                 <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12,marginBottom:12}}>
                   <div>
