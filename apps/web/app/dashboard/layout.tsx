@@ -41,6 +41,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-screen overflow-hidden" style={{ background: '#06060f' }}>
       <Sidebar
         channelName={user.streamerProfile?.channelName ?? user.displayName ?? 'Streamer'}
+        email={user.email ?? ''}
+        username={user.streamerProfile?.username ?? ''}
+        overlayToken={user.streamerProfile?.overlayToken ?? ''}
         todayEarnings={stats.todayEarnings ?? 0}
         followers={stats.followerCount ?? 0}
       />
