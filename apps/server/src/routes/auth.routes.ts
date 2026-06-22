@@ -9,12 +9,14 @@ import { env } from '../config/env'
 const router = Router()
 
 const IS_PROD = env.NODE_ENV === 'production'
+const COOKIE_DOMAIN = IS_PROD ? '.eztips.live' : undefined
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: IS_PROD,
   sameSite: (IS_PROD ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 30 * 24 * 60 * 60 * 1000,
   path: '/',
+  ...(COOKIE_DOMAIN && { domain: COOKIE_DOMAIN }),
 }
 
 const oauth2Client = new OAuth2Client(
@@ -113,8 +115,8 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
   }
 
   const token = signToken({ userId: user.id, accountType: user.accountType })
-  const next = user.accountType === 'streamer' ? '/dashboard' : '/fan'
-  res.redirect(`${env.FRONTEND_URL}/api/auth/callback?token=${token}&next=${next}`)
+  res.cookie('eztips_token', token, COOKIE_OPTIONS)
+  res.redirect(`${env.FRONTEND_URL}${user.accountType === 'streamer' ? '/dashboard' : '/fan'}`)
 })
 
 router.post('/logout', (_req: Request, res: Response): void => {
