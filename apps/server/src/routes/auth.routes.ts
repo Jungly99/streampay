@@ -113,8 +113,8 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
   }
 
   const token = signToken({ userId: user.id, accountType: user.accountType })
-  res.cookie('eztips_token', token, COOKIE_OPTIONS)
-  res.redirect(`${env.FRONTEND_URL}${user.accountType === 'streamer' ? '/dashboard' : '/fan'}`)
+  const next = user.accountType === 'streamer' ? '/dashboard' : '/fan'
+  res.redirect(`${env.FRONTEND_URL}/api/auth/callback?token=${token}&next=${next}`)
 })
 
 router.post('/logout', (_req: Request, res: Response): void => {

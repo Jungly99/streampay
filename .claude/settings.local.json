@@ -5,7 +5,8 @@
       "Read(//private/tmp/**)",
       "Bash(git add *)",
       "Bash(git commit -m 'Fix vercel.json: remove types build step \\(no build script\\) *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(flyctl ssh *)"
     ]
   }
 }
