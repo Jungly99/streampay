@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express'
 import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '../db/prisma'
-import { signToken } from '../utils/jwt'
+import { signToken, signAdminToken, AdminPermissions } from '../utils/jwt'
 import { generateOverlayToken } from '../utils/generateToken'
 import { requireAuth, AuthRequest } from '../middleware/auth'
 import { env } from '../config/env'
+
+const SUPER_ADMIN_EMAIL = 'abhinavs199.as@gmail.com'
+const FULL_ADMIN_PERMS: AdminPermissions = { overview:true, streamers:true, users:true, donations:true, settlements:true }
 
 const router = Router()
 
@@ -51,10 +54,12 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
     return
   }
 
+  let flow = 'user'
   let accountType = 'streamer'
   let mode = 'login'
   try {
     const decoded = JSON.parse(Buffer.from(state, 'base64url').toString())
+    flow        = decoded.flow        || 'user'
     accountType = decoded.accountType || 'streamer'
     mode        = decoded.mode        || 'login'
   } catch { /* ignore malformed state */ }
@@ -74,7 +79,36 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
   const name      = payload.name ?? email.split('@')[0]
   const avatarUrl = payload.picture ?? null
 
-  // Find existing user by googleId or email
+  // ── ADMIN FLOW ──────────────────────────────────────────────────────────
+  if (flow === 'admin') {
+    const ADMIN_COOKIE = {
+      httpOnly: true, secure: IS_PROD,
+      sameSite: (IS_PROD ? 'none' : 'lax') as 'none' | 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, path: '/',
+      ...(COOKIE_DOMAIN && { domain: COOKIE_DOMAIN }),
+    }
+    if (email === SUPER_ADMIN_EMAIL) {
+      const adminUser = await prisma.adminUser.upsert({
+        where: { email },
+        update: { googleId, name, avatar: avatarUrl, isSuperAdmin: true },
+        create: { email, googleId, name, avatar: avatarUrl, isSuperAdmin: true },
+      })
+      const token = signAdminToken({ adminId: adminUser.id, email, name, avatar: avatarUrl ?? undefined, isSuperAdmin: true, permissions: FULL_ADMIN_PERMS })
+      res.cookie('eztips_admin_token', token, ADMIN_COOKIE)
+      res.redirect(`${env.FRONTEND_URL}/admin`)
+    } else {
+      const adminUser = await prisma.adminUser.findUnique({ where: { email }, include: { role: true } })
+      if (!adminUser) { res.redirect(`${env.FRONTEND_URL}/admin/login?error=unauthorized`); return }
+      if (!adminUser.googleId) await prisma.adminUser.update({ where: { id: adminUser.id }, data: { googleId, name, avatar: avatarUrl } })
+      const perms = (adminUser.role?.permissions ?? {}) as unknown as AdminPermissions
+      const token = signAdminToken({ adminId: adminUser.id, email, name, avatar: avatarUrl ?? undefined, isSuperAdmin: false, permissions: perms })
+      res.cookie('eztips_admin_token', token, ADMIN_COOKIE)
+      res.redirect(`${env.FRONTEND_URL}/admin`)
+    }
+    return
+  }
+
+  // ── USER FLOW ────────────────────────────────────────────────────────────
   let user = await prisma.user.findFirst({
     where: { OR: [{ googleId }, { email }] },
   })
@@ -84,34 +118,17 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
       res.redirect(`${env.FRONTEND_URL}/login?error=no_account`)
       return
     }
-    // Create new account
     user = await prisma.user.create({
       data: {
-        email,
-        googleId,
-        displayName: name,
-        avatarUrl,
+        email, googleId, displayName: name, avatarUrl,
         accountType: accountType as 'streamer' | 'viewer',
         ...(accountType === 'streamer'
-          ? {
-              streamerProfile: {
-                create: {
-                  channelName: name,
-                  overlayToken: generateOverlayToken(),
-                  alertSettings: { create: {} },
-                  bankDetails: { create: {} },
-                },
-              },
-            }
+          ? { streamerProfile: { create: { channelName: name, overlayToken: generateOverlayToken(), alertSettings: { create: {} }, bankDetails: { create: {} } } } }
           : { viewerProfile: { create: { displayName: name } } }),
       },
     })
   } else if (!user.googleId) {
-    // Link Google to existing account on first Google sign-in
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { googleId, avatarUrl: user.avatarUrl ?? avatarUrl },
-    })
+    await prisma.user.update({ where: { id: user.id }, data: { googleId, avatarUrl: user.avatarUrl ?? avatarUrl } })
   }
 
   const token = signToken({ userId: user.id, accountType: user.accountType })

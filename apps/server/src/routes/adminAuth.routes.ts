@@ -22,18 +22,21 @@ const COOKIE_OPTIONS = {
   ...(IS_PROD && { domain: '.eztips.live' }),
 }
 
+// Reuse the same registered callback URL — differentiate via state.flow='admin'
 const adminOAuth = new OAuth2Client(
   env.GOOGLE_CLIENT_ID,
   env.GOOGLE_CLIENT_SECRET,
-  env.GOOGLE_ADMIN_CALLBACK_URL,
+  env.GOOGLE_CALLBACK_URL,
 )
 
 // GET /api/admin/auth/google
 router.get('/google', (_req: Request, res: Response) => {
+  const state = Buffer.from(JSON.stringify({ flow: 'admin' })).toString('base64url')
   const url = adminOAuth.generateAuthUrl({
     access_type: 'offline',
-    scope: ['email', 'profile'],
+    scope: ['email', 'profile', 'openid'],
     prompt: 'select_account',
+    state,
   })
   res.redirect(url)
 })
