@@ -6,7 +6,7 @@ const router = Router()
 router.get('/validate/:token', async (req: Request, res: Response): Promise<void> => {
   const profile = await prisma.streamerProfile.findUnique({
     where: { overlayToken: req.params.token },
-    include: { alertSettings: true, goals: { where: { isActive: true }, take: 1 } },
+    include: { alertSettings: true, goals: { take: 1, orderBy: { createdAt: 'desc' } } },
   })
   if (!profile) {
     res.status(404).json({ error: 'Invalid overlay token' })
