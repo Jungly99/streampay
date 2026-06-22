@@ -256,14 +256,14 @@ export default function AdminDashboard() {
 
   const canSee = (p: keyof AdminPerms) => admin.isSuperAdmin || admin.permissions[p]
 
-  const TABS: Array<{key:TabType; label:string; show:boolean}> = [
-    { key:'overview',    label:'Overview',    show:canSee('overview') },
-    { key:'streamers',   label:'Streamers',   show:canSee('streamers') },
-    { key:'users',       label:'Users',       show:canSee('users') },
-    { key:'donations',   label:'Donations',   show:canSee('donations') },
-    { key:'settlements', label:'Settlements', show:canSee('settlements') },
-    { key:'team',        label:'Team',        show:admin.isSuperAdmin },
-  ].filter(t=>t.show)
+  const TABS = ([
+    { key:'overview'    as TabType, label:'Overview',    show:canSee('overview') },
+    { key:'streamers'   as TabType, label:'Streamers',   show:canSee('streamers') },
+    { key:'users'       as TabType, label:'Users',       show:canSee('users') },
+    { key:'donations'   as TabType, label:'Donations',   show:canSee('donations') },
+    { key:'settlements' as TabType, label:'Settlements', show:canSee('settlements') },
+    { key:'team'        as TabType, label:'Team',        show:admin.isSuperAdmin },
+  ] as Array<{key:TabType;label:string;show:boolean}>).filter(t=>t.show)
 
   return (
     <div style={{fontFamily:'system-ui,sans-serif',background:'#0f0f1a',minHeight:'100vh',color:'#e2e8f0'}}>
