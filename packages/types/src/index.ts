@@ -37,6 +37,26 @@ export interface AlertSettings {
   ttsVoice: string
   voiceMessagesEnabled: boolean
   alertDuration: number
+  enableShadow: boolean
+  shadowBlur: number
+  shadowColor: string
+  shadowOpacity: number
+  shadowOffsetX: number
+  shadowOffsetY: number
+  enableGradientBg: boolean
+  enableCoinSound: boolean
+  coinSoundVolume: number
+  ttsSoundDelay: number
+  ttsRate: number
+  ttsPitch: number
+  minAlertAmount: number
+  minTtsAmount: number
+  goalBarColor: string
+  enableGoalCelebration: boolean
+  enableBirthday: boolean
+  birthdayTemplate: string
+  enableProfanityFilter: boolean
+  customBlocklist: string
 }
 
 export interface DonationPageStreamer {

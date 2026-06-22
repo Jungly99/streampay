@@ -1,19 +1,32 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://eztips.live'
 
-const navItems = [
-  { href: '/dashboard',                      icon: '⊞',  label: 'Dashboard',            sub: 'Overview & Stats' },
-  { href: '/dashboard/messages',             icon: '💰',  label: 'Messages',             sub: 'Transaction History' },
-  { href: '/dashboard/settlements',          icon: '📊',  label: 'Settlements',          sub: 'Payout Summary' },
-  { href: '/dashboard/lifetime-settlements', icon: '📈',  label: 'Lifetime Settlements', sub: 'Total Earnings & Net Received' },
-  { href: '/dashboard/invoices',             icon: '🗒️',  label: 'Invoices',             sub: 'GST Invoices' },
-  { href: '/dashboard/profile',              icon: '👤',  label: 'Profile',              sub: 'Account Settings' },
-  { href: '/dashboard/voice-settings',       icon: '🎙️',  label: 'Voice Settings',       sub: 'Voice & Subscription' },
-  { href: '/dashboard/overlay',              icon: '🎨',  label: 'Overlay',              sub: 'Customize Alerts' },
-  { href: 'https://discord.gg/eztips',       icon: '💬',  label: 'Discord',              sub: 'Join our community', external: true },
+const navGroups = [
+  {
+    items: [
+      { href: '/dashboard',                      color: '#0ea5e9', symbol: '◫',  label: 'Dashboard',            sub: 'Overview & Stats' },
+      { href: '/dashboard/messages',             color: '#10b981', symbol: '↓',  label: 'Messages',             sub: 'Transaction History' },
+    ],
+  },
+  {
+    items: [
+      { href: '/dashboard/settlements',          color: '#6366f1', symbol: '⇆',  label: 'Settlements',          sub: 'Payout Summary' },
+      { href: '/dashboard/lifetime-settlements', color: '#8b5cf6', symbol: '∑',  label: 'Lifetime',             sub: 'Total Earnings & Net' },
+      { href: '/dashboard/invoices',             color: '#f59e0b', symbol: '▤',  label: 'Invoices',             sub: 'GST Invoices' },
+    ],
+  },
+  {
+    items: [
+      { href: '/dashboard/profile',              color: '#ec4899', symbol: '◉',  label: 'Profile',              sub: 'Account Settings' },
+      { href: '/dashboard/voice-settings',       color: '#a855f7', symbol: '♪',  label: 'Voice',                sub: 'Voice & Subscription' },
+      { href: '/dashboard/overlay',              color: '#14b8a6', symbol: '◈',  label: 'Overlay',              sub: 'Customize Alerts' },
+      { href: 'https://discord.gg/eztips',       color: '#5865f2', symbol: '⌘',  label: 'Discord',              sub: 'Join our community', external: true },
+    ],
+  },
 ]
 
 export default function Sidebar({ channelName, email, username, overlayToken, todayEarnings, followers }: {
@@ -21,162 +34,164 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
   todayEarnings: number; followers: number
 }) {
   const path = usePathname()
-  const active = (href: string) => path === href
+  const isActive = (href: string) => path === href
+  const [copied, setCopied] = useState(false)
 
   const overlayUrl = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
   const messageLink = username ? `${SITE}/send-message/${username}` : ''
 
+  function copyLink() {
+    if (!messageLink) return
+    navigator.clipboard.writeText(messageLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   return (
     <aside style={{
-      width: 264, flexShrink: 0, height: '100vh', position: 'sticky', top: 0,
+      width: 252, flexShrink: 0, height: '100vh', position: 'sticky', top: 0,
       display: 'flex', flexDirection: 'column',
-      background: 'rgba(8,8,24,0.98)',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
-      fontFamily: 'system-ui,-apple-system,sans-serif',
+      background: 'linear-gradient(180deg,#0c0d1a 0%,#080910 100%)',
+      borderRight: '1px solid rgba(255,255,255,0.05)',
+      fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
     }}>
 
-      {/* Logo */}
-      <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+      {/* Top glow */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.5),transparent)', pointerEvents: 'none' }} />
+
+      {/* Logo row */}
+      <div style={{ padding: '16px 16px 12px', flexShrink: 0 }}>
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-            background: 'linear-gradient(135deg,#7c3aed,#db2777)',
+            width: 30, height: 30, borderRadius: 8,
+            background: 'linear-gradient(135deg,#7c3aed 0%,#ec4899 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 15, color: 'white',
-            boxShadow: '0 0 18px rgba(124,58,237,0.35)',
-          }}>S</div>
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#f8fafc', letterSpacing: '-0.3px' }}>eztips</span>
+            fontWeight: 900, fontSize: 14, color: 'white',
+            boxShadow: '0 4px 14px rgba(124,58,237,0.45)',
+            letterSpacing: '-1px',
+          }}>ez</div>
+          <span style={{ fontWeight: 800, fontSize: 15, color: '#f1f5f9', letterSpacing: '-0.4px' }}>eztips</span>
+          <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: '#7c3aed', letterSpacing: '0.1em', background: 'rgba(124,58,237,0.12)', padding: '2px 6px', borderRadius: 4 }}>LIVE</span>
         </Link>
       </div>
 
-      {/* User card */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* Channel card */}
+      <div style={{ margin: '0 10px 10px', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg,#7c3aed,#db2777)',
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: 'linear-gradient(135deg,#7c3aed,#ec4899)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: 15, color: 'white',
+            fontWeight: 800, fontSize: 15, color: 'white',
+            boxShadow: '0 2px 10px rgba(124,58,237,0.3)',
           }}>{channelName?.[0]?.toUpperCase() ?? 'S'}</div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{channelName}</p>
-            <p style={{ fontSize: 11, color: '#7c3aed', fontWeight: 500, margin: 0 }}>Streamer</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{channelName}</p>
+            <span style={{ fontSize: 10, fontWeight: 600, color: '#7c3aed', background: 'rgba(124,58,237,0.12)', padding: '1px 6px', borderRadius: 20, letterSpacing: '0.05em' }}>STREAMER</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, flexShrink: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa' }}>₹{todayEarnings}</span>
-            <span style={{ fontSize: 10, color: '#475569' }}>Today</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <div style={{ background: 'rgba(124,58,237,0.08)', borderRadius: 8, padding: '7px 10px', border: '1px solid rgba(124,58,237,0.12)' }}>
+            <p style={{ fontSize: 13, fontWeight: 800, color: '#a78bfa', margin: 0 }}>₹{todayEarnings}</p>
+            <p style={{ fontSize: 10, color: '#475569', margin: 0, marginTop: 1 }}>Today</p>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '7px 10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize: 13, fontWeight: 800, color: '#e2e8f0', margin: 0 }}>{followers}</p>
+            <p style={{ fontSize: 10, color: '#475569', margin: 0, marginTop: 1 }}>Fans</p>
           </div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 10px 8px' }}>
-        <SectionLabel>NAVIGATION</SectionLabel>
-        {navItems.map(item => {
-          const on = active(item.href)
-          const inner = (
-            <>
-              <span style={{ fontSize: 16, width: 22, textAlign: 'center' as const, flexShrink: 0, lineHeight: 1 }}>{item.icon}</span>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 13, fontWeight: on ? 600 : 500, color: on ? '#f8fafc' : '#94a3b8', lineHeight: 1.2 }}>{item.label}</span>
-                <span style={{ display: 'block', fontSize: 10, color: on ? '#8b5cf6' : '#475569', marginTop: 1 }}>{item.sub}</span>
-              </span>
-            </>
-          )
-          return item.external ? (
-            <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" style={linkStyle(false)}>{inner}</a>
-          ) : (
-            <Link key={item.href} href={item.href} style={linkStyle(on)}>{inner}</Link>
-          )
-        })}
+      {/* Nav groups */}
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px' }}>
+        {navGroups.map((group, gi) => (
+          <div key={gi} style={{ marginBottom: 4 }}>
+            {gi > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: '6px 6px 8px' }} />}
+            {group.items.map(item => {
+              const on = isActive(item.href)
+              const inner = (
+                <>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+                    background: on ? item.color : `${item.color}18`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, color: on ? 'white' : item.color,
+                    transition: 'all 0.15s', fontWeight: 700,
+                  }}>{item.symbol}</div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: on ? 700 : 500, color: on ? '#f1f5f9' : '#8b9ab0', lineHeight: 1.3 }}>{item.label}</span>
+                    <span style={{ display: 'block', fontSize: 10, color: on ? `${item.color}cc` : '#374151', marginTop: 1 }}>{item.sub}</span>
+                  </div>
+                  {on && <div style={{ width: 5, height: 5, borderRadius: '50%', background: item.color, flexShrink: 0, boxShadow: `0 0 6px ${item.color}` }} />}
+                </>
+              )
+              const style: React.CSSProperties = {
+                display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none',
+                padding: '7px 8px', borderRadius: 10, marginBottom: 1,
+                background: on ? `linear-gradient(135deg,${item.color}14,${item.color}08)` : 'transparent',
+                border: on ? `1px solid ${item.color}20` : '1px solid transparent',
+                transition: 'all 0.15s', cursor: 'pointer',
+              }
+              return item.external ? (
+                <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" style={style}>{inner}</a>
+              ) : (
+                <Link key={item.href} href={item.href} style={style}>{inner}</Link>
+              )
+            })}
+          </div>
+        ))}
 
-        {/* Quick Actions */}
-        <div style={{ marginTop: 16 }}>
-          <SectionLabel>QUICK ACTIONS</SectionLabel>
+        {/* Quick actions */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: '6px 6px 10px' }} />
+        <p style={{ fontSize: 9, fontWeight: 700, color: '#374151', letterSpacing: '0.12em', paddingLeft: 8, marginBottom: 8 }}>QUICK ACTIONS</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {overlayUrl && (
-            <a href={overlayUrl} target="_blank" rel="noopener noreferrer" style={quickStyle}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>📡</span>
-              <span>
-                <span style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#f8fafc' }}>Open Overlay</span>
-                <span style={{ display: 'block', fontSize: 10, color: '#475569' }}>For OBS Studio</span>
-              </span>
+            <a href={overlayUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', padding: '8px 10px', borderRadius: 10, background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.12)', transition: 'all 0.15s' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(14,165,233,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>📡</div>
+              <div>
+                <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#7dd3fc' }}>Open Overlay</span>
+                <span style={{ display: 'block', fontSize: 10, color: '#374151' }}>For OBS Studio</span>
+              </div>
             </a>
           )}
           {messageLink && (
-            <a href={messageLink} target="_blank" rel="noopener noreferrer" style={quickStyle}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>🔗</span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#f8fafc' }}>
-                  Message Link{' '}
-                  <span style={{ fontSize: 10, color: '#a78bfa', fontWeight: 600 }}>Custom</span>
-                </span>
-                <span style={{ display: 'block', fontSize: 10, color: '#475569' }}>Share with viewers</span>
-              </span>
-              <button
-                onClick={e => { e.preventDefault(); navigator.clipboard.writeText(messageLink) }}
-                title="Copy link"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#64748b', flexShrink: 0, padding: '2px' }}>
-                ⎘
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 10, background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>🔗</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6ee7b7' }}>Message Link</span>
+                <span style={{ display: 'block', fontSize: 10, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>/{username || 'not set'}</span>
+              </div>
+              <button onClick={copyLink} title="Copy link" style={{ width: 24, height: 24, borderRadius: 6, background: copied ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', fontSize: 11, color: copied ? '#6ee7b7' : '#64748b', flexShrink: 0 }}>
+                {copied ? '✓' : '⎘'}
               </button>
-            </a>
+            </div>
           )}
         </div>
       </nav>
 
-      {/* Bottom user + signout */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-        <div style={{ padding: '11px 16px 8px', display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg,#7c3aed,#db2777)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 700, color: 'white',
-          }}>{channelName?.[0]?.toUpperCase() ?? 'S'}</div>
-          <div style={{ minWidth: 0 }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#cbd5e1', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{email}</p>
-            <p style={{ fontSize: 10, color: '#475569', margin: 0 }}>Streamer Account</p>
+      {/* Footer */}
+      <div style={{ padding: '8px 10px 10px', borderTop: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 6px', marginBottom: 4 }}>
+          <div style={{ width: 26, height: 26, borderRadius: 8, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+            {channelName?.[0]?.toUpperCase() ?? 'S'}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{email}</p>
+            <p style={{ fontSize: 9, color: '#374151', margin: 0, letterSpacing: '0.05em' }}>STREAMER ACCOUNT</p>
           </div>
         </div>
-        <form action="/api/auth/logout" method="POST" style={{ padding: '0 10px 12px' }}>
+        <form action="/api/auth/logout" method="POST">
           <button type="submit" style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-            padding: '8px 12px', borderRadius: 9, cursor: 'pointer',
-            background: 'rgba(248,113,113,0.05)', border: '1px solid rgba(248,113,113,0.1)',
-            color: '#94a3b8', fontSize: 13, fontWeight: 500, transition: 'all 0.15s',
+            width: '100%', padding: '8px 12px', borderRadius: 9, cursor: 'pointer',
+            background: 'transparent', border: '1px solid rgba(248,113,113,0.1)',
+            color: '#64748b', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color='#f87171'; e.currentTarget.style.background='rgba(248,113,113,0.1)' }}
-          onMouseLeave={e => { e.currentTarget.style.color='#94a3b8'; e.currentTarget.style.background='rgba(248,113,113,0.05)' }}>
-            <span>🚪</span>
-            Sign Out
-            <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>Return to homepage</span>
+          onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(248,113,113,0.3)'; e.currentTarget.style.color='#f87171'; e.currentTarget.style.background='rgba(248,113,113,0.05)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(248,113,113,0.1)'; e.currentTarget.style.color='#64748b'; e.currentTarget.style.background='transparent' }}>
+            <span style={{ fontSize: 12 }}>↪</span> Sign Out
           </button>
         </form>
       </div>
     </aside>
   )
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{ fontSize: 10, fontWeight: 700, color: '#334155', letterSpacing: '0.08em', paddingLeft: 10, marginBottom: 6, marginTop: 0 }}>
-      {children}
-    </p>
-  )
-}
-
-function linkStyle(on: boolean): React.CSSProperties {
-  return {
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '8px 10px', borderRadius: 10, marginBottom: 2,
-    background: on ? 'rgba(124,58,237,0.12)' : 'transparent',
-    borderLeft: on ? '2px solid #7c3aed' : '2px solid transparent',
-    transition: 'all 0.15s', textDecoration: 'none', cursor: 'pointer',
-  }
-}
-
-const quickStyle: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none',
-  padding: '9px 12px', borderRadius: 10, marginBottom: 6,
-  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-  transition: 'all 0.15s', cursor: 'pointer',
 }

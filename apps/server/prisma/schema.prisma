@@ -128,6 +128,32 @@ model AlertSettings {
   ttsVoice             String          @default("en-IN") @map("tts_voice")
   voiceMessagesEnabled Boolean         @default(false) @map("voice_messages_enabled")
   alertDuration        Int             @default(8) @map("alert_duration")
+
+  enableShadow         Boolean         @default(false) @map("enable_shadow")
+  shadowBlur           Int             @default(20) @map("shadow_blur")
+  shadowColor          String          @default("#000000") @map("shadow_color")
+  shadowOpacity        Int             @default(30) @map("shadow_opacity")
+  shadowOffsetX        Int             @default(0) @map("shadow_offset_x")
+  shadowOffsetY        Int             @default(8) @map("shadow_offset_y")
+  enableGradientBg     Boolean         @default(false) @map("enable_gradient_bg")
+
+  enableCoinSound      Boolean         @default(true) @map("enable_coin_sound")
+  coinSoundVolume      Int             @default(50) @map("coin_sound_volume")
+  ttsSoundDelay        Int             @default(1) @map("tts_sound_delay")
+  ttsRate              Float           @default(1.0) @map("tts_rate")
+  ttsPitch             Float           @default(1.0) @map("tts_pitch")
+  minAlertAmount       Int             @default(0) @map("min_alert_amount")
+  minTtsAmount         Int             @default(0) @map("min_tts_amount")
+
+  goalBarColor         String          @default("#7c3aed") @map("goal_bar_color")
+  enableGoalCelebration Boolean        @default(true) @map("enable_goal_celebration")
+
+  enableBirthday       Boolean         @default(false) @map("enable_birthday")
+  birthdayTemplate     String          @default("Happy Birthday {name}! 🎂") @map("birthday_template")
+
+  enableProfanityFilter Boolean        @default(true) @map("enable_profanity_filter")
+  customBlocklist      String          @default("") @map("custom_blocklist")
+
   createdAt            DateTime        @default(now()) @map("created_at")
   updatedAt            DateTime        @updatedAt @map("updated_at")
 

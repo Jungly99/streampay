@@ -188,6 +188,8 @@ router.patch('/alert-settings', async (req: AuthRequest, res: Response): Promise
     create: { streamerId: profile.id, ...req.body },
     update: req.body,
   })
+  // Push live settings update to any open overlay window
+  if (profile.overlayToken) emitToDonationOverlay(profile.overlayToken, 'settings-updated', settings)
   res.json(settings)
 })
 
@@ -307,6 +309,74 @@ router.post('/test-alert', async (req: AuthRequest, res: Response): Promise<void
   })
 
   res.json({ success: true, amount: testAmounts[idx], name: testNames[idx] })
+})
+
+// ── ANALYTICS ──────────────────────────────────────────────────────────────
+router.get('/analytics', async (req: AuthRequest, res: Response): Promise<void> => {
+  const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
+  if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
+
+  const range = (req.query.range as string) || '30d'
+  const days = range === '7d' ? 7 : range === '90d' ? 90 : 30
+  const since = new Date(); since.setDate(since.getDate() - days); since.setHours(0,0,0,0)
+
+  const [donations, topDonors, byHour, totalStats] = await Promise.all([
+    prisma.donation.findMany({
+      where: { streamerId: profile.id, status: 'SUCCESS', paidAt: { gte: since } },
+      select: { amount: true, donorName: true, paidAt: true, message: true },
+      orderBy: { paidAt: 'asc' },
+    }),
+    prisma.donation.groupBy({
+      by: ['donorName'],
+      where: { streamerId: profile.id, status: 'SUCCESS' },
+      _sum: { amount: true },
+      _count: true,
+      orderBy: { _sum: { amount: 'desc' } },
+      take: 5,
+    }),
+    prisma.donation.findMany({
+      where: { streamerId: profile.id, status: 'SUCCESS' },
+      select: { paidAt: true, amount: true },
+    }),
+    prisma.donation.aggregate({
+      where: { streamerId: profile.id, status: 'SUCCESS' },
+      _sum: { amount: true },
+      _count: true,
+      _avg: { amount: true },
+      _max: { amount: true },
+    }),
+  ])
+
+  // Group by day for chart
+  const byDay: Record<string, number> = {}
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since); d.setDate(d.getDate() + i)
+    byDay[d.toISOString().split('T')[0]!] = 0
+  }
+  for (const d of donations) {
+    if (!d.paidAt) continue
+    const key = new Date(d.paidAt).toISOString().split('T')[0]!
+    if (key in byDay) byDay[key] = (byDay[key] ?? 0) + d.amount
+  }
+
+  // Hour-of-day distribution (all time)
+  const hourDist = Array(24).fill(0) as number[]
+  for (const d of byHour) {
+    if (d.paidAt) hourDist[new Date(d.paidAt).getHours()]! += d.amount
+  }
+
+  res.json({
+    dailyEarnings: Object.entries(byDay).map(([date, amount]) => ({ date, amount })),
+    topDonors: topDonors.map(d => ({ name: d.donorName, total: d._sum.amount ?? 0, count: d._count })),
+    hourDistribution: hourDist.map((amount, hour) => ({ hour, amount })),
+    totals: {
+      earned: totalStats._sum.amount ?? 0,
+      count: totalStats._count,
+      avg: Math.round(totalStats._avg?.amount ?? 0),
+      max: totalStats._max?.amount ?? 0,
+    },
+    recentDonations: donations.slice(-10).reverse().map(d => ({ amount: d.amount, name: d.donorName, paidAt: d.paidAt })),
+  })
 })
 
 export default router

@@ -91,11 +91,27 @@ export default function OverlayClient({ token }: { token: string }) {
       audio.volume = (settings.ttsVolume ?? 100) / 100
       audioRef.current = audio
       audio.play().catch(() => {})
-    } else if (settings.ttsEnabled && current.message && 'speechSynthesis' in window) {
-      const u = new SpeechSynthesisUtterance(`${current.donorName} donated ₹${current.amount}. ${current.message}`)
-      u.lang = settings.ttsVoice ?? 'en-IN'
-      u.volume = (settings.ttsVolume ?? 100) / 100
-      setTimeout(() => speechSynthesis.speak(u), 500)
+    } else {
+      const delay = (settings.ttsSoundDelay ?? 1) * 1000
+      if (settings.enableCoinSound) {
+        try {
+          const ctx = new AudioContext()
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.connect(gain); gain.connect(ctx.destination)
+          osc.frequency.setValueAtTime(880, ctx.currentTime)
+          osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.08)
+          gain.gain.setValueAtTime((settings.coinSoundVolume ?? 50) / 100 * 0.5, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25)
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.25)
+        } catch { /* audio not available */ }
+      }
+      if (settings.ttsEnabled && current.message && 'speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(`${current.donorName} donated ₹${current.amount}. ${current.message}`)
+        u.lang = settings.ttsVoice ?? 'en-IN'
+        u.volume = (settings.ttsVolume ?? 100) / 100
+        setTimeout(() => speechSynthesis.speak(u), delay)
+      }
     }
     const duration = (settings.alertDuration ?? 8) * 1000
     const timer = setTimeout(() => {
@@ -120,6 +136,7 @@ export default function OverlayClient({ token }: { token: string }) {
       reconnectTimer = setTimeout(() => window.location.reload(), 30_000)
     })
     socket.on('overlay-joined', ({ settings: s }: { settings: AlertSettings }) => setSettings(s))
+    socket.on('settings-updated', (s: AlertSettings) => setSettings(s))
     socket.on('new-donation', (data: NewDonationEvent) => {
       setQueue(q => [...q, { ...data, id: `${Date.now()}-${Math.random()}` }])
     })
@@ -140,8 +157,22 @@ export default function OverlayClient({ token }: { token: string }) {
   const anim = ANIMATIONS[(settings.animationStyle as keyof typeof ANIMATIONS)] ?? ANIMATIONS.slideDown
   const tier = current ? getTier(current.amount) : null
 
+  const shadowCss = settings.enableShadow
+    ? (() => {
+        const r = parseInt(settings.shadowColor.slice(1,3)||'00',16)
+        const g = parseInt(settings.shadowColor.slice(3,5)||'00',16)
+        const b = parseInt(settings.shadowColor.slice(5,7)||'00',16)
+        const a = (settings.shadowOpacity ?? 30) / 100
+        return `${settings.shadowOffsetX ?? 0}px ${settings.shadowOffsetY ?? 8}px ${settings.shadowBlur ?? 20}px rgba(${r},${g},${b},${a})`
+      })()
+    : '0 25px 50px rgba(0,0,0,0.4)'
+
+  const bgStyle: React.CSSProperties = settings.enableGradientBg
+    ? { background: `linear-gradient(135deg,${settings.bgColor},${tier?.color ?? '#8b5cf6'}33)` }
+    : { backgroundColor: settings.bgOpacity === 0 ? 'transparent' : settings.bgColor }
+
   const cardStyle: React.CSSProperties = {
-    backgroundColor: settings.bgOpacity === 0 ? 'transparent' : settings.bgColor,
+    ...bgStyle,
     color: settings.textColor,
     fontSize: settings.fontSize,
     fontFamily: settings.fontStyle,
@@ -151,7 +182,7 @@ export default function OverlayClient({ token }: { token: string }) {
     border: settings.enableBorder ? `2px solid ${tier?.color ?? '#8b5cf6'}` : 'none',
     borderRadius: 20,
     position: 'relative',
-    boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+    boxShadow: shadowCss,
   }
 
   return (

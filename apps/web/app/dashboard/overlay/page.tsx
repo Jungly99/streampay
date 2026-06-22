@@ -3,39 +3,80 @@ import { useEffect, useState } from 'react'
 import { api } from '../../../lib/api'
 import toast from 'react-hot-toast'
 
-type OverlayTab = 'appearance' | 'tts' | 'goal' | 'leaderboard'
+type Tab = 'appearance' | 'tts' | 'goal' | 'safety' | 'leaderboard'
 
 const TEMPLATES = [
-  { id: 'superchat', label: 'Superchat',  desc: 'Auto-colored pills by amount' },
-  { id: 'colorful',  label: 'Colorful',   desc: 'Vibrant gradient backgrounds' },
-  { id: 'custom',    label: 'Minimal',    desc: 'Clean configurable card' },
+  { id: 'superchat', emoji: '💬', label: 'SuperTip',  desc: 'Auto-colors by donation tier' },
+  { id: 'colorful',  emoji: '🌈', label: 'Vibrant',   desc: 'Rich gradient backgrounds' },
+  { id: 'custom',    emoji: '✦',  label: 'Minimal',   desc: 'Clean, fully your own' },
 ]
-const ANIMATIONS = ['none', 'slideDown', 'slideUp', 'fadeIn', 'bounceIn', 'zoomIn']
-const FONTS = ['Arial', 'Verdana', 'Georgia', 'Courier New', 'Impact']
+const FONTS = ['Arial','Verdana','Georgia','Courier New','Impact','Trebuchet MS','Poppins']
+const ANIMATIONS = [
+  { id: 'slideDown', label: 'Slide Down' },{ id: 'slideUp', label: 'Slide Up' },
+  { id: 'fadeIn', label: 'Fade In' },{ id: 'bounceIn', label: 'Bounce' },
+  { id: 'zoomIn', label: 'Zoom In' },{ id: 'none', label: 'Instant' },
+]
 
-const C: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
-const fieldLabel: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 7 }
-const sel: React.CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 9, fontSize: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#f8fafc', outline: 'none' }
-const numInput: React.CSSProperties = { ...sel }
-const colorInput: React.CSSProperties = { width: '100%', height: 38, borderRadius: 9, border: '1px solid rgba(255,255,255,0.09)', background: 'none', cursor: 'pointer', padding: 2 }
+// ── Style constants ──────────────────────────────────────────────────
+const C: React.CSSProperties = { background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:14 }
+const lbl: React.CSSProperties = { display:'block', fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:7 }
+const inp: React.CSSProperties = { width:'100%', padding:'9px 12px', borderRadius:9, fontSize:13, boxSizing:'border-box', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'#f1f5f9', outline:'none' }
+const colorBox: React.CSSProperties = { width:'100%', height:38, borderRadius:9, border:'1px solid rgba(255,255,255,0.08)', background:'none', cursor:'pointer', padding:2 }
+const sH: React.CSSProperties = { fontSize:13, fontWeight:700, color:'#e2e8f0', marginBottom:14, display:'flex', alignItems:'center', gap:8 }
+const divider: React.CSSProperties = { height:1, background:'rgba(255,255,255,0.05)', margin:'14px 0' }
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button onClick={() => onChange(!on)} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, background: on ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.12)', transition: 'background 0.2s' }}>
-      <span style={{ position: 'absolute', top: 2, left: 2, width: 20, height: 20, borderRadius: '50%', background: 'white', transition: 'transform 0.2s', transform: on ? 'translateX(20px)' : 'none' }} />
+    <button onClick={() => onChange(!on)} style={{ width:42, height:23, borderRadius:12, border:'none', cursor:'pointer', position:'relative', flexShrink:0, background: on ? 'linear-gradient(90deg,#7c3aed,#ec4899)' : 'rgba(255,255,255,0.1)', transition:'background 0.2s' }}>
+      <span style={{ position:'absolute', top:2, left:2, width:19, height:19, borderRadius:'50%', background:'white', transition:'transform 0.2s', transform: on ? 'translateX(19px)' : 'none', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }} />
     </button>
   )
 }
+function Row({ label: l, tip, children }: { label: string; tip?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+      <div style={{ flex:1, minWidth:0 }}>
+        <p style={{ fontSize:13, fontWeight:500, color:'#cbd5e1', margin:0 }}>{l}</p>
+        {tip && <p style={{ fontSize:11, color:'#475569', margin:'2px 0 0' }}>{tip}</p>}
+      </div>
+      {children}
+    </div>
+  )
+}
+function Slider({ label: l, value, min, max, step=1, unit, onChange }: { label:string; value:number; min:number; max:number; step?:number; unit?:string; onChange:(v:number)=>void }) {
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+        <span style={lbl}>{l}</span>
+        <span style={{ fontSize:12, color:'#7c3aed', fontWeight:700 }}>{value}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} style={{ width:'100%', accentColor:'#7c3aed' }} />
+    </div>
+  )
+}
+function InfoBox({ children }: { children: React.ReactNode }) {
+  return <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.15)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'#94a3b8', lineHeight:1.6 }}>{children}</div>
+}
 
 export default function OverlayPage() {
-  const [tab, setTab] = useState<OverlayTab>('appearance')
+  const [tab, setTab] = useState<Tab>('appearance')
   const [s, setS] = useState<any>({
-    template: 'superchat', bgColor: '#1a1a2e', bgOpacity: 100, textColor: '#ffffff',
-    fontSize: 24, fontStyle: 'Arial', textBold: true, textItalic: false, textUnderline: false,
-    animationStyle: 'slideDown', enableBorder: false, ttsEnabled: true, ttsVolume: 100, ttsVoice: 'en-IN',
-    alertDuration: 8,
+    template:'superchat', bgColor:'#1a1a2e', bgOpacity:100, textColor:'#ffffff',
+    fontSize:24, fontStyle:'Arial', textBold:true, textItalic:false, textUnderline:false,
+    animationStyle:'slideDown', enableBorder:false, alertDuration:8,
+    enableShadow:false, shadowBlur:20, shadowColor:'#000000', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
+    enableGradientBg:false,
+    ttsEnabled:true, ttsVolume:100, ttsVoice:'en-IN', ttsRate:1.0, ttsPitch:1.0,
+    enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1,
+    minAlertAmount:0, minTtsAmount:0,
+    goalBarColor:'#7c3aed', enableGoalCelebration:true,
+    enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
+    enableProfanityFilter:true, customBlocklist:'',
   })
-  const [goal, setGoal] = useState<any>({ title: '', targetAmount: 1000, isActive: false })
+  const [goal, setGoal] = useState<any>({ title:'', targetAmount:1000, isActive:false, currentAmount:0 })
+  const [manualAdd, setManualAdd] = useState('')
+  const [overlayToken, setOverlayToken] = useState('')
+  const [showToken, setShowToken] = useState(false)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
 
@@ -43,230 +84,364 @@ export default function OverlayPage() {
     Promise.all([
       api.get<any>('/api/streamer/alert-settings'),
       api.get<any>('/api/streamer/goal'),
-    ]).then(([settings, g]) => {
-      if (settings && Object.keys(settings).length) setS(settings)
+      api.get<any>('/api/streamer/profile'),
+    ]).then(([settings, g, profile]) => {
+      if (settings && Object.keys(settings).length) setS((p: any) => ({ ...p, ...settings }))
       if (g) setGoal(g)
+      if (profile?.overlayToken) setOverlayToken(profile.overlayToken)
     }).catch(() => {})
   }, [])
+
+  const set = (k: string, v: any) => setS((p: any) => ({ ...p, [k]: v }))
 
   async function save() {
     setSaving(true)
     try {
-      const proms = [api.patch('/api/streamer/alert-settings', s)]
-      if (goal.title && goal.targetAmount) proms.push(api.put('/api/streamer/goal', goal))
-      await Promise.all(proms)
-      toast.success('Overlay settings saved!')
+      await Promise.all([
+        api.patch('/api/streamer/alert-settings', s),
+        goal.title ? api.put('/api/streamer/goal', goal) : Promise.resolve(),
+      ])
+      toast.success('Settings saved!')
     } catch (e: any) { toast.error(e.message) } finally { setSaving(false) }
   }
 
-  async function sendTestAlert() {
+  async function sendTest() {
     setTesting(true)
     try {
-      const res = await api.post<{ success: boolean; amount: number; name: string }>('/api/streamer/test-alert')
-      toast.success(`Test alert sent! ₹${res.amount} from ${res.name}`)
+      await api.patch('/api/streamer/alert-settings', s)
+      const r = await api.post<any>('/api/streamer/test-alert')
+      toast.success(`Test sent — ₹${r.amount} from ${r.name}`)
     } catch (e: any) { toast.error(e.message) } finally { setTesting(false) }
   }
 
-  const tabs: [OverlayTab, string][] = [['appearance', 'Appearance'], ['tts', 'TTS & Audio'], ['goal', 'Donation Goal'], ['leaderboard', 'Leaderboard']]
+  function previewVoice() {
+    if (!('speechSynthesis' in window)) { toast.error('TTS not supported in this browser'); return }
+    const u = new SpeechSynthesisUtterance('Sample Support donated ₹100. Keep it up!')
+    u.lang = s.ttsVoice; u.volume = s.ttsVolume / 100; u.rate = s.ttsRate; u.pitch = s.ttsPitch
+    speechSynthesis.cancel(); speechSynthesis.speak(u)
+    toast.success('Playing voice preview…')
+  }
 
-  const textInput: React.CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 9, fontSize: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#f8fafc', outline: 'none', boxSizing: 'border-box' }
+  const SITE = typeof window !== 'undefined' ? window.location.origin : 'https://eztips.live'
+  const overlayUrl = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
+  const maskedUrl  = overlayUrl.replace(/[a-zA-Z0-9]{6,}(?=[^/]*$)/, '•'.repeat(16))
+
+  const tabs: [Tab, string, string][] = [
+    ['appearance','🎨','Appearance'],
+    ['tts','🔊','TTS & Audio'],
+    ['goal','🎯','Goal'],
+    ['safety','🛡️','Safety'],
+    ['leaderboard','🏆','Leaderboard'],
+  ]
+
+  // Live preview render
+  const TIERS = [{ min:1000, color:'#ffd700' },{ min:500, color:'#ff6b35' },{ min:100, color:'#8b5cf6' },{ min:0, color:'#06b6d4' }]
+  const tier = TIERS.find(t => 100 >= t.min) ?? TIERS[TIERS.length-1]!
+  const previewBg = s.enableGradientBg ? `linear-gradient(135deg,${s.bgColor},${tier.color}33)` : (s.bgOpacity===0 ? 'transparent' : s.bgColor)
 
   return (
-    <div style={{ padding: 28, minHeight: '100%', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px' }}>Overlay Settings</h1>
-          <p style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>Customize how donation alerts appear on your stream</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={sendTestAlert} disabled={testing} style={{
-            padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: testing ? 'not-allowed' : 'pointer',
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-            color: '#a78bfa', opacity: testing ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 7,
-          }}>
-            <span style={{ fontSize: 15 }}>🧪</span>
-            {testing ? 'Sending…' : 'Send Test Alert'}
-          </button>
-          <button onClick={save} disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: 'linear-gradient(135deg,#7c3aed,#db2777)', border: 'none', color: 'white', boxShadow: '0 0 20px rgba(124,58,237,0.3)', opacity: saving ? 0.7 : 1 }}>
-            {saving ? 'Saving…' : 'Save Settings'}
-          </button>
-        </div>
+    <div style={{ padding:'24px 28px', minHeight:'100%', fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif' }}>
+      <div style={{ marginBottom:22 }}>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#f1f5f9', letterSpacing:'-0.5px', margin:0 }}>Overlay Settings</h1>
+        <p style={{ fontSize:13, color:'#475569', margin:'4px 0 0' }}>Customize alerts, TTS, goals, and safety for your stream</p>
       </div>
 
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+      <div style={{ display:'flex', gap:20, alignItems:'flex-start' }}>
 
-        {/* Left: settings */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* ── LEFT ──────────────────────────────────────────── */}
+        <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:14 }}>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4 }}>
-            {tabs.map(([t, label]) => (
+          {/* Tab bar */}
+          <div style={{ display:'flex', gap:4, background:'rgba(255,255,255,0.03)', borderRadius:12, padding:4, border:'1px solid rgba(255,255,255,0.06)', overflowX:'auto' }}>
+            {tabs.map(([t,icon,name]) => (
               <button key={t} onClick={() => setTab(t)} style={{
-                padding: '8px 16px', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-                background: tab === t ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.04)',
-                border: tab === t ? 'none' : '1px solid rgba(255,255,255,0.07)',
-                color: tab === t ? 'white' : '#64748b',
-              }}>{label}</button>
+                padding:'7px 14px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap',
+                display:'flex', alignItems:'center', gap:5,
+                background: tab===t ? 'linear-gradient(135deg,#7c3aed,#ec4899)' : 'transparent',
+                border:'none', color: tab===t ? 'white' : '#64748b', transition:'all 0.15s',
+                boxShadow: tab===t ? '0 2px 10px rgba(124,58,237,0.3)' : 'none',
+              }}>
+                <span style={{ fontSize:13 }}>{icon}</span>{name}
+              </button>
             ))}
           </div>
 
-          {tab === 'appearance' && (
-            <>
-              {/* Templates */}
-              <div style={{ ...C, padding: '20px 22px' }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>Alert Template</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  {TEMPLATES.map(t => (
-                    <button key={t.id} onClick={() => setS((p: any) => ({ ...p, template: t.id }))} style={{
-                      padding: '14px 12px', borderRadius: 11, textAlign: 'center', cursor: 'pointer',
-                      background: s.template === t.id ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.02)',
-                      border: `2px solid ${s.template === t.id ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.07)'}`,
-                      transition: 'all 0.15s',
-                    }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: s.template === t.id ? '#f8fafc' : '#64748b', marginBottom: 3 }}>{t.label}</p>
-                      <p style={{ fontSize: 11, color: '#334155' }}>{t.desc}</p>
-                    </button>
-                  ))}
-                </div>
+          {/* ── APPEARANCE ─────────────────────────── */}
+          {tab==='appearance' && <>
+            <div style={{ ...C, padding:'18px 20px' }}>
+              <p style={sH}><span>🖼️</span> Alert Template</p>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+                {TEMPLATES.map(t => (
+                  <button key={t.id} onClick={() => set('template',t.id)} style={{
+                    padding:'14px 10px', borderRadius:12, textAlign:'center', cursor:'pointer',
+                    background: s.template===t.id ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.02)',
+                    border:`2px solid ${s.template===t.id ? '#7c3aed' : 'rgba(255,255,255,0.06)'}`,
+                    transition:'all 0.15s',
+                  }}>
+                    <span style={{ fontSize:24, display:'block', marginBottom:6 }}>{t.emoji}</span>
+                    <p style={{ fontSize:12, fontWeight:700, color: s.template===t.id ? '#f1f5f9' : '#64748b', margin:0 }}>{t.label}</p>
+                    <p style={{ fontSize:10, color:'#374151', margin:'3px 0 0' }}>{t.desc}</p>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Colors + Text */}
-              <div style={{ ...C, padding: '20px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>Background</p>
-                  <div>
-                    <label style={fieldLabel}>Background Color</label>
-                    <input type="color" value={s.bgColor} onChange={e => setS((p: any) => ({ ...p, bgColor: e.target.value }))} style={colorInput} />
-                  </div>
-                  <div>
-                    <label style={fieldLabel}>Opacity: {s.bgOpacity}%</label>
-                    <input type="range" min={0} max={100} value={s.bgOpacity} onChange={e => setS((p: any) => ({ ...p, bgOpacity: Number(e.target.value) }))} style={{ width: '100%' }} />
-                  </div>
-                  <div>
-                    <label style={fieldLabel}>Text Color</label>
-                    <input type="color" value={s.textColor} onChange={e => setS((p: any) => ({ ...p, textColor: e.target.value }))} style={colorInput} />
-                  </div>
+            <div style={{ ...C, padding:'18px 20px' }}>
+              <p style={sH}><span>🎨</span> Appearance</p>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+                <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                  <div><span style={lbl}>Background Color</span><input type="color" value={s.bgColor} onChange={e=>set('bgColor',e.target.value)} style={colorBox}/></div>
+                  <Slider label="Opacity" value={s.bgOpacity} min={0} max={100} unit="%" onChange={v=>set('bgOpacity',v)}/>
+                  <div><span style={lbl}>Text Color</span><input type="color" value={s.textColor} onChange={e=>set('textColor',e.target.value)} style={colorBox}/></div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>Text & Animation</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                   <div>
-                    <label style={fieldLabel}>Font Size (px)</label>
-                    <input type="number" value={s.fontSize} min={12} max={72} onChange={e => setS((p: any) => ({ ...p, fontSize: Number(e.target.value) }))} style={numInput} />
+                    <span style={lbl}>Font Size (px)</span>
+                    <input type="number" value={s.fontSize} min={12} max={72} onChange={e=>set('fontSize',Number(e.target.value))} style={inp}/>
                   </div>
                   <div>
-                    <label style={fieldLabel}>Font</label>
-                    <select value={s.fontStyle} onChange={e => setS((p: any) => ({ ...p, fontStyle: e.target.value }))} style={sel}>{FONTS.map(f => <option key={f}>{f}</option>)}</select>
+                    <span style={lbl}>Font</span>
+                    <select value={s.fontStyle} onChange={e=>set('fontStyle',e.target.value)} style={{ ...inp, appearance:'none' as any }}>{FONTS.map(f=><option key={f}>{f}</option>)}</select>
                   </div>
                   <div>
-                    <label style={fieldLabel}>Animation</label>
-                    <select value={s.animationStyle} onChange={e => setS((p: any) => ({ ...p, animationStyle: e.target.value }))} style={sel}>{ANIMATIONS.map(a => <option key={a}>{a}</option>)}</select>
-                  </div>
-                  <div>
-                    <label style={fieldLabel}>Text Style</label>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {(['textBold', 'textItalic', 'textUnderline'] as const).map((key, idx) => (
-                        <button key={key} onClick={() => setS((p: any) => ({ ...p, [key]: !p[key] }))} style={{
-                          width: 34, height: 34, borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                          background: s[key] ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.05)',
-                          border: s[key] ? 'none' : '1px solid rgba(255,255,255,0.09)',
-                          color: s[key] ? 'white' : '#64748b',
-                        }}>{['B', 'I', 'U'][idx]}</button>
-                      ))}
-                    </div>
+                    <span style={lbl}>Entrance Animation</span>
+                    <select value={s.animationStyle} onChange={e=>set('animationStyle',e.target.value)} style={{ ...inp, appearance:'none' as any }}>{ANIMATIONS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select>
                   </div>
                 </div>
               </div>
-
-              {/* Advanced */}
-              <div style={{ ...C, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 28 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Toggle on={s.enableBorder} onChange={v => setS((p: any) => ({ ...p, enableBorder: v }))} />
-                  <p style={{ fontSize: 13, color: '#94a3b8' }}>Enable border</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <label style={{ ...fieldLabel, marginBottom: 0 }}>Duration (s)</label>
-                  <input type="number" value={s.alertDuration} min={3} max={30} onChange={e => setS((p: any) => ({ ...p, alertDuration: Number(e.target.value) }))} style={{ ...numInput, width: 70 }} />
-                </div>
-              </div>
-            </>
-          )}
-
-          {tab === 'tts' && (
-            <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>Text to Speech</p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={divider}/>
+              <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc' }}>Enable TTS</p>
-                  <p style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>Read donation messages aloud on your stream</p>
+                  <span style={lbl}>Text Style</span>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {([['textBold','B','bold'],['textItalic','I','italic'],['textUnderline','U','underline']] as const).map(([k,c,st])=>(
+                      <button key={k} onClick={()=>set(k,!s[k])} style={{ width:34, height:34, borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:700, fontStyle:st==='italic'?'italic':'normal', textDecoration:st==='underline'?'underline':'none', background:s[k]?'linear-gradient(135deg,#7c3aed,#ec4899)':'rgba(255,255,255,0.05)', border:s[k]?'none':'1px solid rgba(255,255,255,0.08)', color:s[k]?'white':'#64748b' }}>{c}</button>
+                    ))}
+                  </div>
                 </div>
-                <Toggle on={s.ttsEnabled} onChange={v => setS((p: any) => ({ ...p, ttsEnabled: v }))} />
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:'auto' }}>
+                  <span style={{ ...lbl, marginBottom:0 }}>Show for</span>
+                  <input type="number" value={s.alertDuration} min={3} max={30} onChange={e=>set('alertDuration',Number(e.target.value))} style={{ ...inp, width:58 }}/>
+                  <span style={{ fontSize:12, color:'#475569' }}>sec</span>
+                </div>
               </div>
-              <div>
-                <label style={fieldLabel}>Voice Language</label>
-                <select value={s.ttsVoice} onChange={e => setS((p: any) => ({ ...p, ttsVoice: e.target.value }))} style={sel}>
-                  {['en-IN', 'hi-IN', 'en-US', 'en-GB'].map(v => <option key={v}>{v}</option>)}
-                </select>
+            </div>
+
+            <div style={{ ...C, padding:'18px 20px' }}>
+              <p style={sH}><span>✦</span> Advanced Effects</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                <Row label="Card Border" tip="Outline the alert card with tier color"><Toggle on={s.enableBorder} onChange={v=>set('enableBorder',v)}/></Row>
+                <Row label="Gradient Background" tip="Blends background with donation tier color"><Toggle on={s.enableGradientBg} onChange={v=>set('enableGradientBg',v)}/></Row>
+                <Row label="Drop Shadow" tip="Soft shadow beneath the alert card"><Toggle on={s.enableShadow} onChange={v=>set('enableShadow',v)}/></Row>
+                {s.enableShadow && (
+                  <div style={{ paddingLeft:12, borderLeft:'2px solid rgba(124,58,237,0.3)', display:'flex', flexDirection:'column', gap:12 }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                      <Slider label="Blur" value={s.shadowBlur} min={0} max={60} unit="px" onChange={v=>set('shadowBlur',v)}/>
+                      <Slider label="Opacity" value={s.shadowOpacity} min={0} max={100} unit="%" onChange={v=>set('shadowOpacity',v)}/>
+                      <Slider label="X Offset" value={s.shadowOffsetX} min={-30} max={30} unit="px" onChange={v=>set('shadowOffsetX',v)}/>
+                      <Slider label="Y Offset" value={s.shadowOffsetY} min={-30} max={30} unit="px" onChange={v=>set('shadowOffsetY',v)}/>
+                    </div>
+                    <div><span style={lbl}>Shadow Color</span><input type="color" value={s.shadowColor} onChange={e=>set('shadowColor',e.target.value)} style={{ ...colorBox, height:34 }}/></div>
+                  </div>
+                )}
+                <div style={divider}/>
+                <div>
+                  <span style={lbl}>Min Amount to Show on Overlay (₹)</span>
+                  <input type="number" value={s.minAlertAmount} min={0} onChange={e=>set('minAlertAmount',Number(e.target.value))} style={inp}/>
+                  <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Donations below this won't show on overlay (test alerts always show)</p>
+                </div>
               </div>
+            </div>
+          </>}
+
+          {/* ── TTS & AUDIO ──────────────────────────── */}
+          {tab==='tts' && <>
+            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
+              <p style={sH}><span>🗣️</span> Text to Speech</p>
+              <Row label="Enable TTS" tip="Reads donation messages aloud during stream"><Toggle on={s.ttsEnabled} onChange={v=>set('ttsEnabled',v)}/></Row>
+              {s.ttsEnabled && <>
+                <div>
+                  <span style={lbl}>Voice Language</span>
+                  <select value={s.ttsVoice} onChange={e=>set('ttsVoice',e.target.value)} style={{ ...inp, appearance:'none' as any }}>
+                    {[['en-IN','English – India'],['hi-IN','Hindi – India'],['en-US','English – US'],['en-GB','English – UK'],['ta-IN','Tamil – India'],['te-IN','Telugu – India']].map(([v,n])=><option key={v} value={v}>{n}</option>)}
+                  </select>
+                </div>
+                <Slider label="Volume" value={s.ttsVolume} min={0} max={100} unit="%" onChange={v=>set('ttsVolume',v)}/>
+                <Slider label="Speed" value={s.ttsRate} min={0.5} max={2} step={0.1} unit="×" onChange={v=>set('ttsRate',v)}/>
+                <Slider label="Pitch" value={s.ttsPitch} min={0} max={2} step={0.1} unit="" onChange={v=>set('ttsPitch',v)}/>
+                <div>
+                  <span style={lbl}>Min Donation for TTS (₹)</span>
+                  <input type="number" value={s.minTtsAmount} min={0} onChange={e=>set('minTtsAmount',Number(e.target.value))} style={inp}/>
+                  <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>TTS only plays for donations at or above this amount</p>
+                </div>
+                <button onClick={previewVoice} style={{ padding:'9px 18px', borderRadius:9, cursor:'pointer', fontSize:13, fontWeight:600, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa', display:'flex', alignItems:'center', gap:7, width:'fit-content' }}>
+                  <span>▶</span> Preview Voice
+                </button>
+              </>}
+            </div>
+
+            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
+              <p style={sH}><span>🔔</span> Alert Sound</p>
+              <Row label="Coin Sound" tip="A chime plays the moment a donation arrives"><Toggle on={s.enableCoinSound} onChange={v=>set('enableCoinSound',v)}/></Row>
+              {s.enableCoinSound && <>
+                <Slider label="Chime Volume" value={s.coinSoundVolume} min={0} max={100} unit="%" onChange={v=>set('coinSoundVolume',v)}/>
+                <Slider label="Delay Before TTS" value={s.ttsSoundDelay} min={0} max={12} unit="s" onChange={v=>set('ttsSoundDelay',v)}/>
+                <p style={{ fontSize:11, color:'#475569' }}>How long after the chime to start TTS (0–12s, default 1s)</p>
+              </>}
+            </div>
+
+            <InfoBox>
+              <strong style={{ color:'#a78bfa' }}>OBS Tip:</strong> Make sure &ldquo;Control audio via OBS&rdquo; is enabled on your Browser Source so TTS and sounds play through your stream.
+            </InfoBox>
+          </>}
+
+          {/* ── GOAL ────────────────────────────────── */}
+          {tab==='goal' && <>
+            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
+              <p style={sH}><span>🎯</span> Donation Goal</p>
+              <div><span style={lbl}>Goal Title</span><input value={goal.title} onChange={e=>setGoal((g:any)=>({...g,title:e.target.value}))} placeholder="e.g. New Mic Fund" style={inp}/></div>
+              <div><span style={lbl}>Target Amount (₹)</span><input type="number" value={goal.targetAmount} onChange={e=>setGoal((g:any)=>({...g,targetAmount:Number(e.target.value)}))} style={inp}/></div>
+
+              {/* Progress */}
+              <div style={{ background:'rgba(124,58,237,0.06)', borderRadius:10, padding:14, border:'1px solid rgba(124,58,237,0.12)' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'#94a3b8', marginBottom:8 }}>
+                  <span style={{ fontWeight:600 }}>{goal.title || 'Goal Progress'}</span>
+                  <span>₹{goal.currentAmount ?? 0} / ₹{goal.targetAmount}</span>
+                </div>
+                <div style={{ height:8, background:'rgba(255,255,255,0.08)', borderRadius:8 }}>
+                  <div style={{ height:'100%', width:`${Math.min(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100,100)}%`, borderRadius:8, background:`linear-gradient(90deg,${s.goalBarColor},#ec4899)`, transition:'width 0.5s' }}/>
+                </div>
+                <p style={{ fontSize:10, color:'#475569', margin:'6px 0 0' }}>
+                  {Math.round(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100)}% reached
+                </p>
+              </div>
+
+              {/* Manual add */}
               <div>
-                <label style={fieldLabel}>Volume: {s.ttsVolume}%</label>
-                <input type="range" min={0} max={100} value={s.ttsVolume} onChange={e => setS((p: any) => ({ ...p, ttsVolume: Number(e.target.value) }))} style={{ width: '100%' }} />
+                <span style={lbl}>Add Amount Manually (other platforms)</span>
+                <div style={{ display:'flex', gap:8 }}>
+                  <input type="number" value={manualAdd} onChange={e=>setManualAdd(e.target.value)} placeholder="e.g. 500" style={{ ...inp, flex:1 }}/>
+                  <button onClick={()=>{ const n=Number(manualAdd); if(n>0){ setGoal((g:any)=>({...g,currentAmount:(g.currentAmount??0)+n})); setManualAdd(''); toast.success(`+₹${n} added to goal`) }}} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', background:'rgba(124,58,237,0.15)', border:'1px solid rgba(124,58,237,0.3)', color:'#a78bfa', fontSize:13, fontWeight:600, flexShrink:0 }}>+ Add</button>
+                </div>
+                <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Manually add donations from YouTube Superchat, etc.</p>
+              </div>
+
+              <Row label="Show on Overlay" tip="Displays progress bar on OBS Browser Source"><Toggle on={goal.isActive} onChange={v=>setGoal((g:any)=>({...g,isActive:v}))}/></Row>
+            </div>
+
+            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
+              <p style={sH}><span>✨</span> Goal Customization</p>
+              <div><span style={lbl}>Progress Bar Color</span><input type="color" value={s.goalBarColor} onChange={e=>set('goalBarColor',e.target.value)} style={colorBox}/></div>
+              <Row label="Goal Celebration" tip="Confetti burst and special alert when goal is reached"><Toggle on={s.enableGoalCelebration} onChange={v=>set('enableGoalCelebration',v)}/></Row>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={()=>{ setGoal((g:any)=>({...g,currentAmount:0})); toast.success('Goal reset to ₹0') }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171' }}>↺ Reset Goal</button>
+              </div>
+            </div>
+
+            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
+              <p style={sH}><span>🎂</span> Birthday Messages</p>
+              <Row label="Enable Birthday Messages" tip="Appends a birthday message when a viewer donates on their birthday"><Toggle on={s.enableBirthday} onChange={v=>set('enableBirthday',v)}/></Row>
+              {s.enableBirthday && <>
+                <div>
+                  <span style={lbl}>Birthday Template</span>
+                  <textarea value={s.birthdayTemplate} onChange={e=>set('birthdayTemplate',e.target.value)} rows={2} style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}/>
+                  <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Use <code style={{ color:'#a78bfa' }}>{'{name}'}</code> to insert the viewer&apos;s name.</p>
+                </div>
+                <div style={{ ...C, padding:'12px 14px', borderRadius:10 }}>
+                  <p style={{ fontSize:11, color:'#64748b', margin:'0 0 6px', fontWeight:600 }}>PREVIEW</p>
+                  <p style={{ fontSize:13, color:'#f1f5f9', margin:0 }}>{s.birthdayTemplate.replace('{name}', 'Arjun')}</p>
+                </div>
+              </>}
+            </div>
+          </>}
+
+          {/* ── SAFETY ────────────────────────────────── */}
+          {tab==='safety' && <>
+            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
+              <p style={sH}><span>🛡️</span> Profanity Filter</p>
+              <Row label="Enable Filter" tip="Replaces blocked words in donation messages with ****"><Toggle on={s.enableProfanityFilter} onChange={v=>set('enableProfanityFilter',v)}/></Row>
+              {s.enableProfanityFilter && <>
+                <div>
+                  <span style={lbl}>Custom Blocklist</span>
+                  <textarea value={s.customBlocklist} onChange={e=>set('customBlocklist',e.target.value)} rows={4} placeholder="word1, word2, bad phrase" style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}/>
+                  <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Comma-separated. Each blocked word is replaced with first letter + asterisks (e.g. &ldquo;bad&rdquo; → &ldquo;b**&rdquo;) in the overlay. Original is saved in your dashboard.</p>
+                </div>
+                <InfoBox>
+                  <strong style={{ color:'#a78bfa' }}>How it works:</strong> Filtered messages are still saved in full in your Messages tab — only what appears on the OBS overlay and TTS is censored.
+                </InfoBox>
+              </>}
+            </div>
+          </>}
+
+          {/* ── LEADERBOARD ───────────────────────────── */}
+          {tab==='leaderboard' && (
+            <div style={{ ...C, padding:'36px 24px', textAlign:'center' }}>
+              <span style={{ fontSize:48 }}>🏆</span>
+              <p style={{ fontSize:17, fontWeight:700, color:'#f1f5f9', margin:'14px 0 8px' }}>Leaderboard Overlays</p>
+              <p style={{ fontSize:13, color:'#475569', maxWidth:340, margin:'0 auto 20px' }}>
+                Top Supporter, Recent Donors, and Support Streak overlays are coming in the next update.
+                These will be separate OBS Browser Sources you can position anywhere on your scene.
+              </p>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, maxWidth:420, margin:'0 auto' }}>
+                {[['🥇','Top Donor','#ffd700'],['👥','Recent Donors','#06b6d4'],['⚡','Streak','#a855f7']].map(([e,n,c])=>(
+                  <div key={n} style={{ background:`${c}10`, border:`1px solid ${c}25`, borderRadius:12, padding:'16px 10px' }}>
+                    <span style={{ fontSize:28 }}>{e}</span>
+                    <p style={{ fontSize:12, fontWeight:600, color:'#94a3b8', margin:'8px 0 0' }}>{n}</p>
+                    <span style={{ fontSize:10, color:c, fontWeight:700, marginTop:4, display:'block' }}>Coming Soon</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {tab === 'goal' && (
-            <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>Donation Goal</p>
-              <div>
-                <label style={fieldLabel}>Goal Title</label>
-                <input value={goal.title} onChange={e => setGoal((g: any) => ({ ...g, title: e.target.value }))} placeholder="e.g. New PC Fund" style={textInput} />
+          {/* OBS Link */}
+          {overlayUrl && (
+            <div style={{ ...C, padding:'16px 20px' }}>
+              <p style={sH}><span>📡</span> OBS Overlay Link</p>
+              <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>Paste this into OBS as a Browser Source. Never share or show this on stream.</p>
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
+                <span style={{ flex:1, fontSize:12, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{showToken ? overlayUrl : maskedUrl}</span>
+                <button onClick={()=>setShowToken(t=>!t)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'#64748b', flexShrink:0 }}>{showToken?'🙈':'👁️'}</button>
+                <button onClick={()=>{ navigator.clipboard.writeText(overlayUrl); toast.success('Copied!') }} style={{ background:'rgba(124,58,237,0.12)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:7, cursor:'pointer', fontSize:12, color:'#a78bfa', padding:'5px 10px', fontWeight:700 }}>Copy</button>
               </div>
-              <div>
-                <label style={fieldLabel}>Target Amount (₹)</label>
-                <input type="number" value={goal.targetAmount} onChange={e => setGoal((g: any) => ({ ...g, targetAmount: Number(e.target.value) }))} style={textInput} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Toggle on={goal.isActive} onChange={v => setGoal((g: any) => ({ ...g, isActive: v }))} />
-                <p style={{ fontSize: 13, color: '#94a3b8' }}>Show goal progress bar on overlay</p>
-              </div>
-            </div>
-          )}
-
-          {tab === 'leaderboard' && (
-            <div style={{ ...C, padding: '80px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc', marginBottom: 8 }}>Leaderboard Settings</p>
-              <p style={{ fontSize: 13, color: '#475569' }}>Show top donors on your overlay — coming soon</p>
+              <p style={{ fontSize:11, color:'#f59e0b', margin:'8px 0 0', display:'flex', alignItems:'center', gap:5 }}><span>⚠️</span> Only use in OBS Browser Source — not visible to viewers.</p>
             </div>
           )}
         </div>
 
-        {/* Right: Preview */}
-        <div style={{ width: 280, flexShrink: 0 }}>
-          <div style={{ ...C, padding: 18, position: 'sticky', top: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171' }} />
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#334155', letterSpacing: '0.05em' }}>LIVE PREVIEW</p>
+        {/* ── RIGHT (preview + buttons) ────────────────── */}
+        <div style={{ width:264, flexShrink:0, position:'sticky', top:24, display:'flex', flexDirection:'column', gap:14 }}>
+          <div style={{ ...C, padding:16 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
+              <div style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 6px #22c55e' }}/>
+              <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.06em', margin:0 }}>LIVE PREVIEW</p>
             </div>
-            <div style={{ background: '#000', borderRadius: 10, height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ background:'#000', borderRadius:10, minHeight:140, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflow:'hidden' }}>
               <div style={{
-                borderRadius: 12, padding: '14px 18px', textAlign: 'center',
-                backgroundColor: s.bgColor,
-                color: s.textColor,
-                fontSize: s.fontSize * 0.6,
+                borderRadius:14, padding:'12px 16px', textAlign:'center',
+                background: previewBg,
+                color: s.textColor, fontSize: s.fontSize * 0.52,
                 fontFamily: s.fontStyle,
-                fontWeight: s.textBold ? 'bold' : 'normal',
-                fontStyle: s.textItalic ? 'italic' : 'normal',
-                textDecoration: s.textUnderline ? 'underline' : 'none',
-                border: s.enableBorder ? `2px solid ${s.textColor}50` : 'none',
+                fontWeight: s.textBold?'bold':'normal',
+                fontStyle: s.textItalic?'italic':'normal',
+                textDecoration: s.textUnderline?'underline':'none',
+                border: s.enableBorder?`2px solid ${s.textColor}50`:'none',
+                boxShadow: s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px rgba(0,0,0,${s.shadowOpacity/100})`:'none',
               }}>
-                <p style={{ fontWeight: 700 }}>Rahul donated ₹500</p>
-                <p style={{ opacity: 0.8, fontSize: '0.85em', marginTop: 4 }}>"Keep it up bhai!"</p>
+                <p style={{ fontWeight:700, margin:0 }}>🎉 Arjun donated ₹500</p>
+                <p style={{ opacity:0.8, fontSize:'0.85em', margin:'4px 0 0' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
               </div>
             </div>
-            <p style={{ fontSize: 11, color: '#334155', textAlign: 'center', marginTop: 12 }}>This is how alerts appear on OBS</p>
+            <p style={{ fontSize:10, color:'#374151', textAlign:'center', margin:'8px 0 0' }}>Updates as you edit</p>
+          </div>
+
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <button onClick={sendTest} disabled={testing} style={{ width:'100%', padding:11, borderRadius:10, fontSize:13, fontWeight:700, cursor:testing?'not-allowed':'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa', opacity:testing?0.7:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <span>🚀</span>{testing?'Sending…':'Send Test Alert'}
+            </button>
+            <button onClick={save} disabled={saving} style={{ width:'100%', padding:11, borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', background:'linear-gradient(135deg,#7c3aed,#ec4899)', border:'none', color:'white', boxShadow:'0 4px 18px rgba(124,58,237,0.3)', opacity:saving?0.7:1 }}>
+              {saving?'Saving…':'💾 Save Settings'}
+            </button>
           </div>
         </div>
       </div>

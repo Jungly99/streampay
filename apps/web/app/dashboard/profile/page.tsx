@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
 import { api } from '../../../lib/api'
 import toast from 'react-hot-toast'
 
@@ -253,12 +254,166 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {tab === 'analytics' && (
-        <div style={{ ...C, padding: '80px', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#f8fafc', marginBottom: 8 }}>Analytics Coming Soon</p>
-          <p style={{ fontSize: 13, color: '#475569' }}>Detailed earnings charts and donor insights will appear here</p>
+      {tab === 'analytics' && <AnalyticsTab />}
+    </div>
+  )
+}
+
+// ── Analytics Tab ─────────────────────────────────────────────────────────────
+const AC: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
+
+function StatCard({ icon, label, value, sub, color }: { icon: string; label: string; value: string; sub?: string; color: string }) {
+  return (
+    <div style={{ ...AC, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{icon}</div>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{label}</span>
+      </div>
+      <p style={{ fontSize: 24, fontWeight: 800, color, margin: 0, letterSpacing: '-0.5px' }}>{value}</p>
+      {sub && <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{sub}</p>}
+    </div>
+  )
+}
+
+function AnalyticsTab() {
+  const [data, setData] = useState<any>(null)
+  const [range, setRange] = useState('30d')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    api.get<any>(`/api/streamer/analytics?range=${range}`)
+      .then(d => setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [range])
+
+  if (loading) return (
+    <div style={{ padding: '60px', textAlign: 'center', color: '#475569', fontSize: 13 }}>
+      Loading analytics…
+    </div>
+  )
+
+  if (!data) return (
+    <div style={{ ...AC, padding: '60px', textAlign: 'center' }}>
+      <p style={{ color: '#475569', fontSize: 13 }}>Could not load analytics. Try refreshing.</p>
+    </div>
+  )
+
+  const hasData = data.totals.count > 0
+  const fmtDate = (d: string) => { const dt = new Date(d); return `${dt.getDate()}/${dt.getMonth()+1}` }
+  const peaked = data.hourDistribution.reduce((mx: any, h: any) => h.amount > (mx?.amount ?? 0) ? h : mx, null)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Range toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Earnings Analytics</h2>
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 9, padding: 3, border: '1px solid rgba(255,255,255,0.07)' }}>
+          {[['7d','7 Days'],['30d','30 Days'],['90d','90 Days']].map(([v,l]) => (
+            <button key={v} onClick={() => setRange(v ?? '30d')} style={{
+              padding: '5px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              background: range === v ? 'linear-gradient(135deg,#7c3aed,#ec4899)' : 'transparent',
+              border: 'none', color: range === v ? 'white' : '#64748b', transition: 'all 0.15s',
+            }}>{l}</button>
+          ))}
         </div>
+      </div>
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12 }}>
+        <StatCard icon="💰" label="Total Earned" value={`₹${data.totals.earned}`} sub="All time gross" color="#a78bfa" />
+        <StatCard icon="📨" label="Donations" value={data.totals.count.toString()} sub="Successful payments" color="#34d399" />
+        <StatCard icon="📊" label="Avg Donation" value={`₹${data.totals.avg}`} sub="Per transaction" color="#60a5fa" />
+        <StatCard icon="👑" label="Top Donation" value={`₹${data.totals.max}`} sub="Single largest" color="#fbbf24" />
+      </div>
+
+      {!hasData ? (
+        <div style={{ ...AC, padding: '60px', textAlign: 'center' }}>
+          <div style={{ fontSize: 40, marginBottom: 14 }}>📭</div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', margin: '0 0 8px' }}>No donations yet</p>
+          <p style={{ fontSize: 13, color: '#475569' }}>Share your donation link to start collecting tips</p>
+        </div>
+      ) : (
+        <>
+          {/* Earnings over time */}
+          <div style={{ ...AC, padding: '18px 20px' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span>📈</span> Earnings — Last {range === '7d' ? '7' : range === '30d' ? '30' : '90'} Days
+            </p>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={data.dailyEarnings.map((d: any) => ({ ...d, date: fmtDate(d.date) }))} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="date" tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
+                <Tooltip contentStyle={{ background: '#0c0d1a', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, fontSize: 12 }} formatter={(v: any) => [`₹${v}`, 'Earned']} labelStyle={{ color: '#94a3b8' }} itemStyle={{ color: '#a78bfa' }} />
+                <Bar dataKey="amount" fill="url(#barGrad)" radius={[4,4,0,0]} />
+                <defs>
+                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#ec4899" stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            {/* Top donors */}
+            <div style={{ ...AC, padding: '18px 20px' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 7 }}><span>🏆</span> Top Supporters</p>
+              {data.topDonors.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#475569' }}>No donations yet</p>
+              ) : data.topDonors.map((d: any, i: number) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 8, background: ['rgba(255,215,0,0.15)','rgba(192,192,192,0.1)','rgba(205,127,50,0.1)','rgba(255,255,255,0.05)','rgba(255,255,255,0.05)'][i] ?? 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>
+                    {['🥇','🥈','🥉','4️⃣','5️⃣'][i]}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</p>
+                    <p style={{ fontSize: 10, color: '#475569', margin: 0 }}>{d.count} donation{d.count !== 1 ? 's' : ''}</p>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa' }}>₹{d.total}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Peak hour */}
+            <div style={{ ...AC, padding: '18px 20px' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 7 }}><span>⏰</span> Activity by Hour</p>
+              <ResponsiveContainer width="100%" height={130}>
+                <BarChart data={data.hourDistribution} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                  <XAxis dataKey="hour" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={h => h % 6 === 0 ? `${h}h` : ''} />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{ background: '#0c0d1a', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, fontSize: 11 }} formatter={(v: any) => [`₹${v}`, 'Earned']} labelFormatter={h => `${h}:00`} labelStyle={{ color: '#94a3b8' }} itemStyle={{ color: '#34d399' }} />
+                  <Bar dataKey="amount" fill="#34d399" opacity={0.7} radius={[3,3,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+              {peaked && (
+                <p style={{ fontSize: 11, color: '#475569', margin: '8px 0 0', textAlign: 'center' }}>
+                  Peak at <span style={{ color: '#34d399', fontWeight: 600 }}>{peaked.hour}:00</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Recent activity */}
+          <div style={{ ...AC, padding: '18px 20px' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 7 }}><span>⚡</span> Recent Donations</p>
+            {data.recentDonations.map((d: any, i: number) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < data.recentDonations.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
+                  {d.amount >= 1000 ? '👑' : d.amount >= 500 ? '🔥' : d.amount >= 100 ? '💜' : '🎉'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9', margin: 0 }}>{d.name}</p>
+                  <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{d.paidAt ? new Date(d.paidAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}</p>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 800, color: '#a78bfa' }}>₹{d.amount}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
