@@ -4,11 +4,11 @@ import Link from 'next/link'
 
 async function getUser() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('streampay_token')
+  const token = cookieStore.get('eztips_token')
   if (!token) return null
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/auth/me`, {
-      headers: { Cookie: `streampay_token=${token.value}` }, cache: 'no-store',
+      headers: { Cookie: `eztips_token=${token.value}` }, cache: 'no-store',
     })
     if (!res.ok) return null
     return res.json()

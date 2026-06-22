@@ -24,7 +24,7 @@ export default function LifetimeSettlementsPage() {
 
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px' }}>Lifetime Settlements</h1>
-        <p style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>Your complete earnings history since you joined StreamPay</p>
+        <p style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>Your complete earnings history since you joined eztips</p>
       </div>
 
       {/* Stat cards */}
@@ -43,7 +43,7 @@ export default function LifetimeSettlementsPage() {
       <div style={{ ...C, overflow: 'hidden', flex: 1 }}>
         <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc' }}>Settlement History</p>
-          <p style={{ fontSize: 12, color: '#334155', marginTop: 3 }}>All withdrawals made from your StreamPay account</p>
+          <p style={{ fontSize: 12, color: '#334155', marginTop: 3 }}>All withdrawals made from your eztips account</p>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -83,7 +83,7 @@ export default function LifetimeSettlementsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
             ['Net Received', 'Amount credited to your bank after deducting the 5% platform fee'],
-            ['Fees Paid', 'StreamPay charges 5% only at settlement — never per donation'],
+            ['Fees Paid', 'eztips charges 5% only at settlement — never per donation'],
             ['No Minimum', 'You can settle any amount, any time. No ₹500 minimums.'],
           ].map(([title, desc]) => (
             <div key={title as string} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>

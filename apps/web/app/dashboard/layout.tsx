@@ -4,11 +4,11 @@ import Sidebar from '../../components/dashboard/Sidebar'
 
 async function getUser() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('streampay_token')
+  const token = cookieStore.get('eztips_token')
   if (!token) return null
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/auth/me`, {
-      headers: { Cookie: `streampay_token=${token.value}` },
+      headers: { Cookie: `eztips_token=${token.value}` },
       cache: 'no-store',
     })
     if (!res.ok) return null
@@ -19,7 +19,7 @@ async function getUser() {
 async function getStats(token: string) {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/streamer/stats`, {
-      headers: { Cookie: `streampay_token=${token}` },
+      headers: { Cookie: `eztips_token=${token}` },
       cache: 'no-store',
     })
     if (!res.ok) return { todayEarnings: 0, followerCount: 0 }
@@ -29,7 +29,7 @@ async function getStats(token: string) {
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('streampay_token')
+  const token = cookieStore.get('eztips_token')
   const user = await getUser()
 
   if (!user) redirect('/login')

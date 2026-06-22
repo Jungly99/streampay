@@ -6,7 +6,7 @@ import DashboardClient from './DashboardClient'
 
 async function fetchData(token: string) {
   const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-  const h = { Cookie: `streampay_token=${token}` }
+  const h = { Cookie: `eztips_token=${token}` }
   const [stats, links, alertSettings] = await Promise.all([
     fetch(`${base}/api/streamer/stats`,          { headers: h, cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
     fetch(`${base}/api/streamer/links`,          { headers: h, cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
@@ -17,7 +17,7 @@ async function fetchData(token: string) {
 
 export default async function DashboardPage() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('streampay_token')?.value ?? ''
+  const token = cookieStore.get('eztips_token')?.value ?? ''
   const { stats, links, alertSettings } = await fetchData(token)
 
   const statItems = [

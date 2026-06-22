@@ -88,7 +88,7 @@ router.post('/razorpay', async (req: Request, res: Response): Promise<void> => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           embeds: [{
-            title: `💸 New Donation on StreamPay!`,
+            title: `💸 New Donation on eztips!`,
             description: `**${donation.donorName}** donated **₹${donation.amount}**${donation.message ? `\n"${donation.message}"` : ''}`,
             color: 0x8b5cf6,
             timestamp: new Date().toISOString(),

@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express'
-import bcrypt from 'bcryptjs'
-import { z } from 'zod'
+import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '../db/prisma'
 import { signToken } from '../utils/jwt'
 import { generateOverlayToken } from '../utils/generateToken'
@@ -18,88 +17,108 @@ const COOKIE_OPTIONS = {
   path: '/',
 }
 
-const signupSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  displayName: z.string().min(1).max(50),
-  accountType: z.enum(['streamer', 'viewer']),
-})
+const oauth2Client = new OAuth2Client(
+  env.GOOGLE_CLIENT_ID,
+  env.GOOGLE_CLIENT_SECRET,
+  env.GOOGLE_CALLBACK_URL,
+)
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-})
+// Redirect to Google — accountType and mode (login|signup) carried in base64url state
+router.get('/google', (req: Request, res: Response): void => {
+  const accountType = (req.query.accountType as string) || 'streamer'
+  const mode        = (req.query.mode as string)        || 'login'
 
-router.post('/signup', async (req: Request, res: Response): Promise<void> => {
-  const parsed = signupSchema.safeParse(req.body)
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten().fieldErrors })
-    return
-  }
-  const { email, password, displayName, accountType } = parsed.data
+  const state = Buffer.from(JSON.stringify({ accountType, mode })).toString('base64url')
 
-  const existing = await prisma.user.findUnique({ where: { email } })
-  if (existing) {
-    res.status(409).json({ error: 'Email already in use' })
-    return
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12)
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      displayName,
-      accountType,
-      ...(accountType === 'streamer'
-        ? {
-            streamerProfile: {
-              create: {
-                channelName: displayName,
-                overlayToken: generateOverlayToken(),
-                alertSettings: { create: {} },
-                bankDetails: { create: {} },
-              },
-            },
-          }
-        : {
-            viewerProfile: { create: { displayName } },
-          }),
-    },
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['email', 'profile', 'openid'],
+    state,
+    prompt: 'select_account',
   })
 
-  const token = signToken({ userId: user.id, accountType })
-  res.cookie('streampay_token', token, COOKIE_OPTIONS)
-  res.status(201).json({ id: user.id, email: user.email, accountType, displayName })
+  res.redirect(url)
 })
 
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
-  const parsed = loginSchema.safeParse(req.body)
-  if (!parsed.success) {
-    res.status(400).json({ error: 'Invalid credentials' })
+// Google redirects back here with ?code=...&state=...
+router.get('/google/callback', async (req: Request, res: Response): Promise<void> => {
+  const { code, state, error } = req.query as Record<string, string>
+
+  if (error) {
+    res.redirect(`${env.FRONTEND_URL}/login?error=${encodeURIComponent(error)}`)
     return
   }
-  const { email, password } = parsed.data
 
-  const user = await prisma.user.findUnique({ where: { email } })
+  let accountType = 'streamer'
+  let mode = 'login'
+  try {
+    const decoded = JSON.parse(Buffer.from(state, 'base64url').toString())
+    accountType = decoded.accountType || 'streamer'
+    mode        = decoded.mode        || 'login'
+  } catch { /* ignore malformed state */ }
+
+  // Exchange code for tokens
+  const { tokens } = await oauth2Client.getToken(code)
+  oauth2Client.setCredentials(tokens)
+
+  // Verify id_token to get profile
+  const ticket = await oauth2Client.verifyIdToken({
+    idToken: tokens.id_token!,
+    audience: env.GOOGLE_CLIENT_ID,
+  })
+  const payload = ticket.getPayload()!
+  const googleId  = payload.sub
+  const email     = payload.email!
+  const name      = payload.name ?? email.split('@')[0]
+  const avatarUrl = payload.picture ?? null
+
+  // Find existing user by googleId or email
+  let user = await prisma.user.findFirst({
+    where: { OR: [{ googleId }, { email }] },
+  })
+
   if (!user) {
-    res.status(401).json({ error: 'Invalid email or password' })
-    return
-  }
-
-  const valid = await bcrypt.compare(password, user.passwordHash)
-  if (!valid) {
-    res.status(401).json({ error: 'Invalid email or password' })
-    return
+    if (mode === 'login') {
+      res.redirect(`${env.FRONTEND_URL}/login?error=no_account`)
+      return
+    }
+    // Create new account
+    user = await prisma.user.create({
+      data: {
+        email,
+        googleId,
+        displayName: name,
+        avatarUrl,
+        accountType: accountType as 'streamer' | 'viewer',
+        ...(accountType === 'streamer'
+          ? {
+              streamerProfile: {
+                create: {
+                  channelName: name,
+                  overlayToken: generateOverlayToken(),
+                  alertSettings: { create: {} },
+                  bankDetails: { create: {} },
+                },
+              },
+            }
+          : { viewerProfile: { create: { displayName: name } } }),
+      },
+    })
+  } else if (!user.googleId) {
+    // Link Google to existing account on first Google sign-in
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { googleId, avatarUrl: user.avatarUrl ?? avatarUrl },
+    })
   }
 
   const token = signToken({ userId: user.id, accountType: user.accountType })
-  res.cookie('streampay_token', token, COOKIE_OPTIONS)
-  res.json({ id: user.id, email: user.email, accountType: user.accountType, displayName: user.displayName })
+  res.cookie('eztips_token', token, COOKIE_OPTIONS)
+  res.redirect(`${env.FRONTEND_URL}${user.accountType === 'streamer' ? '/dashboard' : '/fan'}`)
 })
 
 router.post('/logout', (_req: Request, res: Response): void => {
-  res.clearCookie('streampay_token', { path: '/', secure: IS_PROD, sameSite: IS_PROD ? 'none' : 'lax' })
+  res.clearCookie('eztips_token', { path: '/', secure: IS_PROD, sameSite: IS_PROD ? 'none' : 'lax' })
   res.json({ ok: true })
 })
 
@@ -111,10 +130,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response): Promise<
       viewerProfile: true,
     },
   })
-  if (!user) {
-    res.status(404).json({ error: 'User not found' })
-    return
-  }
+  if (!user) { res.status(404).json({ error: 'User not found' }); return }
   res.json(user)
 })
 

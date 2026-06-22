@@ -37,7 +37,7 @@ export default function LandingPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 14, color: 'white',
           }}>S</div>
-          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>StreamPay</span>
+          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>eztips</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Link href="/login" style={{ fontSize: 13, color: '#64748b', padding: '7px 16px', borderRadius: 8, textDecoration: 'none' }}>
@@ -203,7 +203,7 @@ export default function LandingPage() {
               Your viewers are waiting
             </h2>
             <p style={{ fontSize: 15, color: '#475569', marginBottom: 36, lineHeight: 1.7 }}>
-              Join Indian streamers already earning on StreamPay.
+              Join Indian streamers already earning on eztips.
               Set up your donation page in under 2 minutes, completely free.
             </p>
             <Link href="/signup?type=streamer" style={{
@@ -223,9 +223,9 @@ export default function LandingPage() {
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '32px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 22, height: 22, borderRadius: 6, background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: 'white' }}>S</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>StreamPay</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>eztips</span>
         </div>
-        <p style={{ fontSize: 12, color: '#1e293b' }}>© 2026 StreamPay · Made for Indian Streamers</p>
+        <p style={{ fontSize: 12, color: '#1e293b' }}>© 2026 eztips · Made for Indian Streamers</p>
         <div style={{ display: 'flex', gap: 20 }}>
           {[['Sign In', '/login'], ['Sign Up', '/signup'], ['Dashboard', '/dashboard']].map(([l, h]) => (
             <Link key={l} href={h!} style={{ fontSize: 12, color: '#334155', textDecoration: 'none' }}>{l}</Link>

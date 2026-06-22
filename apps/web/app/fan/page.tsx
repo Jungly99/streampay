@@ -5,7 +5,7 @@ import { formatINR, formatDate } from '../../lib/utils'
 async function getDashboard(token: string) {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/viewer/dashboard`, {
-      headers: { Cookie: `streampay_token=${token}` }, cache: 'no-store',
+      headers: { Cookie: `eztips_token=${token}` }, cache: 'no-store',
     })
     return res.json()
   } catch { return null }
@@ -13,7 +13,7 @@ async function getDashboard(token: string) {
 
 export default async function FanDashboard() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('streampay_token')?.value ?? ''
+  const token = cookieStore.get('eztips_token')?.value ?? ''
   const data = await getDashboard(token)
 
   return (

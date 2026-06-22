@@ -9,7 +9,7 @@ const geistSans = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'StreamPay — Support Your Favourite Streamers',
+  title: 'eztips — Support Your Favourite Streamers',
   description: 'The most viewer-friendly way to send superchats and donate to Indian streamers.',
 }
 

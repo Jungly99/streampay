@@ -86,7 +86,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: res.amount,
         currency: res.currency,
-        name: 'StreamPay',
+        name: 'eztips',
         description: `Donation to ${streamer.channelName}`,
         order_id: res.razorpayOrderId,
         handler: () => {
@@ -108,7 +108,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
       {/* Top bar */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <span style={{ fontSize: 12, color: '#334155' }}>Powered by </span>
-        <span style={{ fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,#a78bfa,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>StreamPay</span>
+        <span style={{ fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,#a78bfa,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>eztips</span>
         <span style={{ fontSize: 12, color: '#334155' }}> · 0% fee on viewers · Secure via Razorpay</span>
       </div>
 

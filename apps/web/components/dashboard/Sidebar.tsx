@@ -40,7 +40,7 @@ export default function Sidebar({ channelName, todayEarnings, followers }: {
             fontWeight: 800, fontSize: 16, color: 'white',
             boxShadow: '0 0 20px rgba(124,58,237,0.4)',
           }}>S</div>
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#f8fafc', letterSpacing: '-0.3px' }}>StreamPay</span>
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#f8fafc', letterSpacing: '-0.3px' }}>eztips</span>
         </Link>
 
         {/* Channel card */}

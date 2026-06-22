@@ -4,8 +4,8 @@ import { api } from '../../../lib/api'
 import { formatINR, formatDate } from '../../../lib/utils'
 import toast from 'react-hot-toast'
 
-interface FeeBreakdown { grossAmount: number; feePct: number; feeAmount: number; netAmount: number; canSettle: boolean }
-interface DonationRow { id: string; donorName: string; amount: number; feeAmount: number; netAmount: number; settled: boolean; createdAt: string }
+interface FeeBreakdown { grossAmount: number; feePct: number; feeAmount: number; netAmount: number; canSettle: boolean; minSettlement: number }
+interface DonationRow { id: string; donorName: string; amount: number; feeAmount: number; netAmount: number; settled: boolean; createdAt: string; settlement?: { status: string } | null }
 
 const C: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
 
@@ -36,7 +36,7 @@ export default function SettlementsPage() {
     setSettling(true)
     try {
       await api.post('/api/settlements/initiate')
-      toast.success('Settlement initiated! Funds transfer in progress.')
+      toast.success('Settlement requested! Payment will be processed within 2 business days.')
       load()
     } catch (e: any) { toast.error(e.message) } finally { setSettling(false) }
   }
@@ -67,7 +67,7 @@ export default function SettlementsPage() {
           boxShadow: breakdown?.canSettle ? '0 0 20px rgba(124,58,237,0.3)' : 'none',
           opacity: settling ? 0.7 : 1, transition: 'all 0.15s',
         }}>
-          {settling ? 'Processing…' : 'Settle Now →'}
+          {settling ? 'Requesting…' : 'Request Settlement →'}
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export default function SettlementsPage() {
       {/* Fee breakdown */}
       {breakdown && (
         <div style={{ ...C, padding: '20px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: '#f59e0b', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>Pending Balance</p>
               <p style={{ fontSize: 28, fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px' }}>{formatINR(breakdown.grossAmount)}</p>
@@ -95,11 +95,22 @@ export default function SettlementsPage() {
                 <span style={{ color: '#10b981', fontWeight: 700 }}>{formatINR(breakdown.netAmount)}</span>
               </p>
             </div>
-            {!breakdown.canSettle && (
-              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', fontSize: 12, color: '#f59e0b' }}>
-                Nothing to settle yet
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+              {!breakdown.canSettle && breakdown.grossAmount > 0 && (
+                <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', fontSize: 12, color: '#f59e0b', textAlign: 'right' }}>
+                  Minimum ₹{breakdown.minSettlement} required to settle<br />
+                  <span style={{ color: '#64748b' }}>Need {formatINR(breakdown.minSettlement - breakdown.grossAmount)} more</span>
+                </div>
+              )}
+              {!breakdown.canSettle && breakdown.grossAmount === 0 && (
+                <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', fontSize: 12, color: '#f59e0b' }}>
+                  Nothing to settle yet
+                </div>
+              )}
+              <div style={{ padding: '8px 14px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', fontSize: 11, color: '#818cf8', textAlign: 'right' }}>
+                ⏱ Settlements processed within 2 business days
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -150,9 +161,14 @@ export default function SettlementsPage() {
                 <td style={{ padding: '13px 18px', fontSize: 13, color: '#f87171' }}>{formatINR(Number(d.feeAmount))}</td>
                 <td style={{ padding: '13px 18px', fontSize: 13, fontWeight: 700, color: '#60a5fa' }}>{formatINR(Number(d.netAmount))}</td>
                 <td style={{ padding: '13px 18px' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: d.settled ? '#10b981' : '#f59e0b', background: d.settled ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)', padding: '3px 9px', borderRadius: 20 }}>
-                    {d.settled ? '✓ Settled' : '⏳ Pending'}
-                  </span>
+                  {!d.settled
+                    ? <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '3px 9px', borderRadius: 20 }}>⏳ Pending</span>
+                    : d.settlement?.status === 'SUCCESS'
+                      ? <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '3px 9px', borderRadius: 20 }}>✓ Paid</span>
+                      : d.settlement?.status === 'FAILED'
+                        ? <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', background: 'rgba(248,113,113,0.1)', padding: '3px 9px', borderRadius: 20 }}>✗ Failed</span>
+                        : <span style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', background: 'rgba(129,140,248,0.1)', padding: '3px 9px', borderRadius: 20 }}>🔄 Processing</span>
+                  }
                 </td>
                 <td style={{ padding: '13px 18px', fontSize: 12, color: '#334155' }}>{formatDate(d.createdAt)}</td>
               </tr>

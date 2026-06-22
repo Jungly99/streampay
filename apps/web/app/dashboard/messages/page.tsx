@@ -34,7 +34,7 @@ export default function MessagesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const params = new URLSearchParams({ page: String(page), ...(search ? { search } : {}), ...(period !== 'all' ? { period } : {}) })
+    const params = new URLSearchParams({ page: String(page), status: 'SUCCESS', ...(search ? { search } : {}), ...(period !== 'all' ? { period } : {}) })
     const [donRes, statRes] = await Promise.all([
       api.get<{ donations: Donation[]; total: number }>(`/api/donations?${params}`),
       api.get<Stats>('/api/donations/stats/summary'),

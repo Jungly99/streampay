@@ -18,7 +18,8 @@ router.get('/fee-breakdown', async (req: AuthRequest, res: Response): Promise<vo
   const feeAmount = (grossAmount * feePct) / 100
   const netAmount = grossAmount - feeAmount
 
-  res.json({ grossAmount, feePct, feeAmount, netAmount, canSettle: grossAmount > 0 })
+  const MIN_SETTLEMENT = 100
+  res.json({ grossAmount, feePct, feeAmount, netAmount, canSettle: grossAmount >= MIN_SETTLEMENT, minSettlement: MIN_SETTLEMENT })
 })
 
 router.post('/initiate', async (req: AuthRequest, res: Response): Promise<void> => {
@@ -37,6 +38,11 @@ router.post('/initiate', async (req: AuthRequest, res: Response): Promise<void> 
   }
 
   const grossAmount = unsettled.reduce((s, d) => s + d.amount, 0)
+
+  if (grossAmount < 100) {
+    res.status(400).json({ error: 'Minimum settlement amount is ₹100' })
+    return
+  }
   const feePct = 5
   const feeAmount = (grossAmount * feePct) / 100
   const netAmount = grossAmount - feeAmount
@@ -74,6 +80,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
       ...(endDate ? { createdAt: { lte: new Date(endDate) } } : {}),
       ...(search ? { donorName: { contains: search, mode: 'insensitive' as const } } : {}),
     },
+    include: { settlement: { select: { status: true } } },
     orderBy: { createdAt: 'desc' },
   })
 
