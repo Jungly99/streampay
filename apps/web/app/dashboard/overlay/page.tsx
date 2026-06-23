@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api } from '../../../lib/api'
+import { getSocket } from '../../../lib/socket'
 import toast from 'react-hot-toast'
 
 type Tab = 'appearance' | 'tts' | 'goal' | 'safety' | 'leaderboard'
@@ -88,7 +89,6 @@ export default function OverlayPage() {
       api.get<any>('/api/streamer/profile'),
     ]).then(([settings, g, profile]) => {
       if (settings && Object.keys(settings).length) {
-        // Strip Prisma metadata fields before merging into local state
         const { id: _id, streamerId: _sid, createdAt: _ca, updatedAt: _ua, ...clean } = settings
         setS((p: any) => ({ ...p, ...clean }))
       }
@@ -96,6 +96,23 @@ export default function OverlayPage() {
       if (profile?.overlayToken) setOverlayToken(profile.overlayToken)
     }).catch(() => {})
   }, [])
+
+  // Listen to real-time goal updates (e.g. when a donation arrives) to keep preview in sync
+  useEffect(() => {
+    if (!overlayToken) return
+    const socket = getSocket()
+    socket.connect()
+    const onConnect = () => socket.emit('join-overlay', { token: overlayToken })
+    const onGoal = (data: any) => setGoal((g: any) => ({ ...g, ...data }))
+    socket.on('connect', onConnect)
+    socket.on('goal-updated', onGoal)
+    if (socket.connected) onConnect()
+    return () => {
+      socket.off('connect', onConnect)
+      socket.off('goal-updated', onGoal)
+      socket.disconnect()
+    }
+  }, [overlayToken])
 
   const set = (k: string, v: any) => setS((p: any) => ({ ...p, [k]: v }))
 
@@ -329,7 +346,15 @@ export default function OverlayPage() {
                 <span style={lbl}>Add Amount Manually (other platforms)</span>
                 <div style={{ display:'flex', gap:8 }}>
                   <input type="number" value={manualAdd} onChange={e=>setManualAdd(e.target.value)} placeholder="e.g. 500" style={{ ...inp, flex:1 }}/>
-                  <button onClick={()=>{ const n=Number(manualAdd); if(n>0){ setGoal((g:any)=>({...g,currentAmount:(g.currentAmount??0)+n})); setManualAdd(''); toast.success(`+₹${n} added to goal`) }}} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', background:'rgba(124,58,237,0.15)', border:'1px solid rgba(124,58,237,0.3)', color:'#a78bfa', fontSize:13, fontWeight:600, flexShrink:0 }}>+ Add</button>
+                  <button onClick={async ()=>{
+                    const n=Number(manualAdd); if(n<=0) return
+                    try {
+                      const updated = await api.patch<any>('/api/streamer/goal/amount', { add: n })
+                      setGoal((g:any)=>({...g, currentAmount: updated.currentAmount}))
+                      setManualAdd('')
+                      toast.success(`+₹${n} added to goal`)
+                    } catch(e:any){ toast.error(e.message) }
+                  }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', background:'rgba(124,58,237,0.15)', border:'1px solid rgba(124,58,237,0.3)', color:'#a78bfa', fontSize:13, fontWeight:600, flexShrink:0 }}>+ Add</button>
                 </div>
                 <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Manually add donations from YouTube Superchat, etc.</p>
               </div>
@@ -342,7 +367,13 @@ export default function OverlayPage() {
               <div><span style={lbl}>Progress Bar Color</span><input type="color" value={s.goalBarColor} onChange={e=>set('goalBarColor',e.target.value)} style={colorBox}/></div>
               <Row label="Goal Celebration" tip="Confetti burst and special alert when goal is reached"><Toggle on={s.enableGoalCelebration} onChange={v=>set('enableGoalCelebration',v)}/></Row>
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={()=>{ setGoal((g:any)=>({...g,currentAmount:0})); toast.success('Goal reset to ₹0') }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171' }}>↺ Reset Goal</button>
+                <button onClick={async ()=>{
+                  try {
+                    const updated = await api.put<any>('/api/streamer/goal', { ...goal, currentAmount: 0 })
+                    setGoal((g:any)=>({...g, currentAmount: 0}))
+                    toast.success('Goal reset to ₹0')
+                  } catch(e:any){ toast.error(e.message) }
+                }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171' }}>↺ Reset Goal</button>
               </div>
             </div>
 

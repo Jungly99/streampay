@@ -241,6 +241,7 @@ router.put('/goal', async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     title: z.string().min(1).max(100),
     targetAmount: z.number().int().positive(),
+    currentAmount: z.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
   })
   const parsed = schema.safeParse(req.body)
@@ -249,15 +250,70 @@ router.put('/goal', async (req: AuthRequest, res: Response): Promise<void> => {
   const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
   if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
 
-  await prisma.overlayGoal.updateMany({ where: { streamerId: profile.id }, data: { isActive: false } })
-  const goal = await prisma.overlayGoal.create({
-    data: {
-      streamer: { connect: { id: profile.id } },
-      title: parsed.data.title,
-      targetAmount: parsed.data.targetAmount,
-      isActive: true,
-    },
+  // Update existing goal or create one — never reset currentAmount unless explicitly passed
+  const existing = await prisma.overlayGoal.findFirst({
+    where: { streamerId: profile.id },
+    orderBy: { createdAt: 'desc' },
   })
+  let goal
+  if (existing) {
+    goal = await prisma.overlayGoal.update({
+      where: { id: existing.id },
+      data: {
+        title: parsed.data.title,
+        targetAmount: parsed.data.targetAmount,
+        currentAmount: parsed.data.currentAmount ?? existing.currentAmount,
+        isActive: parsed.data.isActive ?? existing.isActive,
+      },
+    })
+  } else {
+    goal = await prisma.overlayGoal.create({
+      data: {
+        streamer: { connect: { id: profile.id } },
+        title: parsed.data.title,
+        targetAmount: parsed.data.targetAmount,
+        currentAmount: parsed.data.currentAmount ?? 0,
+        isActive: parsed.data.isActive ?? true,
+      },
+    })
+  }
+
+  if (profile.overlayToken) {
+    emitToDonationOverlay(profile.overlayToken, 'goal-updated', {
+      currentAmount: goal.currentAmount,
+      targetAmount: goal.targetAmount,
+      title: goal.title,
+    })
+  }
+  res.json(goal)
+})
+
+// Incremental manual amount add (other platforms: YouTube Superchat, etc.)
+router.patch('/goal/amount', async (req: AuthRequest, res: Response): Promise<void> => {
+  const n = Number(req.body.add)
+  if (!n || n <= 0) { res.status(400).json({ error: 'Invalid amount' }); return }
+
+  const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
+  if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
+
+  const existing = await prisma.overlayGoal.findFirst({
+    where: { streamerId: profile.id },
+    orderBy: { createdAt: 'desc' },
+  })
+  if (!existing) { res.status(404).json({ error: 'No goal set yet' }); return }
+
+  const goal = await prisma.overlayGoal.update({
+    where: { id: existing.id },
+    data: { currentAmount: { increment: n } },
+  })
+
+  if (profile.overlayToken) {
+    emitToDonationOverlay(profile.overlayToken, 'goal-updated', {
+      currentAmount: goal.currentAmount,
+      targetAmount: goal.targetAmount,
+      title: goal.title,
+    })
+  }
   res.json(goal)
 })
 
