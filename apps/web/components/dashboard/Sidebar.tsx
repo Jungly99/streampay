@@ -25,6 +25,7 @@ const navGroups = [
       { href: '/dashboard/tip-settings',         color: '#f59e0b', symbol: '₹',  label: 'Tip Settings',         sub: 'Min Amount & Char Tiers' },
       { href: '/dashboard/voice-settings',       color: '#a855f7', symbol: '♪',  label: 'Voice',                sub: 'Voice & Subscription' },
       { href: '/dashboard/overlay',              color: '#14b8a6', symbol: '◈',  label: 'Overlay',              sub: 'Customize Alerts' },
+      { href: '/dashboard/celebrity-voice',      color: '#f59e0b', symbol: '🎤', label: 'Celebrity Voice',       sub: 'AI Voices & Pricing' },
       { href: 'https://discord.gg/eztips',       color: '#5865f2', symbol: '⌘',  label: 'Discord',              sub: 'Join our community', external: true },
     ],
   },

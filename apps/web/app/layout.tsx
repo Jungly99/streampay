@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
         <Toaster
           position="top-right"
+          containerStyle={{ top: 64 }}
           toastOptions={{
             style: {
               background: 'rgba(18,18,42,0.95)',

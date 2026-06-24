@@ -157,6 +157,10 @@ model AlertSettings {
   enableProfanityFilter Boolean        @default(true) @map("enable_profanity_filter")
   customBlocklist      String          @default("") @map("custom_blocklist")
 
+  celebrityVoiceEnabled   Boolean @default(false) @map("celebrity_voice_enabled")
+  celebrityVoiceId        String? @map("celebrity_voice_id")
+  celebrityVoiceMinAmount Int     @default(1000)  @map("celebrity_voice_min_amount")
+
   createdAt            DateTime        @default(now()) @map("created_at")
   updatedAt            DateTime        @updatedAt @map("updated_at")
 

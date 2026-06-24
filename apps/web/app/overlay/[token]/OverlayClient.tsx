@@ -106,14 +106,41 @@ export default function OverlayClient({ token }: { token: string }) {
           osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.25)
         } catch { /* audio not available */ }
       }
-      if (settings.ttsEnabled && current.message && 'speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(`${current.donorName} donated ₹${current.amount}. ${current.message}`)
+
+      const ttsText = `${current.donorName} donated ₹${current.amount}. ${current.message ?? ''}`
+      const isCelebrityVoice = !!(
+        settings.celebrityVoiceEnabled &&
+        settings.celebrityVoiceId &&
+        current.amount >= (settings.celebrityVoiceMinAmount ?? 1000)
+      )
+
+      if (isCelebrityVoice && settings.ttsEnabled && current.message) {
+        // ElevenLabs celebrity voice
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+        setTimeout(async () => {
+          try {
+            const res = await fetch(`${backendUrl}/api/tts/celebrity`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: ttsText, voiceId: settings.celebrityVoiceId }),
+            })
+            if (res.ok) {
+              const blob = await res.blob()
+              const url = URL.createObjectURL(blob)
+              const audio = new Audio(url)
+              audio.volume = (settings.ttsVolume ?? 100) / 100
+              audioRef.current = audio
+              audio.play().catch(() => {})
+            }
+          } catch { /* celebrity voice unavailable, skip */ }
+        }, delay)
+      } else if (settings.ttsEnabled && current.message && 'speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(ttsText)
         const targetLang = settings.ttsVoice ?? 'en-IN'
         u.lang = targetLang
         u.volume = (settings.ttsVolume ?? 100) / 100
         u.rate = settings.ttsRate ?? 1.0
         u.pitch = settings.ttsPitch ?? 1.0
-        // Try to find an exact voice match; fall back to same-language prefix; then default
         const voices = speechSynthesis.getVoices()
         const exact = voices.find(v => v.lang === targetLang)
         const prefix = voices.find(v => v.lang.startsWith(targetLang.split('-')[0] ?? ''))

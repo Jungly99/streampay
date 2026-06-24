@@ -198,15 +198,22 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-              {ALL_QUICK_AMOUNTS.filter(a => a >= streamer.minDonationAmount).slice(0, 6).map(a => (
-                <button key={a} onClick={() => selectAmount(a)} style={{
-                  padding: '11px 0', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  background: amount === a ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.04)',
-                  border: amount === a ? 'none' : '1px solid rgba(255,255,255,0.09)',
-                  color: amount === a ? 'white' : '#94a3b8', transition: 'all 0.15s',
-                  boxShadow: amount === a ? '0 0 20px rgba(124,58,237,0.3)' : 'none',
-                }}>₹{a}</button>
-              ))}
+              {ALL_QUICK_AMOUNTS.filter(a => a >= streamer.minDonationAmount).slice(0, 6).map(a => {
+                const isCelebrity = streamer.celebrityVoiceEnabled && a >= (streamer.celebrityVoiceMinAmount ?? 1000)
+                return (
+                  <button key={a} onClick={() => selectAmount(a)} style={{
+                    padding: '11px 0', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    background: amount === a ? 'linear-gradient(135deg,#7c3aed,#db2777)' : isCelebrity ? 'rgba(245,158,11,0.06)' : 'rgba(255,255,255,0.04)',
+                    border: amount === a ? 'none' : isCelebrity ? '1px solid rgba(245,158,11,0.25)' : '1px solid rgba(255,255,255,0.09)',
+                    color: amount === a ? 'white' : isCelebrity ? '#f59e0b' : '#94a3b8', transition: 'all 0.15s',
+                    boxShadow: amount === a ? '0 0 20px rgba(124,58,237,0.3)' : 'none',
+                    position: 'relative',
+                  }}>
+                    {isCelebrity && <span style={{ position: 'absolute', top: -6, right: -4, fontSize: 9, fontWeight: 800, background: '#f59e0b', color: '#000', padding: '1px 5px', borderRadius: 10 }}>🎤</span>}
+                    ₹{a}
+                  </button>
+                )
+              })}
             </div>
 
             {finalAmount > 0 && (

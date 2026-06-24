@@ -129,12 +129,12 @@ export default async function DashboardPage() {
             <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>Quick Actions</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
-                { href: '/dashboard/messages',       label: 'Donations',           icon: '↓', color: '#7c3aed' },
-                { href: '/dashboard/settlements',    label: 'Settle Earnings',     icon: '⇄', color: '#059669' },
-                { href: '/dashboard/overlay',        label: 'Edit Overlay',        icon: '◈', color: '#0891b2' },
-                { href: '/dashboard/tip-settings',   label: 'Tip Settings',        icon: '₹', color: '#f59e0b' },
-                { href: '/dashboard/voice-settings', label: 'Voice Tiers',         icon: '♫', color: '#d97706' },
-                { href: '/dashboard/invoices',       label: 'Download Invoices',   icon: '▤', color: '#db2777' },
+                { href: '/dashboard/messages',          label: 'Donations',           icon: '↓', color: '#7c3aed' },
+                { href: '/dashboard/settlements',       label: 'Settle Earnings',     icon: '⇄', color: '#059669' },
+                { href: '/dashboard/overlay',           label: 'Edit Overlay',        icon: '◈', color: '#0891b2' },
+                { href: '/dashboard/celebrity-voice',   label: 'Celebrity Voice',     icon: '🎤', color: '#f59e0b' },
+                { href: '/dashboard/tip-settings',      label: 'Tip Settings',        icon: '₹', color: '#d97706' },
+                { href: '/dashboard/invoices',          label: 'Download Invoices',   icon: '▤', color: '#db2777' },
               ].map(a => (
                 <Link key={a.href} href={a.href} style={{
                   display: 'flex', alignItems: 'center', gap: 12,

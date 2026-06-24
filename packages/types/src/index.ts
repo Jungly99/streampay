@@ -57,6 +57,9 @@ export interface AlertSettings {
   birthdayTemplate: string
   enableProfanityFilter: boolean
   customBlocklist: string
+  celebrityVoiceEnabled: boolean
+  celebrityVoiceId: string | null
+  celebrityVoiceMinAmount: number
 }
 
 export interface DonationPageStreamer {
@@ -78,6 +81,8 @@ export interface DonationPageStreamer {
   socialTwitch: string | null
   socialDiscord: string | null
   socialKick: string | null
+  celebrityVoiceEnabled: boolean
+  celebrityVoiceMinAmount: number
 }
 
 export interface MessageTier {

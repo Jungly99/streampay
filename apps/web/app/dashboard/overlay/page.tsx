@@ -141,6 +141,29 @@ export default function OverlayPage() {
 
   const set = (k: string, v: any) => setS((p: any) => ({ ...p, [k]: v }))
 
+  const APPEARANCE_DEFAULTS = {
+    template:'superchat', bgColor:'#1a1a2e', bgOpacity:100, textColor:'#ffffff',
+    fontSize:24, fontStyle:'Arial', textBold:true, textItalic:false, textUnderline:false,
+    animationStyle:'slideDown', enableBorder:false, alertDuration:8,
+    enableShadow:false, shadowBlur:20, shadowColor:'#000000', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
+    enableGradientBg:false, minAlertAmount:0,
+  }
+
+  const GOAL_DEFAULTS = {
+    goalBarColor:'#7c3aed', enableGoalCelebration:true,
+    enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
+  }
+
+  function resetAppearance() {
+    setS((p: any) => ({ ...p, ...APPEARANCE_DEFAULTS }))
+    toast.success('Appearance reset to defaults')
+  }
+
+  function resetGoalSettings() {
+    setS((p: any) => ({ ...p, ...GOAL_DEFAULTS }))
+    toast.success('Goal settings reset to defaults')
+  }
+
   async function save() {
     setSaving(true)
     try {
@@ -218,6 +241,11 @@ export default function OverlayPage() {
 
           {/* ── APPEARANCE ─────────────────────────── */}
           {tab==='appearance' && <>
+            <div style={{ display:'flex', justifyContent:'flex-end' }}>
+              <button onClick={resetAppearance} style={{ padding:'7px 14px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', color:'#f87171', display:'flex', alignItems:'center', gap:6 }}>
+                ↺ Reset to Defaults
+              </button>
+            </div>
             <div style={{ ...C, padding:'18px 20px' }}>
               <p style={sH}><span>🖼️</span> Alert Template</p>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
@@ -399,17 +427,22 @@ export default function OverlayPage() {
             </div>
 
             <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
-              <p style={sH}><span>✨</span> Goal Customization</p>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <p style={{ ...sH, marginBottom:0 }}><span>✨</span> Goal Customization</p>
+                <button onClick={resetGoalSettings} style={{ padding:'6px 12px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:600, background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', color:'#f87171', display:'flex', alignItems:'center', gap:5 }}>
+                  ↺ Reset to Defaults
+                </button>
+              </div>
               <div><span style={lbl}>Progress Bar Color</span><input type="color" value={s.goalBarColor} onChange={e=>set('goalBarColor',e.target.value)} style={colorBox}/></div>
               <Row label="Goal Celebration" tip="Confetti burst and special alert when goal is reached"><Toggle on={s.enableGoalCelebration} onChange={v=>set('enableGoalCelebration',v)}/></Row>
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={async ()=>{
                   try {
-                    const updated = await api.put<any>('/api/streamer/goal', { ...goal, currentAmount: 0 })
+                    await api.put<any>('/api/streamer/goal', { ...goal, currentAmount: 0 })
                     setGoal((g:any)=>({...g, currentAmount: 0}))
                     toast.success('Goal reset to ₹0')
                   } catch(e:any){ toast.error(e.message) }
-                }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171' }}>↺ Reset Goal</button>
+                }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171' }}>↺ Reset Progress to ₹0</button>
               </div>
             </div>
 

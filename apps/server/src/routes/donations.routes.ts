@@ -25,6 +25,10 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
     res.status(200).json({ inactive: true, channelName: profile.channelName, avatarUrl: profile.avatarUrl })
     return
   }
+  const alertSettings = await prisma.alertSettings.findUnique({
+    where: { streamerId: profile.id },
+    select: { celebrityVoiceEnabled: true, celebrityVoiceMinAmount: true },
+  })
   res.json({
     id: profile.id,
     username: profile.username,
@@ -45,6 +49,8 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
     socialTwitch: profile.socialTwitch,
     socialDiscord: profile.socialDiscord,
     socialKick: profile.socialKick,
+    celebrityVoiceEnabled: alertSettings?.celebrityVoiceEnabled ?? false,
+    celebrityVoiceMinAmount: alertSettings?.celebrityVoiceMinAmount ?? 1000,
   })
 })
 
@@ -91,7 +97,13 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
     return
   }
 
-  const feePct = 5
+  const streamerAlertSettings = await prisma.alertSettings.findUnique({ where: { streamerId: streamer.id } })
+  const isCelebrityVoice = !!(
+    streamerAlertSettings?.celebrityVoiceEnabled &&
+    streamerAlertSettings?.celebrityVoiceId &&
+    amount >= (streamerAlertSettings?.celebrityVoiceMinAmount ?? 1000)
+  )
+  const feePct = isCelebrityVoice ? 20 : 5
   const feeAmount = (amount * feePct) / 100
   const netAmount = amount - feeAmount
   const cfOrderId = generateOrderId()
