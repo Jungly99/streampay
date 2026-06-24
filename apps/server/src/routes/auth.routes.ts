@@ -145,7 +145,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response): Promise<
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
     include: {
-      streamerProfile: { select: { username: true, channelName: true, overlayToken: true, isVerified: true, verificationRequestedAt: true } },
+      streamerProfile: { select: { username: true, channelName: true, overlayToken: true, isVerified: true, isActive: true, isPremium: true, verificationRequestedAt: true } },
       viewerProfile: true,
     },
   })
