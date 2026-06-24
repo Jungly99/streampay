@@ -31,6 +31,26 @@ export default function SettlementsPage() {
 
   useEffect(() => { load() }, [startDate, endDate, search])
 
+  function exportCsv() {
+    if (!donations.length) { toast.error('No data to export'); return }
+    const headers = ['Donor', 'Gross Amount (₹)', 'Fee (5%)', 'Fee Deducted (₹)', 'Net Amount (₹)', 'Status', 'Date']
+    const rows = donations.map(d => [
+      d.donorName,
+      d.amount,
+      '5.00%',
+      Number(d.feeAmount).toFixed(2),
+      Number(d.netAmount).toFixed(2),
+      d.settled ? (d.settlement?.status === 'SUCCESS' ? 'Paid' : d.settlement?.status === 'FAILED' ? 'Failed' : 'Processing') : 'Pending',
+      formatDate(d.createdAt),
+    ])
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `eztips-settlements-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
   async function settle() {
     if (!breakdown?.canSettle) return
     setSettling(true)
@@ -128,7 +148,7 @@ export default function SettlementsPage() {
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search donor name…" style={{
           flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#e2e8f0',
         }} />
-        <button style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 12, cursor: 'pointer' }}>
+        <button onClick={exportCsv} style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
           Export CSV
         </button>
       </div>
