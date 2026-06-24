@@ -312,7 +312,15 @@ export default function OverlayPage() {
               {s.ttsEnabled && <>
                 <div>
                   <span style={lbl}>Voice Language</span>
-                  <Select value={s.ttsVoice} onChange={v=>set('ttsVoice',v)} options={[['en-IN','English – India'],['hi-IN','Hindi – India'],['en-US','English – US'],['en-GB','English – UK'],['ta-IN','Tamil – India'],['te-IN','Telugu – India']].map(([v,n])=>({value:v!,label:n!}))} />
+                  <Select value={s.ttsVoice} onChange={v=>set('ttsVoice',v)} options={[
+                    ['en-IN','English – India'],['hi-IN','Hindi – India'],
+                    ['kn-IN','Kannada – India'],['ml-IN','Malayalam – India'],
+                    ['mr-IN','Marathi – India'],['bn-IN','Bengali – India'],
+                    ['gu-IN','Gujarati – India'],['pa-IN','Punjabi – India'],
+                    ['ur-IN','Urdu – India'],
+                    ['ta-IN','Tamil – India'],['te-IN','Telugu – India'],
+                    ['en-US','English – US'],['en-GB','English – UK'],
+                  ].map(([v,n])=>({value:v!,label:n!}))} />
                 </div>
                 <Slider label="Volume" value={s.ttsVolume} min={0} max={100} unit="%" onChange={v=>set('ttsVolume',v)}/>
                 <Slider label="Speed" value={s.ttsRate} min={0.5} max={2} step={0.1} unit="×" onChange={v=>set('ttsRate',v)}/>
