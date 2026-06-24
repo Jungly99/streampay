@@ -58,6 +58,31 @@ function Slider({ label: l, value, min, max, step=1, unit, onChange }: { label:s
 function InfoBox({ children }: { children: React.ReactNode }) {
   return <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.15)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'#94a3b8', lineHeight:1.6 }}>{children}</div>
 }
+function Select({ value, onChange, options }: { value:string; onChange:(v:string)=>void; options:{value:string;label:string}[] }) {
+  const [open, setOpen] = useState(false)
+  const label = options.find(o=>o.value===value)?.label ?? value
+  return (
+    <div style={{ position:'relative' }}>
+      <button type="button" onClick={()=>setOpen(o=>!o)} style={{ ...inp, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', border:'1px solid rgba(255,255,255,0.08)', userSelect:'none' as any }}>
+        <span>{label}</span>
+        <span style={{ fontSize:10, color:'#64748b', marginLeft:8 }}>{open?'▲':'▼'}</span>
+      </button>
+      {open && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{ position:'fixed', inset:0, zIndex:998 }} />
+          <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:999, background:'#1a1a2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, overflow:'hidden', boxShadow:'0 8px 32px rgba(0,0,0,0.6)' }}>
+            {options.map(o=>(
+              <button key={o.value} type="button" onClick={()=>{ onChange(o.value); setOpen(false) }} style={{ display:'block', width:'100%', textAlign:'left', padding:'9px 13px', fontSize:13, background: o.value===value ? 'rgba(124,58,237,0.18)' : 'transparent', color: o.value===value ? '#a78bfa' : '#e2e8f0', border:'none', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.04)' }}
+                onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                onMouseLeave={e=>(e.currentTarget.style.background=o.value===value?'rgba(124,58,237,0.18)':'transparent')}
+              >{o.label}</button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 export default function OverlayPage() {
   const [tab, setTab] = useState<Tab>('appearance')
@@ -226,11 +251,11 @@ export default function OverlayPage() {
                   </div>
                   <div>
                     <span style={lbl}>Font</span>
-                    <select value={s.fontStyle} onChange={e=>set('fontStyle',e.target.value)} style={{ ...inp, appearance:'none' as any }}>{FONTS.map(f=><option key={f}>{f}</option>)}</select>
+                    <Select value={s.fontStyle} onChange={v=>set('fontStyle',v)} options={FONTS.map(f=>({value:f,label:f}))} />
                   </div>
                   <div>
                     <span style={lbl}>Entrance Animation</span>
-                    <select value={s.animationStyle} onChange={e=>set('animationStyle',e.target.value)} style={{ ...inp, appearance:'none' as any }}>{ANIMATIONS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select>
+                    <Select value={s.animationStyle} onChange={v=>set('animationStyle',v)} options={ANIMATIONS.map(a=>({value:a.id,label:a.label}))} />
                   </div>
                 </div>
               </div>
@@ -287,9 +312,7 @@ export default function OverlayPage() {
               {s.ttsEnabled && <>
                 <div>
                   <span style={lbl}>Voice Language</span>
-                  <select value={s.ttsVoice} onChange={e=>set('ttsVoice',e.target.value)} style={{ ...inp, appearance:'none' as any }}>
-                    {[['en-IN','English – India'],['hi-IN','Hindi – India'],['en-US','English – US'],['en-GB','English – UK'],['ta-IN','Tamil – India'],['te-IN','Telugu – India']].map(([v,n])=><option key={v} value={v}>{n}</option>)}
-                  </select>
+                  <Select value={s.ttsVoice} onChange={v=>set('ttsVoice',v)} options={[['en-IN','English – India'],['hi-IN','Hindi – India'],['en-US','English – US'],['en-GB','English – UK'],['ta-IN','Tamil – India'],['te-IN','Telugu – India']].map(([v,n])=>({value:v!,label:n!}))} />
                 </div>
                 <Slider label="Volume" value={s.ttsVolume} min={0} max={100} unit="%" onChange={v=>set('ttsVolume',v)}/>
                 <Slider label="Speed" value={s.ttsRate} min={0.5} max={2} step={0.1} unit="×" onChange={v=>set('ttsRate',v)}/>
