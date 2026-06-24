@@ -475,20 +475,48 @@ export default function OverlayPage() {
             {/* Alert preview — appearance / tts / safety */}
             {(tab==='appearance'||tab==='tts'||tab==='safety') && (
               <div style={{ background:'#000', borderRadius:10, minHeight:140, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflow:'hidden' }}>
-                <div style={{
-                  borderRadius:14, padding:'12px 16px', textAlign:'center',
-                  background: previewBg,
-                  color: s.textColor, fontSize: s.fontSize * 0.52,
-                  fontFamily: s.fontStyle,
-                  fontWeight: s.textBold?'bold':'normal',
-                  fontStyle: s.textItalic?'italic':'normal',
-                  textDecoration: s.textUnderline?'underline':'none',
-                  border: s.enableBorder?`2px solid ${s.textColor}50`:'none',
-                  boxShadow: s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px rgba(0,0,0,${s.shadowOpacity/100})`:'none',
-                }}>
-                  <p style={{ fontWeight:700, margin:0 }}>🎉 Arjun donated ₹500</p>
-                  <p style={{ opacity:0.8, fontSize:'0.85em', margin:'4px 0 0' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
-                </div>
+                {s.template === 'superchat' && (
+                  <div style={{ borderRadius:12, overflow:'hidden', width:'100%', fontFamily:s.fontStyle, fontSize:s.fontSize*0.5 }}>
+                    <div style={{ padding:'10px 14px', display:'flex', alignItems:'center', gap:10, background:`${tier.color}33` }}>
+                      <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#7c3aed,#db2777)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:'white', flexShrink:0 }}>A</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <p style={{ fontSize:12, fontWeight:700, color:'white', margin:0 }}>Arjun</p>
+                        <p style={{ fontSize:10, color:'rgba(255,255,255,0.6)', margin:0 }}>🎉 donated</p>
+                      </div>
+                      <div style={{ padding:'4px 10px', borderRadius:20, fontSize:12, fontWeight:700, color:'white', background:tier.color }}>₹500</div>
+                    </div>
+                    <div style={{ padding:'10px 14px', background:'rgba(0,0,0,0.65)' }}>
+                      <p style={{ fontSize:12, color:'rgba(255,255,255,0.9)', margin:0 }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
+                    </div>
+                  </div>
+                )}
+                {s.template === 'colorful' && (
+                  <div style={{ borderRadius:14, padding:'14px 16px', width:'100%', background:`linear-gradient(135deg,${tier.color}33,${tier.color}11)`, border:`1px solid ${tier.color}55`, fontFamily:s.fontStyle, fontSize:s.fontSize*0.5 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                      <div style={{ width:28, height:28, borderRadius:'50%', background:tier.color, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:'white', flexShrink:0 }}>A</div>
+                      <div>
+                        <p style={{ fontSize:12, fontWeight:700, color:'white', margin:0 }}>Arjun donated <span style={{ color:tier.color }}>₹500</span></p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.8)', margin:0 }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
+                  </div>
+                )}
+                {s.template === 'custom' && (
+                  <div style={{
+                    borderRadius:14, padding:'12px 16px', textAlign:'center', width:'100%',
+                    background: previewBg,
+                    color: s.textColor, fontSize: s.fontSize * 0.52,
+                    fontFamily: s.fontStyle,
+                    fontWeight: s.textBold?'bold':'normal',
+                    fontStyle: s.textItalic?'italic':'normal',
+                    textDecoration: s.textUnderline?'underline':'none',
+                    border: s.enableBorder?`2px solid ${s.textColor}50`:'none',
+                    boxShadow: s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px rgba(0,0,0,${s.shadowOpacity/100})`:'none',
+                  }}>
+                    <p style={{ fontWeight:700, margin:0 }}>🎉 Arjun donated ₹500</p>
+                    <p style={{ opacity:0.8, fontSize:'0.85em', margin:'4px 0 0' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
+                  </div>
+                )}
               </div>
             )}
 
