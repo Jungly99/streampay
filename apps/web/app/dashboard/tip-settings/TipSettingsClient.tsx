@@ -149,6 +149,50 @@ export default function TipSettingsClient({
           {saving ? 'Saving…' : 'Save Settings'}
         </button>
       </div>
+
+      {/* What viewers see */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ ...C, padding: '22px 24px' }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>What Viewers See</p>
+          <p style={{ fontSize: 12, color: '#475569', marginBottom: 16 }}>Your tier list appears on the donation page as viewers pick an amount</p>
+          <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Message Tiers</p>
+            {sorted.length === 0 ? (
+              <p style={{ fontSize: 12, color: '#334155' }}>Add tiers above to see the preview</p>
+            ) : sorted.map((tier, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderRadius: 8, marginBottom: 6, background: i === 1 ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.02)', border: `1px solid ${i === 1 ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)'}` }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 12 }}>{i === 1 ? '●' : '○'}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: i === 1 ? '#a78bfa' : '#475569' }}>₹{tier.minAmount}+</span>
+                  {i === 1 && <span style={{ fontSize: 10, color: '#7c3aed' }}>current tier</span>}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: i === 1 ? '#a78bfa' : '#334155' }}>{tier.charLimit} chars</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ ...C, padding: '22px 24px' }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>How Tiers Work</p>
+          <p style={{ fontSize: 12, color: '#475569', marginBottom: 16 }}>The highest tier the viewer's donation meets unlocks the most characters</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {[
+              { icon: '₹', color: '#7c3aed', title: 'Set minimum amount', desc: 'Blocks tips below your floor — protects against spam donations' },
+              { icon: '✦', color: '#0891b2', title: 'Add tiers', desc: 'Each tier unlocks more characters. Viewers see all tiers on the donation page' },
+              { icon: '↑', color: '#059669', title: 'Higher tip = more chars', desc: 'Incentivises bigger tips — viewers write longer messages for more money' },
+              { icon: '⟳', color: '#d97706', title: 'Changes apply instantly', desc: 'After saving, new donations immediately use the updated tiers' },
+            ].map(step => (
+              <div key={step.title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: `${step.color}18`, border: `1px solid ${step.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: step.color, flexShrink: 0 }}>{step.icon}</div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9', margin: 0 }}>{step.title}</p>
+                  <p style={{ fontSize: 12, color: '#475569', margin: '3px 0 0', lineHeight: 1.5 }}>{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

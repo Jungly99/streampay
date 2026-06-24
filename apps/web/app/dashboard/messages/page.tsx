@@ -32,6 +32,16 @@ export default function MessagesPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
 
+  function exportCsv() {
+    if (!donations.length) { return }
+    const headers = ['Donor', 'Message', 'Amount (₹)', 'Net (₹)', 'Status', 'Date']
+    const rows = donations.map(d => [d.donorName, d.message ?? '', d.amount, Number(d.netAmount).toFixed(2), d.status, new Date(d.createdAt).toLocaleDateString('en-IN')])
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+    a.download = `eztips-donations-${new Date().toISOString().slice(0,10)}.csv`; a.click()
+  }
+
   const load = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), status: 'SUCCESS', ...(search ? { search } : {}), ...(period !== 'all' ? { period } : {}) })
@@ -63,9 +73,9 @@ export default function MessagesPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px' }}>Donations</h1>
           <p style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>Your complete donation history</p>
         </div>
-        <button style={{
-          padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: '#94a3b8',
+        <button onClick={exportCsv} disabled={!donations.length} style={{
+          padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: donations.length ? 'pointer' : 'not-allowed',
+          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: '#94a3b8', opacity: donations.length ? 1 : 0.4,
         }}>Export CSV</button>
       </div>
 
@@ -141,6 +151,17 @@ export default function MessagesPage() {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* Summary footer row */}
+        {donations.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+            <span style={{ fontSize: 12, color: '#334155' }}>{donations.length} donation{donations.length !== 1 ? 's' : ''} shown</span>
+            <div style={{ display: 'flex', gap: 20 }}>
+              <span style={{ fontSize: 12, color: '#334155' }}>Total: <strong style={{ color: '#10b981' }}>{formatINR(donations.reduce((s, d) => s + d.amount, 0))}</strong></span>
+              <span style={{ fontSize: 12, color: '#334155' }}>Net: <strong style={{ color: '#60a5fa' }}>{formatINR(donations.reduce((s, d) => s + Number(d.netAmount), 0))}</strong></span>
+            </div>
+          </div>
         )}
 
         {/* Pagination */}

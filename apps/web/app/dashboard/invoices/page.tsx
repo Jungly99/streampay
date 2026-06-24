@@ -35,10 +35,28 @@ export default function InvoicesPage() {
           style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#e2e8f0' }} />
       </div>
 
+      {/* Stat strip */}
+      {invoices.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+          {[
+            { label: 'Total Invoices',  value: invoices.length,                                                                  color: '#a78bfa' },
+            { label: 'Total Gross',     value: `₹${invoices.reduce((s, i) => s + Number(i.grossAmount), 0).toLocaleString('en-IN')}`, color: '#10b981' },
+            { label: 'Total Fees Paid', value: `₹${invoices.reduce((s, i) => s + Number(i.feeAmount), 0).toLocaleString('en-IN')}`,   color: '#f87171' },
+            { label: 'Total Net',       value: `₹${invoices.reduce((s, i) => s + Number(i.netAmount), 0).toLocaleString('en-IN')}`,    color: '#60a5fa' },
+          ].map(s => (
+            <div key={s.label} style={{ ...C, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${s.color}80,transparent)` }} />
+              <p style={{ fontSize: 11, fontWeight: 600, color: s.color, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>{s.label}</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc' }}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Table */}
       <div style={{ ...C, overflow: 'hidden', flex: 1 }}>
         {filtered.length === 0 ? (
-          <div style={{ padding: '80px', textAlign: 'center' }}>
+          <div style={{ padding: '60px', textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📄</div>
             <p style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc', marginBottom: 8 }}>No invoices yet</p>
             <p style={{ fontSize: 13, color: '#475569' }}>Invoices appear after your first settlement. Settle your earnings to generate your first invoice.</p>
@@ -71,6 +89,45 @@ export default function InvoicesPage() {
             </tbody>
           </table>
         )}
+      </div>
+      {/* GST info */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ ...C, padding: '20px 22px' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>What's in an Invoice</p>
+          {[
+            ['Invoice Number', 'Unique sequential ID (e.g. INV-2026-0001) for tax records'],
+            ['Gross Amount', 'Total donations received before the 5% platform fee'],
+            ['Fee Deducted', '5% platform fee — only charged at settlement, not per tip'],
+            ['Net Amount', 'Amount transferred to your bank account'],
+            ['GST Details', '18% GST applied on the platform fee (₹0.90 per ₹100 tip)'],
+          ].map(([title, desc]) => (
+            <div key={title as string} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+              <span style={{ color: '#7c3aed', fontSize: 12, flexShrink: 0, marginTop: 2 }}>◆</span>
+              <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>
+                <span style={{ color: '#94a3b8', fontWeight: 600 }}>{title}: </span>{desc}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div style={{ ...C, padding: '20px 22px' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>For Tax Filing</p>
+          <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.7, marginBottom: 12 }}>
+            Download PDF invoices to file as income from streaming. Each invoice covers one settlement period.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { icon: '📁', text: 'Keep invoices for minimum 7 years (IT requirement)' },
+              { icon: '🧾', text: 'Report net income under "Income from Other Sources"' },
+              { icon: '💡', text: 'Platform fee (5%) + GST (18% on fee) are deductible' },
+              { icon: '📧', text: 'Email invoices to your CA directly from downloads' },
+            ].map(item => (
+              <div key={item.text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+                <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5 }}>{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

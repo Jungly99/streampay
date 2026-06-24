@@ -136,6 +136,70 @@ export default function VoiceSettingsPage() {
           ))}
         </div>
       </div>
+
+      {/* How it works + OBS setup */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ ...C, padding: '22px 24px' }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginBottom: 18 }}>How Voice Messages Work</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {[
+              { n: '1', color: '#7c3aed', title: 'Viewer donates', desc: 'Viewer meets the minimum donation for a voice tier on your page' },
+              { n: '2', color: '#0891b2', title: 'Browser records', desc: 'Viewer\'s browser asks for mic access and records within the time limit' },
+              { n: '3', color: '#059669', title: 'Payment completes', desc: 'Voice clip is attached to the donation and sent to your overlay' },
+              { n: '4', color: '#db2777', title: 'Plays on stream', desc: 'Audio plays on your OBS overlay live — your chat hears it' },
+            ].map((step, i, arr) => (
+              <div key={step.n} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${step.color}20`, border: `2px solid ${step.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: step.color }}>{step.n}</div>
+                  {i < arr.length - 1 && <div style={{ width: 2, flex: 1, background: 'rgba(255,255,255,0.06)', marginTop: 6 }} />}
+                </div>
+                <div style={{ paddingTop: 6, paddingBottom: i < arr.length - 1 ? 10 : 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>{step.title}</p>
+                  <p style={{ fontSize: 12, color: '#475569', margin: '4px 0 0' }}>{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ ...C, padding: '22px 24px' }}>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>⚙</div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', margin: 0 }}>OBS Setup Required</p>
+                <p style={{ fontSize: 12, color: '#475569', margin: '3px 0 0' }}>Voice won't play without this</p>
+              </div>
+            </div>
+            {[
+              'Right-click your overlay Browser Source in OBS',
+              'Click "Properties"',
+              'Check "Control audio via OBS"',
+              'In Audio Mixer, unmute the Browser Source',
+            ].map((step, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: i < 3 ? 10 : 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', width: 20, height: 20, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>{step}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ ...C, padding: '20px 22px', background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.15)' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa', marginBottom: 10 }}>Tips for Best Experience</p>
+            {[
+              '4s tier at ₹100 is the most popular — start there',
+              'Voice messages play after TTS, not simultaneously',
+              'Viewers can preview their recording before sending',
+              'Audio is attached to the donation — it\'s saved permanently',
+            ].map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: i < 3 ? 8 : 0 }}>
+                <span style={{ color: '#7c3aed', fontSize: 12, flexShrink: 0, marginTop: 1 }}>◆</span>
+                <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5 }}>{tip}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

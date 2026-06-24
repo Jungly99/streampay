@@ -104,7 +104,7 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
       </div>
 
       {/* Nav groups */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px' }}>
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px', display: 'flex', flexDirection: 'column' }}>
         {navGroups.map((group, gi) => (
           <div key={gi} style={{ marginBottom: 4 }}>
             {gi > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: '6px 6px 8px' }} />}
@@ -167,6 +167,33 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
               </button>
             </div>
           )}
+        </div>
+
+        {/* Spacer pushes platform card to bottom */}
+        <div style={{ flex: 1, minHeight: 16 }} />
+
+        {/* Platform info card */}
+        <div style={{ margin: '0 2px 8px', padding: '14px 14px', borderRadius: 12, background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.12)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#10b981', letterSpacing: '0.08em' }}>ALL SYSTEMS OPERATIONAL</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+            {[
+              { label: 'Platform Fee', value: '5%' },
+              { label: 'Settlement', value: 'Any Time' },
+              { label: 'Viewer Signup', value: 'Never' },
+              { label: 'Min Tip', value: '₹100' },
+            ].map(s => (
+              <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 7, padding: '6px 8px' }}>
+                <p style={{ fontSize: 9, color: '#334155', margin: 0, letterSpacing: '0.05em', textTransform: 'uppercase', fontWeight: 600 }}>{s.label}</p>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa', margin: '2px 0 0' }}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+          <a href="mailto:support@eztips.live" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 11, color: '#475569', textDecoration: 'none', padding: '6px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <span>✉</span> support@eztips.live
+          </a>
         </div>
       </nav>
 
