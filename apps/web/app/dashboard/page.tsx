@@ -7,18 +7,20 @@ import DashboardClient from './DashboardClient'
 async function fetchData(token: string) {
   const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
   const h = { Cookie: `eztips_token=${token}` }
-  const [stats, links, alertSettings] = await Promise.all([
+  const [stats, links, alertSettings, profile] = await Promise.all([
     fetch(`${base}/api/streamer/stats`,          { headers: h, cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
     fetch(`${base}/api/streamer/links`,          { headers: h, cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
     fetch(`${base}/api/streamer/alert-settings`, { headers: h, cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
+    fetch(`${base}/api/streamer/profile`,        { headers: h, cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
   ])
-  return { stats, links, alertSettings }
+  return { stats, links, alertSettings, profile }
 }
 
 export default async function DashboardPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('eztips_token')?.value ?? ''
-  const { stats, links, alertSettings } = await fetchData(token)
+  const { stats, links, alertSettings, profile } = await fetchData(token)
+  const isActive: boolean = profile?.isActive ?? true
 
   const statItems = [
     { label: 'Today',          value: formatINR(stats.todayEarnings ?? 0),    sub: 'earnings',          color: '#7c3aed' },
@@ -38,16 +40,33 @@ export default async function DashboardPage() {
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
-        {links.messageLink && (
-          <Link href={links.messageLink} target="_blank" style={{
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
             display: 'flex', alignItems: 'center', gap: 7,
-            padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, color: 'white',
-            background: 'linear-gradient(135deg,#7c3aed,#db2777)',
-            boxShadow: '0 0 20px rgba(124,58,237,0.3)',
+            padding: '7px 14px', borderRadius: 10,
+            background: isActive ? 'rgba(16,185,129,0.08)' : 'rgba(248,113,113,0.08)',
+            border: `1px solid ${isActive ? 'rgba(16,185,129,0.25)' : 'rgba(248,113,113,0.25)'}`,
           }}>
-            <span style={{ fontSize: 11 }}>↗</span> My Donation Page
-          </Link>
-        )}
+            <div style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: isActive ? '#10b981' : '#f87171',
+              boxShadow: isActive ? '0 0 6px #10b981' : '0 0 6px #f87171',
+            }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#10b981' : '#f87171' }}>
+              {isActive ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+          {links.messageLink && (
+            <Link href={links.messageLink} target="_blank" style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, color: 'white',
+              background: 'linear-gradient(135deg,#7c3aed,#db2777)',
+              boxShadow: '0 0 20px rgba(124,58,237,0.3)',
+            }}>
+              <span style={{ fontSize: 11 }}>↗</span> My Donation Page
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* ── 4 stat cards ─────────────────────────────── */}
