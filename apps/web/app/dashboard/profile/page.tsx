@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [bank, setBank] = useState<any>(null)
   const [saving, setSaving] = useState(false)
+  const [requesting, setRequesting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -78,6 +79,26 @@ export default function ProfilePage() {
     } catch (e: any) { toast.error(e.message) } finally { setSaving(false) }
   }
 
+  async function requestVerification() {
+    setRequesting(true)
+    try {
+      await api.post('/api/streamer/request-verification', {})
+      await fetchAll()
+      toast.success('Verification requested! Admin will review shortly.')
+    } catch (e: any) { toast.error(e.message) } finally { setRequesting(false) }
+  }
+
+  const verifStatus: 'verified' | 'pending' | 'unverified' =
+    profile?.isVerified ? 'verified'
+    : profile?.verificationRequestedAt ? 'pending'
+    : 'unverified'
+
+  const canRequestVerification = verifStatus === 'unverified' && !!(
+    profile?.channelName &&
+    bank?.accountHolderName && bank?.accountNumber && bank?.ifscCode && bank?.bankName &&
+    bank?.invoiceName && bank?.streetAddress && bank?.city && bank?.pincode && bank?.state
+  )
+
 if (!profile) return (
     <div style={{ padding: 28, color: '#334155', fontSize: 13 }}>Loading profile…</div>
   )
@@ -105,20 +126,88 @@ if (!profile) return (
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f8fafc', marginBottom: 4 }}>{profile.channelName}</h1>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {profile.isVerified && <span style={{ fontSize: 11, fontWeight: 600, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 20 }}>✓ Verified</span>}
+              {verifStatus === 'verified' && <span style={{ fontSize: 11, fontWeight: 600, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 20 }}>✓ Verified</span>}
+              {verifStatus === 'pending' && <span style={{ fontSize: 11, fontWeight: 600, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 20 }}>⏳ Verification Pending</span>}
+              {verifStatus === 'unverified' && <span style={{ fontSize: 11, fontWeight: 600, color: '#f87171', background: 'rgba(248,113,113,0.1)', padding: '2px 8px', borderRadius: 20 }}>○ Not Verified</span>}
               {profile.isActive && <span style={{ fontSize: 11, fontWeight: 600, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 20 }}>✓ Active</span>}
               <span style={{ fontSize: 11, color: '#475569' }}>Click photo to change</span>
             </div>
           </div>
         </div>
-        <button onClick={tab === 'bank' ? saveBank : saveProfile} disabled={saving} style={{
-          padding: '10px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-          background: 'linear-gradient(135deg,#7c3aed,#db2777)', border: 'none', color: 'white',
-          boxShadow: '0 0 20px rgba(124,58,237,0.3)', opacity: saving ? 0.7 : 1,
-        }}>
-          {saving ? 'Saving…' : 'Save Changes'}
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {canRequestVerification && (
+            <button onClick={requestVerification} disabled={requesting} style={{
+              padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: requesting ? 'not-allowed' : 'pointer',
+              background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981',
+              opacity: requesting ? 0.7 : 1,
+            }}>
+              {requesting ? 'Requesting…' : '✦ Request Verification'}
+            </button>
+          )}
+          <button onClick={tab === 'bank' ? saveBank : saveProfile} disabled={saving} style={{
+            padding: '10px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            background: 'linear-gradient(135deg,#7c3aed,#db2777)', border: 'none', color: 'white',
+            boxShadow: '0 0 20px rgba(124,58,237,0.3)', opacity: saving ? 0.7 : 1,
+          }}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
       </div>
+
+      {/* Verification banner */}
+      {verifStatus === 'verified' && (
+        <div style={{ ...C, padding: '14px 20px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', flexShrink: 0 }} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#10b981', margin: 0 }}>Account Verified</p>
+            <p style={{ fontSize: 12, color: '#475569', margin: '2px 0 0' }}>Your account is verified — you have full access to all features.</p>
+          </div>
+        </div>
+      )}
+      {verifStatus === 'pending' && (
+        <div style={{ ...C, padding: '14px 20px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 20, flexShrink: 0 }}>⏳</span>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b', margin: 0 }}>Verification Under Review</p>
+            <p style={{ fontSize: 12, color: '#475569', margin: '2px 0 0' }}>Requested on {new Date(profile.verificationRequestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. Our team will approve your account shortly.</p>
+          </div>
+        </div>
+      )}
+      {verifStatus === 'unverified' && (
+        <div style={{ ...C, padding: '14px 20px', background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.18)' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#f87171', marginBottom: 10 }}>Complete these steps to get verified:</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {[
+              { label: 'Channel Name', done: !!profile.channelName, tab: 'profile' },
+              { label: 'Account Holder Name', done: !!bank?.accountHolderName, tab: 'bank' },
+              { label: 'Account Number', done: !!bank?.accountNumber, tab: 'bank' },
+              { label: 'IFSC Code', done: !!bank?.ifscCode, tab: 'bank' },
+              { label: 'Bank Name', done: !!bank?.bankName, tab: 'bank' },
+              { label: 'Full Name (GST)', done: !!bank?.invoiceName, tab: 'bank' },
+              { label: 'Street Address', done: !!bank?.streetAddress, tab: 'bank' },
+              { label: 'City', done: !!bank?.city, tab: 'bank' },
+              { label: 'Pincode', done: !!bank?.pincode, tab: 'bank' },
+              { label: 'State', done: !!bank?.state, tab: 'bank' },
+            ].map(item => (
+              <div key={item.label} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: item.done ? '#10b981' : '#475569', flexShrink: 0 }}>{item.done ? '✓' : '○'}</span>
+                <span style={{ fontSize: 12, color: item.done ? '#10b981' : '#475569' }}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+          {canRequestVerification && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ fontSize: 12, color: '#10b981' }}>All fields filled — you can now request verification!</p>
+              <button onClick={requestVerification} disabled={requesting} style={{
+                padding: '8px 18px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: requesting ? 'not-allowed' : 'pointer',
+                background: 'linear-gradient(135deg,#059669,#10b981)', border: 'none', color: 'white', opacity: requesting ? 0.7 : 1,
+              }}>
+                {requesting ? 'Requesting…' : 'Request Verification →'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 6 }}>

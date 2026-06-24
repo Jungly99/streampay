@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from '../../components/dashboard/Sidebar'
+import VerificationGate from '../../components/dashboard/VerificationGate'
 
 async function getUser() {
   const cookieStore = await cookies()
@@ -36,6 +37,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (user.accountType !== 'streamer') redirect('/fan')
 
   const stats = await getStats(token!.value)
+  const isVerified: boolean = user.streamerProfile?.isVerified ?? false
+  const verificationRequestedAt: string | null = user.streamerProfile?.verificationRequestedAt ?? null
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#06060f' }}>
@@ -48,6 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         followers={stats.followerCount ?? 0}
       />
       <main className="flex-1 overflow-y-auto h-full">
+        <VerificationGate isVerified={isVerified} verificationRequestedAt={verificationRequestedAt} />
         {children}
       </main>
     </div>

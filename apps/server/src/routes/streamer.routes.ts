@@ -57,6 +57,39 @@ router.patch('/profile', async (req: AuthRequest, res: Response): Promise<void> 
   res.json(profile)
 })
 
+router.post('/request-verification', async (req: AuthRequest, res: Response): Promise<void> => {
+  const profile = await prisma.streamerProfile.findUnique({
+    where: { userId: req.user!.userId },
+    include: { bankDetails: true },
+  })
+  if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
+  if (profile.isVerified) { res.status(400).json({ error: 'Already verified' }); return }
+  if (profile.verificationRequestedAt) { res.status(400).json({ error: 'Verification already requested — please wait for admin review' }); return }
+
+  const bank = profile.bankDetails
+  const missing: string[] = []
+  if (!profile.channelName) missing.push('Channel Name')
+  if (!bank?.accountHolderName) missing.push('Account Holder Name')
+  if (!bank?.accountNumber) missing.push('Account Number')
+  if (!bank?.ifscCode) missing.push('IFSC Code')
+  if (!bank?.bankName) missing.push('Bank Name')
+  if (!bank?.invoiceName) missing.push('Full Name (GST)')
+  if (!bank?.streetAddress) missing.push('Street Address')
+  if (!bank?.city) missing.push('City')
+  if (!bank?.pincode) missing.push('Pincode')
+  if (!bank?.state) missing.push('State')
+
+  if (missing.length) {
+    res.status(400).json({ error: `Please fill in: ${missing.join(', ')}` }); return
+  }
+
+  const updated = await prisma.streamerProfile.update({
+    where: { userId: req.user!.userId },
+    data: { verificationRequestedAt: new Date() },
+  })
+  res.json({ verificationRequestedAt: updated.verificationRequestedAt })
+})
+
 router.post('/profile/username', async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({ username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/) })
   const parsed = schema.safeParse(req.body)

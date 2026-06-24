@@ -7,7 +7,7 @@ interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donat
 interface AdminMe { adminId:string; email:string; name?:string; avatar?:string; isSuperAdmin:boolean; permissions:AdminPerms }
 interface Stats { totalStreamers:number; totalViewers:number; totalDonations:number; totalCollected:number; pendingSettlements:number; totalPaidOut:number }
 interface BankDetails { id:string; accountHolderName:string|null; accountNumber:string|null; ifscCode:string|null; bankName:string|null; invoiceName:string|null; streetAddress:string|null; city:string|null; state:string|null; pincode:string|null }
-interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; bankDetails:BankDetails|null }
+interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; verificationRequestedAt:string|null; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; bankDetails:BankDetails|null }
 interface User { id:string; email:string; accountType:string; displayName:string|null; createdAt:string; streamerProfile:{id:string;username:string|null;channelName:string|null;isActive:boolean;isVerified:boolean}|null; viewerProfile:{id:string;displayName:string|null}|null }
 interface Donation { id:string; donorName:string; message:string|null; amount:number; status:string; createdAt:string; cfOrderId:string; cfPaymentId:string|null; settled:boolean; streamer:{username:string|null;channelName:string|null} }
 interface Settlement { id:string; grossAmount:number; feeAmount:string; netAmount:string; status:'INITIATED'|'SUCCESS'|'FAILED'; initiatedAt:string; settledAt:string|null; failureReason:string|null; cfTransferId:string|null; streamer:{username:string|null;channelName:string|null;user:{email:string};bankDetails:BankDetails|null} }
@@ -150,6 +150,16 @@ export default function AdminDashboard() {
     await api(`/streamers/${id}`, { method:'PATCH', body:JSON.stringify({ [field]:val }) })
     setStreamers(p=>p.map(s=>s.id===id?{...s,[field]:val}:s))
     showToast('Updated')
+  }
+  async function approveVerification(id:string) {
+    await api(`/streamers/${id}/approve-verification`, { method:'POST' })
+    setStreamers(p=>p.map(s=>s.id===id?{...s,isVerified:true,verificationRequestedAt:null}:s))
+    showToast('✓ Streamer verified!')
+  }
+  async function rejectVerification(id:string) {
+    await api(`/streamers/${id}/reject-verification`, { method:'POST' })
+    setStreamers(p=>p.map(s=>s.id===id?{...s,verificationRequestedAt:null}:s))
+    showToast('Verification request cleared')
   }
   async function saveStreamer() {
     if (!editStreamer) return
@@ -327,6 +337,48 @@ export default function AdminDashboard() {
         {/* ═══ STREAMERS ═════════════════════════════════════════════════════════ */}
         {tab==='streamers' && (
           <div>
+            {/* Pending verification queue */}
+            {streamers.filter(s=>s.verificationRequestedAt && !s.isVerified).length > 0 && (
+              <div style={{...card,padding:'20px 24px',marginBottom:20,border:'1px solid rgba(245,158,11,0.35)',background:'rgba(245,158,11,0.04)'}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                  <span style={{fontSize:18}}>⏳</span>
+                  <h3 style={{margin:0,fontSize:15,fontWeight:700,color:'#f59e0b'}}>
+                    Pending Verification ({streamers.filter(s=>s.verificationRequestedAt && !s.isVerified).length})
+                  </h3>
+                </div>
+                {streamers.filter(s=>s.verificationRequestedAt && !s.isVerified).map(s=>(
+                  <div key={s.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderRadius:10,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)',marginBottom:8,gap:12,flexWrap:'wrap'}}>
+                    <div style={{display:'flex',gap:14,alignItems:'center'}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:'linear-gradient(135deg,#7c3aed,#db2777)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:15,color:'white',flexShrink:0}}>
+                        {s.channelName?.[0]?.toUpperCase()??'?'}
+                      </div>
+                      <div>
+                        <p style={{margin:0,fontWeight:700,fontSize:14}}>{s.channelName??'Unnamed'}</p>
+                        <p style={{margin:'2px 0 0',fontSize:12,color:'#64748b'}}>{s.email} {s.username ? `• @${s.username}` : ''}</p>
+                        <p style={{margin:'2px 0 0',fontSize:11,color:'#f59e0b'}}>
+                          Requested {new Date(s.verificationRequestedAt!).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+                        </p>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',gap:12,alignItems:'center'}}>
+                      {s.bankDetails && (
+                        <div style={{fontSize:11,color:'#64748b',lineHeight:1.5}}>
+                          <p style={{margin:0}}>{s.bankDetails.bankName} •• {s.bankDetails.accountNumber?.slice(-4)}</p>
+                          <p style={{margin:0}}>{s.bankDetails.ifscCode} • {s.bankDetails.city}, {s.bankDetails.state}</p>
+                        </div>
+                      )}
+                      <button onClick={()=>approveVerification(s.id)} style={{...btn('#10b98122','#10b981'),padding:'8px 18px',fontSize:13,fontWeight:700}}>
+                        ✓ Approve
+                      </button>
+                      <button onClick={()=>rejectVerification(s.id)} style={{...dangerBtn,padding:'8px 14px',fontSize:13}}>
+                        ✕ Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16,flexWrap:'wrap'}}>
               <h2 style={{margin:0,fontSize:18,fontWeight:700}}>Streamers ({streamers.filter(s=>!streamerSearch||[s.channelName,s.username,s.email,s.displayName].some(v=>v?.toLowerCase().includes(streamerSearch.toLowerCase()))).length})</h2>
               <input
@@ -346,6 +398,7 @@ export default function AdminDashboard() {
                       {s.username && <span style={{color:'#666',fontSize:12}}>@{s.username}</span>}
                       <Badge v={s.isActive?'SUCCESS':'FAILED'} />
                       {s.isVerified && <Badge v="verified" />}
+                      {!s.isVerified && s.verificationRequestedAt && <Badge v="PENDING" />}
                     </div>
                     <p style={{color:'#666',fontSize:12,margin:0}}>{s.email} · Joined {new Date(s.createdAt).toLocaleDateString('en-IN')}</p>
                   </div>
@@ -371,7 +424,12 @@ export default function AdminDashboard() {
                 <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                   <button onClick={()=>{setEditStreamer(s);setSForm({channelName:s.channelName??'',bio:s.bio??'',channelLink:s.channelLink??'',username:s.username??'',minDonationAmount:s.minDonationAmount,discordWebhookUrl:s.discordWebhookUrl??''})}} style={btn()}>✏ Edit</button>
                   <button onClick={()=>{setEditBank(s);setBForm({accountHolderName:s.bankDetails?.accountHolderName??'',accountNumber:s.bankDetails?.accountNumber??'',ifscCode:s.bankDetails?.ifscCode??'',bankName:s.bankDetails?.bankName??'',invoiceName:s.bankDetails?.invoiceName??'',streetAddress:s.bankDetails?.streetAddress??'',city:s.bankDetails?.city??'',state:s.bankDetails?.state??'',pincode:s.bankDetails?.pincode??''})}} style={btn('#0f0f1a','#aaa')}>🏦 Bank</button>
-                  <button onClick={()=>toggleStreamerField(s.id,'isVerified',!s.isVerified)} style={btn(s.isVerified?'#10b98122':'#7c3aed22',s.isVerified?'#10b981':'#7c3aed')}>{s.isVerified?'✓ Verified':'◯ Verify'}</button>
+                  {s.isVerified
+                    ? <button onClick={()=>toggleStreamerField(s.id,'isVerified',false)} style={btn('#10b98122','#10b981')}>✓ Verified</button>
+                    : s.verificationRequestedAt
+                      ? <><button onClick={()=>approveVerification(s.id)} style={btn('#10b98122','#10b981')}>✓ Approve</button><button onClick={()=>rejectVerification(s.id)} style={dangerBtn}>✕ Reject</button></>
+                      : <button onClick={()=>approveVerification(s.id)} style={btn('#7c3aed22','#7c3aed')}>◯ Verify</button>
+                  }
                   <button onClick={()=>toggleStreamerField(s.id,'isActive',!s.isActive)} style={btn(s.isActive?'#ef444422':'#10b98122',s.isActive?'#f87171':'#10b981')}>{s.isActive?'Deactivate':'Activate'}</button>
                   <button onClick={()=>resetOverlay(s.id)} style={ghostBtn}>Reset Overlay</button>
                   <button onClick={()=>setConfirmDelete({id:s.userId,label:s.channelName??s.email,type:'user'})} style={dangerBtn}>Delete</button>

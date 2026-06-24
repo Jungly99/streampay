@@ -104,6 +104,7 @@ router.get('/streamers', requirePermission('streamers'), async (_req: AdminReque
     displayName: s.user.displayName,
     isActive: s.isActive,
     isVerified: s.isVerified,
+    verificationRequestedAt: s.verificationRequestedAt,
     minDonationAmount: s.minDonationAmount,
     overlayToken: s.overlayToken,
     discordWebhookUrl: s.discordWebhookUrl,
@@ -149,6 +150,22 @@ router.patch('/streamers/:id', requirePermission('streamers'), async (req: Admin
     },
   })
   res.json(updated)
+})
+
+router.post('/streamers/:id/approve-verification', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const updated = await prisma.streamerProfile.update({
+    where: { id: req.params.id },
+    data: { isVerified: true, verificationRequestedAt: null },
+  })
+  res.json({ isVerified: updated.isVerified })
+})
+
+router.post('/streamers/:id/reject-verification', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const updated = await prisma.streamerProfile.update({
+    where: { id: req.params.id },
+    data: { verificationRequestedAt: null },
+  })
+  res.json({ verificationRequestedAt: updated.verificationRequestedAt })
 })
 
 router.post('/streamers/:id/reset-overlay', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
