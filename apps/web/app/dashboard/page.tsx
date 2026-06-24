@@ -132,7 +132,6 @@ export default async function DashboardPage() {
                 { href: '/dashboard/messages',          label: 'Donations',           icon: '↓', color: '#7c3aed' },
                 { href: '/dashboard/settlements',       label: 'Settle Earnings',     icon: '⇄', color: '#059669' },
                 { href: '/dashboard/overlay',           label: 'Edit Overlay',        icon: '◈', color: '#0891b2' },
-                { href: '/dashboard/celebrity-voice',   label: 'Celebrity Voice',     icon: '🎤', color: '#f59e0b' },
                 { href: '/dashboard/tip-settings',      label: 'Tip Settings',        icon: '₹', color: '#d97706' },
                 { href: '/dashboard/invoices',          label: 'Download Invoices',   icon: '▤', color: '#db2777' },
               ].map(a => (
