@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 type Tab = 'appearance' | 'tts' | 'goal' | 'safety' | 'leaderboard'
 
 const TEMPLATES = [
-  { id: 'superchat', emoji: '💬', label: 'SuperTip',  desc: 'Auto-colors by donation tier' },
+  { id: 'superchat', emoji: '💬', label: 'eztips',    desc: 'Auto-colors by donation tier' },
   { id: 'colorful',  emoji: '🌈', label: 'Vibrant',   desc: 'Rich gradient backgrounds' },
   { id: 'custom',    emoji: '✦',  label: 'Minimal',   desc: 'Clean, fully your own' },
 ]
