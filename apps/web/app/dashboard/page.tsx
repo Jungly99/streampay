@@ -110,7 +110,7 @@ export default async function DashboardPage() {
             <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>Quick Actions</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
-                { href: '/dashboard/messages',       label: 'View Donations',      icon: '↓', color: '#7c3aed' },
+                { href: '/dashboard/messages',       label: 'Donations',           icon: '↓', color: '#7c3aed' },
                 { href: '/dashboard/settlements',    label: 'Settle Earnings',     icon: '⇄', color: '#059669' },
                 { href: '/dashboard/overlay',        label: 'Edit Overlay',        icon: '◈', color: '#0891b2' },
                 { href: '/dashboard/tip-settings',   label: 'Tip Settings',        icon: '₹', color: '#f59e0b' },

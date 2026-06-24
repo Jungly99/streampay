@@ -9,7 +9,7 @@ const navGroups = [
   {
     items: [
       { href: '/dashboard',                      color: '#0ea5e9', symbol: '◫',  label: 'Dashboard',            sub: 'Overview & Stats' },
-      { href: '/dashboard/messages',             color: '#10b981', symbol: '↓',  label: 'Messages',             sub: 'Transaction History' },
+      { href: '/dashboard/messages',             color: '#10b981', symbol: '↓',  label: 'Donations',            sub: 'Transaction History' },
     ],
   },
   {
