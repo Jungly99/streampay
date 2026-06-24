@@ -7,7 +7,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth'
 import { env } from '../config/env'
 
 const SUPER_ADMIN_EMAIL = 'abhinavs199.as@gmail.com'
-const FULL_ADMIN_PERMS: AdminPermissions = { overview:true, streamers:true, users:true, donations:true, settlements:true }
+const FULL_ADMIN_PERMS: AdminPermissions = { overview:true, streamers:true, users:true, donations:true, settlements:true, restore_accounts:true }
 
 const router = Router()
 

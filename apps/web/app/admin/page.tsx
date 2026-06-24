@@ -3,18 +3,18 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donations:boolean; settlements:boolean }
+interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donations:boolean; settlements:boolean; restore_accounts:boolean }
 interface AdminMe { adminId:string; email:string; name?:string; avatar?:string; isSuperAdmin:boolean; permissions:AdminPerms }
 interface Stats { totalStreamers:number; totalViewers:number; totalDonations:number; totalCollected:number; pendingSettlements:number; totalPaidOut:number }
 interface BankDetails { id:string; accountHolderName:string|null; accountNumber:string|null; ifscCode:string|null; bankName:string|null; invoiceName:string|null; streetAddress:string|null; city:string|null; state:string|null; pincode:string|null }
-interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; verificationRequestedAt:string|null; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; bankDetails:BankDetails|null }
-interface User { id:string; email:string; accountType:string; displayName:string|null; createdAt:string; streamerProfile:{id:string;username:string|null;channelName:string|null;isActive:boolean;isVerified:boolean}|null; viewerProfile:{id:string;displayName:string|null}|null }
+interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; isPremium:boolean; verificationRequestedAt:string|null; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; bankDetails:BankDetails|null }
+interface User { id:string; email:string; accountType:string; displayName:string|null; createdAt:string; deletedAt?:string|null; streamerProfile:{id:string;username:string|null;channelName:string|null;isActive:boolean;isVerified:boolean;_count?:{donations:number}}|null; viewerProfile:{id:string;displayName:string|null}|null }
 interface Donation { id:string; donorName:string; message:string|null; amount:number; status:string; createdAt:string; cfOrderId:string; cfPaymentId:string|null; settled:boolean; streamer:{username:string|null;channelName:string|null} }
 interface Settlement { id:string; grossAmount:number; feeAmount:string; netAmount:string; status:'INITIATED'|'SUCCESS'|'FAILED'; initiatedAt:string; settledAt:string|null; failureReason:string|null; cfTransferId:string|null; streamer:{username:string|null;channelName:string|null;user:{email:string};bankDetails:BankDetails|null} }
 interface Role { id:string; name:string; permissions:AdminPerms; _count?:{admins:number}; createdAt:string }
 interface AdminUser { id:string; email:string; name:string|null; avatar:string|null; isSuperAdmin:boolean; role:Role|null; createdAt:string }
 
-type TabType = 'overview'|'streamers'|'users'|'donations'|'settlements'|'team'
+type TabType = 'overview'|'streamers'|'users'|'deleted'|'donations'|'settlements'|'team'
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const fmt = (n:number) => `₹${n.toLocaleString('en-IN')}`
@@ -25,7 +25,7 @@ const inp:React.CSSProperties = { width:'100%', padding:'8px 12px', background:'
 const btn = (bg='#7c3aed',c='#fff'):React.CSSProperties => ({ padding:'7px 16px', background:bg, color:c, border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600 })
 const ghostBtn:React.CSSProperties = { ...btn('transparent','#aaa'), border:'1px solid #2d2d4e' }
 const dangerBtn:React.CSSProperties = btn('#ef444422','#f87171')
-const ALL_PERMS:Array<keyof AdminPerms> = ['overview','streamers','users','donations','settlements']
+const ALL_PERMS:Array<keyof AdminPerms> = ['overview','streamers','users','donations','settlements','restore_accounts']
 
 // ─── Modal ─────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children }:{ title:string; onClose:()=>void; children:React.ReactNode }) {
@@ -62,6 +62,7 @@ export default function AdminDashboard() {
   const [users, setUsers]           = useState<User[]>([])
   const [donations, setDonations]   = useState<Donation[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [deletedUsers, setDeletedUsers] = useState<User[]>([])
   const [roles, setRoles]           = useState<Role[]>([])
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
 
@@ -84,9 +85,9 @@ export default function AdminDashboard() {
 
   // Role/admin management state
   const [newRoleName, setNewRoleName]   = useState('')
-  const [newRolePerms, setNewRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false })
+  const [newRolePerms, setNewRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false })
   const [editRole, setEditRole]         = useState<Role|null>(null)
-  const [editRolePerms, setEditRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false })
+  const [editRolePerms, setEditRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false })
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [newAdminRoleId, setNewAdminRoleId] = useState('')
 
@@ -138,6 +139,7 @@ export default function AdminDashboard() {
     if (tab==='users' && (admin.isSuperAdmin||admin.permissions.users)) api(`/users${userSearch?`?search=${userSearch}`:''}`).then(setUsers).catch(()=>{})
     if (tab==='donations' && (admin.isSuperAdmin||admin.permissions.donations)) api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${donationSearch}`:''}`).then((d:any)=>setDonations(d.donations)).catch(()=>{})
     if (tab==='settlements' && (admin.isSuperAdmin||admin.permissions.settlements)) api(`/settlements${settlementFilter?`?status=${settlementFilter}`:''}`).then(setSettlements).catch(()=>{})
+    if (tab==='deleted' && (admin.isSuperAdmin||admin.permissions.restore_accounts)) api('/deleted-users').then(setDeletedUsers).catch(()=>{})
     if (tab==='team' && admin.isSuperAdmin) {
       api('/roles').then(setRoles).catch(()=>{})
       api('/admin-users').then(setAdminUsers).catch(()=>{})
@@ -146,7 +148,7 @@ export default function AdminDashboard() {
   }, [tab, admin, settlementFilter, donationFilter])
 
   // ── Streamer actions ────────────────────────────────────────────────────────
-  async function toggleStreamerField(id:string, field:'isActive'|'isVerified', val:boolean) {
+  async function toggleStreamerField(id:string, field:'isActive'|'isVerified'|'isPremium', val:boolean) {
     await api(`/streamers/${id}`, { method:'PATCH', body:JSON.stringify({ [field]:val }) })
     setStreamers(p=>p.map(s=>s.id===id?{...s,[field]:val}:s))
     showToast('Updated')
@@ -193,11 +195,16 @@ export default function AdminDashboard() {
       await api(`/users/${confirmDelete.id}`, { method:'DELETE' })
       setUsers(p=>p.filter(u=>u.id!==confirmDelete.id))
       setStreamers(p=>p.filter(s=>s.userId!==confirmDelete.id))
-      setConfirmDelete(null); showToast('User deleted')
+      setConfirmDelete(null); showToast('Account deactivated — data preserved for restore')
     } catch(e:any) {
-      showToast(`Delete failed: ${e.message}`)
+      showToast(`Failed: ${e.message}`)
       setConfirmDelete(null)
     }
+  }
+  async function restoreUser(id:string) {
+    await api(`/users/${id}/restore`, { method:'POST' })
+    setDeletedUsers(p=>p.filter(u=>u.id!==id))
+    showToast('Account restored ✓')
   }
 
   // ── Donation actions ──────────────────────────────────────────────────────────
@@ -225,7 +232,7 @@ export default function AdminDashboard() {
     if (!newRoleName.trim()) return
     const role = await api('/roles', { method:'POST', body:JSON.stringify({ name:newRoleName.trim(), permissions:newRolePerms }) })
     setRoles(p=>[...p, role])
-    setNewRoleName(''); setNewRolePerms({ overview:false, streamers:false, users:false, donations:false, settlements:false })
+    setNewRoleName(''); setNewRolePerms({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false })
     showToast('Role created')
   }
   async function saveEditRole() {
@@ -272,10 +279,12 @@ export default function AdminDashboard() {
 
   const canSee = (p: keyof AdminPerms) => admin.isSuperAdmin || admin.permissions[p]
 
+  const canRestore = admin.isSuperAdmin || admin.permissions.restore_accounts
   const TABS = ([
     { key:'overview'    as TabType, label:'Overview',    show:canSee('overview') },
     { key:'streamers'   as TabType, label:'Streamers',   show:canSee('streamers') },
     { key:'users'       as TabType, label:'Users',       show:canSee('users') },
+    { key:'deleted'     as TabType, label:'🗑 Deleted',  show:canRestore },
     { key:'donations'   as TabType, label:'Donations',   show:canSee('donations') },
     { key:'settlements' as TabType, label:'Settlements', show:canSee('settlements') },
     { key:'team'        as TabType, label:'Team',        show:admin.isSuperAdmin },
@@ -436,6 +445,9 @@ export default function AdminDashboard() {
                       : <button onClick={()=>approveVerification(s.id)} style={btn('#7c3aed22','#7c3aed')}>◯ Verify</button>
                   }
                   <button onClick={()=>toggleStreamerField(s.id,'isActive',!s.isActive)} style={btn(s.isActive?'#ef444422':'#10b98122',s.isActive?'#f87171':'#10b981')}>{s.isActive?'Deactivate':'Activate'}</button>
+                  <button onClick={()=>toggleStreamerField(s.id,'isPremium',!s.isPremium)} style={btn(s.isPremium?'#f59e0b33':'#0f0f1a',s.isPremium?'#f59e0b':'#555')}>
+                    {s.isPremium ? '⭐ Premium' : '○ Premium'}
+                  </button>
                   <button onClick={()=>resetOverlay(s.id)} style={ghostBtn}>Reset Overlay</button>
                   <button onClick={()=>setConfirmDelete({id:s.userId,label:s.channelName??s.email,type:'user'})} style={dangerBtn}>Delete</button>
                 </div>
@@ -478,6 +490,42 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* ═══ DELETED ACCOUNTS ══════════════════════════════════════════════════ */}
+        {tab==='deleted' && canRestore && (
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+              <h2 style={{margin:0,fontSize:18,fontWeight:700}}>Deleted Accounts ({deletedUsers.length})</h2>
+              <span style={{fontSize:12,color:'#64748b',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',padding:'3px 10px',borderRadius:20}}>All data preserved — restore any time</span>
+            </div>
+            {deletedUsers.length===0 ? (
+              <div style={{...card,padding:60,textAlign:'center',color:'#555'}}>No deleted accounts</div>
+            ) : (
+              <div style={{...card,overflow:'hidden'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+                  <thead><tr style={{background:'#0f0f1a',color:'#666'}}>
+                    {['Email','Name','Type','Profile','Donations','Deleted On','Restore'].map(h=><th key={h} style={{padding:'11px 16px',fontWeight:600,textAlign:'left'}}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {deletedUsers.map((u,i)=>(
+                      <tr key={u.id} style={{borderTop:'1px solid #2d2d4e',background:i%2?'#ffffff04':'transparent'}}>
+                        <td style={{padding:'11px 16px'}}>{u.email}</td>
+                        <td style={{padding:'11px 16px',color:'#aaa'}}>{u.displayName??'—'}</td>
+                        <td style={{padding:'11px 16px'}}><Badge v={u.accountType}/></td>
+                        <td style={{padding:'11px 16px',color:'#aaa'}}>{u.streamerProfile?`${u.streamerProfile.channelName??''} @${u.streamerProfile.username??'—'}`:u.viewerProfile?.displayName??'—'}</td>
+                        <td style={{padding:'11px 16px',color:'#64748b'}}>{u.streamerProfile?._count?.donations??0}</td>
+                        <td style={{padding:'11px 16px',color:'#f87171',fontSize:12}}>{u.deletedAt?new Date(u.deletedAt).toLocaleDateString('en-IN'):''}</td>
+                        <td style={{padding:'11px 16px'}}>
+                          <button onClick={()=>restoreUser(u.id)} style={{...btn('#10b98122','#10b981'),padding:'5px 14px',fontSize:12}}>↩ Restore</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -741,11 +789,12 @@ export default function AdminDashboard() {
         </Modal>
       )}
       {confirmDelete && (
-        <Modal title="Confirm Delete" onClose={()=>setConfirmDelete(null)}>
-          <p style={{color:'#f87171',margin:'0 0 20px'}}>Delete <strong>{confirmDelete.label}</strong>? This is permanent.</p>
+        <Modal title="Deactivate Account" onClose={()=>setConfirmDelete(null)}>
+          <p style={{color:'#f87171',margin:'0 0 8px'}}>Deactivate <strong>{confirmDelete.label}</strong>?</p>
+          <p style={{color:'#64748b',fontSize:13,margin:'0 0 20px'}}>Their data (donations, settlements) is preserved. Super admin can restore the account from the Deleted tab.</p>
           <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
             <button onClick={()=>setConfirmDelete(null)} style={ghostBtn}>Cancel</button>
-            <button onClick={deleteUser} style={btn('#ef4444')}>Delete Permanently</button>
+            <button onClick={deleteUser} style={btn('#ef4444')}>Deactivate</button>
           </div>
         </Modal>
       )}

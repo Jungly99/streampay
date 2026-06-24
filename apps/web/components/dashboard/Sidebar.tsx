@@ -5,39 +5,43 @@ import { useState } from 'react'
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://eztips.live'
 
-const navGroups = [
+type NavItem = { href: string; color: string; symbol: string; label: string; sub: string; premium?: boolean; external?: boolean }
+type NavGroup = { items: NavItem[] }
+
+const BASE_NAV_GROUPS: NavGroup[] = [
   {
     items: [
-      { href: '/dashboard',                      color: '#0ea5e9', symbol: '◫',  label: 'Dashboard',            sub: 'Overview & Stats' },
-      { href: '/dashboard/messages',             color: '#10b981', symbol: '↓',  label: 'Donations',            sub: 'Transaction History' },
+      { href: '/dashboard',                      color: '#0ea5e9', symbol: '◫',  label: 'Dashboard',       sub: 'Overview & Stats' },
+      { href: '/dashboard/messages',             color: '#10b981', symbol: '↓',  label: 'Donations',       sub: 'Transaction History' },
     ],
   },
   {
     items: [
-      { href: '/dashboard/settlements',          color: '#6366f1', symbol: '⇆',  label: 'Settlements',          sub: 'Payout Summary' },
-      { href: '/dashboard/lifetime-settlements', color: '#8b5cf6', symbol: '∑',  label: 'Lifetime',             sub: 'Total Earnings & Net' },
-      { href: '/dashboard/invoices',             color: '#f59e0b', symbol: '▤',  label: 'Invoices',             sub: 'GST Invoices' },
+      { href: '/dashboard/settlements',          color: '#6366f1', symbol: '⇆',  label: 'Settlements',     sub: 'Payout Summary' },
+      { href: '/dashboard/lifetime-settlements', color: '#8b5cf6', symbol: '∑',  label: 'Lifetime',        sub: 'Total Earnings & Net' },
+      { href: '/dashboard/invoices',             color: '#f59e0b', symbol: '▤',  label: 'Invoices',        sub: 'GST Invoices' },
     ],
   },
   {
     items: [
-      { href: '/dashboard/profile',              color: '#ec4899', symbol: '◉',  label: 'Profile',              sub: 'Account Settings' },
-      { href: '/dashboard/tip-settings',         color: '#f59e0b', symbol: '₹',  label: 'Tip Settings',         sub: 'Min Amount & Char Tiers' },
-      { href: '/dashboard/voice-settings',       color: '#a855f7', symbol: '♪',  label: 'Voice',                sub: 'Voice & Subscription' },
-      { href: '/dashboard/overlay',              color: '#14b8a6', symbol: '◈',  label: 'Overlay',              sub: 'Customize Alerts' },
-      { href: '/dashboard/celebrity-voice',      color: '#f59e0b', symbol: '🎤', label: 'Celebrity Voice',       sub: 'AI Voices & Pricing' },
-      { href: 'https://discord.gg/eztips',       color: '#5865f2', symbol: '⌘',  label: 'Discord',              sub: 'Join our community', external: true },
+      { href: '/dashboard/profile',              color: '#ec4899', symbol: '◉',  label: 'Profile',         sub: 'Account Settings',       premium: false },
+      { href: '/dashboard/tip-settings',         color: '#f59e0b', symbol: '₹',  label: 'Tip Settings',    sub: 'Min Amount & Char Tiers', premium: false },
+      { href: '/dashboard/voice-settings',       color: '#a855f7', symbol: '♪',  label: 'Voice',           sub: 'Voice & Subscription',    premium: false },
+      { href: '/dashboard/overlay',              color: '#14b8a6', symbol: '◈',  label: 'Overlay',         sub: 'Customize Alerts',        premium: false },
+      { href: '/dashboard/celebrity-voice',      color: '#f59e0b', symbol: '🎤', label: 'Celebrity Voice', sub: 'AI Voices & Pricing',     premium: true },
+      { href: 'https://discord.gg/eztips',       color: '#5865f2', symbol: '⌘',  label: 'Discord',         sub: 'Join our community',      external: true, premium: false },
     ],
   },
 ]
 
-export default function Sidebar({ channelName, email, username, overlayToken, todayEarnings, followers }: {
+export default function Sidebar({ channelName, email, username, overlayToken, todayEarnings, followers, isPremium }: {
   channelName: string; email: string; username: string; overlayToken: string
-  todayEarnings: number; followers: number
+  todayEarnings: number; followers: number; isPremium?: boolean
 }) {
   const path = usePathname()
   const isActive = (href: string) => path === href
   const [copied, setCopied] = useState(false)
+  const navGroups = BASE_NAV_GROUPS.map(g => ({ items: g.items.filter(i => !i.premium || isPremium) }))
 
   const overlayUrl = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
   const messageLink = username ? `${SITE}/send-message/${username}` : ''

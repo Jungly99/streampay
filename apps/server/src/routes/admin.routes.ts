@@ -37,9 +37,10 @@ router.get('/stats', requirePermission('overview'), async (_req: AdminRequest, r
 router.get('/users', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { search } = req.query
   const users = await prisma.user.findMany({
-    where: search
-      ? { OR: [{ email: { contains: search as string, mode: 'insensitive' } }, { displayName: { contains: search as string, mode: 'insensitive' } }] }
-      : undefined,
+    where: {
+      deletedAt: null,
+      ...(search ? { OR: [{ email: { contains: search as string, mode: 'insensitive' } }, { displayName: { contains: search as string, mode: 'insensitive' } }] } : {}),
+    },
     include: {
       streamerProfile: { select: { id: true, username: true, channelName: true, isActive: true, isVerified: true } },
       viewerProfile: { select: { id: true, displayName: true } },
@@ -61,13 +62,35 @@ router.patch('/users/:id', requirePermission('users'), async (req: AdminRequest,
 
 router.delete('/users/:id', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
   const streamer = await prisma.streamerProfile.findUnique({ where: { userId: req.params.id } })
+  // Soft delete — preserve all data for potential restore
+  await prisma.user.update({ where: { id: req.params.id }, data: { deletedAt: new Date() } })
   if (streamer) {
-    // Delete FK-dependent records that lack onDelete: Cascade in the right order
-    await prisma.invoice.deleteMany({ where: { streamerId: streamer.id } })
-    await prisma.donation.deleteMany({ where: { streamerId: streamer.id } })
-    await prisma.settlement.deleteMany({ where: { streamerId: streamer.id } })
+    await prisma.streamerProfile.update({ where: { id: streamer.id }, data: { isActive: false } })
   }
-  await prisma.user.delete({ where: { id: req.params.id } })
+  res.json({ ok: true })
+})
+
+// ── DELETED ACCOUNTS (restore_accounts permission) ─────────────────────────
+router.get('/deleted-users', requirePermission('restore_accounts'), async (_req: AdminRequest, res: Response): Promise<void> => {
+  const users = await prisma.user.findMany({
+    where: { NOT: { deletedAt: null } },
+    include: {
+      streamerProfile: { select: { id: true, username: true, channelName: true, isVerified: true, _count: { select: { donations: true } } } },
+      viewerProfile: { select: { id: true, displayName: true } },
+    },
+    orderBy: { deletedAt: 'desc' },
+  })
+  res.json(users)
+})
+
+router.post('/users/:id/restore', requirePermission('restore_accounts'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } })
+  if (!user || !user.deletedAt) { res.status(404).json({ error: 'User not found or not deleted' }); return }
+  await prisma.user.update({ where: { id: req.params.id }, data: { deletedAt: null } })
+  const streamer = await prisma.streamerProfile.findUnique({ where: { userId: req.params.id } })
+  if (streamer) {
+    await prisma.streamerProfile.update({ where: { id: streamer.id }, data: { isActive: true } })
+  }
   res.json({ ok: true })
 })
 
@@ -111,6 +134,7 @@ router.get('/streamers', requirePermission('streamers'), async (_req: AdminReque
     displayName: s.user.displayName,
     isActive: s.isActive,
     isVerified: s.isVerified,
+    isPremium: s.isPremium,
     verificationRequestedAt: s.verificationRequestedAt,
     minDonationAmount: s.minDonationAmount,
     overlayToken: s.overlayToken,
@@ -139,9 +163,9 @@ router.get('/streamers/:id', requirePermission('streamers'), async (req: AdminRe
 
 router.patch('/streamers/:id', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
-  const { channelName, bio, channelLink, username, isActive, isVerified, minDonationAmount, discordWebhookUrl } = req.body as {
+  const { channelName, bio, channelLink, username, isActive, isVerified, isPremium, minDonationAmount, discordWebhookUrl } = req.body as {
     channelName?: string; bio?: string; channelLink?: string; username?: string
-    isActive?: boolean; isVerified?: boolean; minDonationAmount?: number; discordWebhookUrl?: string
+    isActive?: boolean; isVerified?: boolean; isPremium?: boolean; minDonationAmount?: number; discordWebhookUrl?: string
   }
   const updated = await prisma.streamerProfile.update({
     where: { id },
@@ -152,6 +176,7 @@ router.patch('/streamers/:id', requirePermission('streamers'), async (req: Admin
       ...(username          !== undefined && { username }),
       ...(isActive          !== undefined && { isActive }),
       ...(isVerified        !== undefined && { isVerified }),
+      ...(isPremium         !== undefined && { isPremium }),
       ...(minDonationAmount !== undefined && { minDonationAmount }),
       ...(discordWebhookUrl !== undefined && { discordWebhookUrl }),
     },

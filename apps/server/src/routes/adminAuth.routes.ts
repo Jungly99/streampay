@@ -10,7 +10,7 @@ const IS_PROD = env.NODE_ENV === 'production'
 const SUPER_ADMIN_EMAIL = 'abhinavs199.as@gmail.com'
 
 const FULL_PERMISSIONS: AdminPermissions = {
-  overview: true, streamers: true, users: true, donations: true, settlements: true,
+  overview: true, streamers: true, users: true, donations: true, settlements: true, restore_accounts: true,
 }
 
 const COOKIE_OPTIONS = {

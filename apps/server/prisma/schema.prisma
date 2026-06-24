@@ -42,6 +42,7 @@ model User {
   avatarUrl    String?     @map("avatar_url")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
+  deletedAt    DateTime?   @map("deleted_at")
 
   streamerProfile StreamerProfile?
   viewerProfile   ViewerProfile?
@@ -70,6 +71,7 @@ model StreamerProfile {
   isVerified                Boolean   @default(false) @map("is_verified")
   verificationRequestedAt   DateTime? @map("verification_requested_at")
   isActive                  Boolean   @default(true) @map("is_active")
+  isPremium                 Boolean   @default(false) @map("is_premium")
   minDonationAmount     Int      @default(100) @map("min_donation_amount")
   messageMaxLength      Int      @default(100) @map("message_max_length")
   messageTiers          Json     @default("[]") @map("message_tiers")

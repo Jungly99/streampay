@@ -49,6 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         overlayToken={user.streamerProfile?.overlayToken ?? ''}
         todayEarnings={stats.todayEarnings ?? 0}
         followers={stats.followerCount ?? 0}
+        isPremium={user.streamerProfile?.isPremium ?? false}
       />
       <main className="flex-1 overflow-y-auto h-full">
         <VerificationGate isVerified={isVerified} verificationRequestedAt={verificationRequestedAt} />
