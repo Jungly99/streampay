@@ -62,6 +62,7 @@ export default function ProfilePage() {
         socialTwitch: profile.socialTwitch ?? '',
         socialDiscord: profile.socialDiscord ?? '',
         socialKick: profile.socialKick ?? '',
+        discordWebhookUrl: profile.discordWebhookUrl ?? '',
       })
       await fetchAll()
       toast.success('Profile saved!')
@@ -134,38 +135,91 @@ if (!profile) return (
       </div>
 
       {tab === 'profile' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>Basic Information</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'stretch' }}>
+            {/* Basic Info */}
+            <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>Basic Information</p>
 
-            <Field label="Channel Name">
-              <input value={profile.channelName ?? ''} onChange={e => setProfile((p: any) => ({ ...p, channelName: e.target.value }))} style={inputStyle} />
-            </Field>
+              <Field label="Channel Name">
+                <input value={profile.channelName ?? ''} onChange={e => setProfile((p: any) => ({ ...p, channelName: e.target.value }))} style={inputStyle} />
+              </Field>
 
-            <Field label="Channel Link">
-              <input value={profile.channelLink ?? ''} onChange={e => setProfile((p: any) => ({ ...p, channelLink: e.target.value }))} placeholder="https://youtube.com/@yourname" style={inputStyle} />
-            </Field>
+              <Field label="Channel Link">
+                <input value={profile.channelLink ?? ''} onChange={e => setProfile((p: any) => ({ ...p, channelLink: e.target.value }))} placeholder="https://youtube.com/@yourname" style={inputStyle} />
+              </Field>
 
-            <Field label="Bio">
-              <textarea value={profile.bio ?? ''} onChange={e => setProfile((p: any) => ({ ...p, bio: e.target.value }))} rows={3}
-                placeholder="Tell viewers about yourself…" style={{ ...inputStyle, resize: 'none' as const }} />
-            </Field>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <label style={labelStyle}>Bio</label>
+                <textarea value={profile.bio ?? ''} onChange={e => setProfile((p: any) => ({ ...p, bio: e.target.value }))}
+                  placeholder="Tell viewers about yourself… (shown on your donation page)"
+                  style={{ ...inputStyle, resize: 'none' as const, flex: 1, minHeight: 100 }} />
+              </div>
+
+              {/* Donation link info */}
+              <div style={{ padding: '14px 16px', borderRadius: 11, background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.18)' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#7c3aed', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>Your Donation Link</p>
+                {profile.username ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: '#a78bfa', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                      eztips.live/send-message/<strong>{profile.username}</strong>
+                    </span>
+                    <button onClick={() => { navigator.clipboard.writeText(`https://eztips.live/send-message/${profile.username}`); }} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa', flexShrink: 0 }}>Copy</button>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 12, color: '#475569' }}>Set your username on the Dashboard to activate your link</p>
+                )}
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>Social Links</p>
+              <p style={{ fontSize: 12, color: '#475569', marginTop: -8 }}>These appear on your public donation page</p>
+              {[
+                { key: 'socialTwitter',   label: 'X / Twitter',  ph: 'https://x.com/username',          icon: '𝕏' },
+                { key: 'socialInstagram', label: 'Instagram',    ph: 'https://instagram.com/username',   icon: '◎' },
+                { key: 'socialYoutube',   label: 'YouTube',      ph: 'https://youtube.com/@username',    icon: '▶' },
+                { key: 'socialTwitch',    label: 'Twitch',       ph: 'https://twitch.tv/username',       icon: '♟' },
+                { key: 'socialDiscord',   label: 'Discord',      ph: 'https://discord.gg/invite',        icon: '⌘' },
+                { key: 'socialKick',      label: 'Kick',         ph: 'https://kick.com/username',        icon: '⚡' },
+              ].map(s => (
+                <div key={s.key}>
+                  <label style={labelStyle}>{s.label}</label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, color: '#475569', width: 20, textAlign: 'center', flexShrink: 0 }}>{s.icon}</span>
+                    <input value={(profile as any)[s.key] ?? ''} onChange={e => setProfile((p: any) => ({ ...p, [s.key]: e.target.value }))} placeholder={s.ph} style={{ ...inputStyle, flex: 1 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>Social Links</p>
-            {[
-              { key: 'socialTwitter',   label: 'X / Twitter',  ph: 'https://x.com/username' },
-              { key: 'socialInstagram', label: 'Instagram',    ph: 'https://instagram.com/username' },
-              { key: 'socialYoutube',   label: 'YouTube',      ph: 'https://youtube.com/@username' },
-              { key: 'socialTwitch',    label: 'Twitch',       ph: 'https://twitch.tv/username' },
-              { key: 'socialDiscord',   label: 'Discord',      ph: 'https://discord.gg/invite' },
-              { key: 'socialKick',      label: 'Kick',         ph: 'https://kick.com/username' },
-            ].map(s => (
-              <Field key={s.key} label={s.label}>
-                <input value={(profile as any)[s.key] ?? ''} onChange={e => setProfile((p: any) => ({ ...p, [s.key]: e.target.value }))} placeholder={s.ph} style={inputStyle} />
-              </Field>
-            ))}
+          {/* Notifications row */}
+          <div style={{ ...C, padding: '22px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(88,101,242,0.15)', border: '1px solid rgba(88,101,242,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⌘</div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: 0 }}>Discord Notifications</p>
+                <p style={{ fontSize: 11, color: '#475569', margin: 0, marginTop: 2 }}>Get a Discord message every time you receive a tip</p>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'flex-end' }}>
+              <div>
+                <label style={labelStyle}>Webhook URL</label>
+                <input
+                  value={profile.discordWebhookUrl ?? ''}
+                  onChange={e => setProfile((p: any) => ({ ...p, discordWebhookUrl: e.target.value }))}
+                  placeholder="https://discord.com/api/webhooks/…"
+                  style={inputStyle}
+                />
+              </div>
+              <a href="https://support.discord.com/hc/en-us/articles/228383668" target="_blank" rel="noopener noreferrer"
+                style={{ padding: '10px 14px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: '#94a3b8', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', whiteSpace: 'nowrap', display: 'block' }}>
+                How to get webhook →
+              </a>
+            </div>
+            <p style={{ fontSize: 11, color: '#475569', marginTop: 8 }}>Create a webhook in your Discord server: Channel Settings → Integrations → Webhooks → New Webhook → Copy URL</p>
           </div>
         </div>
       )}
