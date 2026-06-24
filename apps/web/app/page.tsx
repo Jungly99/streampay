@@ -112,7 +112,7 @@ export default function LandingPage() {
           {[
             { label: 'Platform Fee',    us: '5%',           them: '7% competitors',  good: true },
             { label: 'Viewer Signup',   us: 'Never Required', them: 'Required elsewhere', good: true },
-            { label: 'Min Settlement',  us: 'No Minimum',   them: '₹500 elsewhere',  good: true },
+            { label: 'Min Tip',         us: '₹100',         them: '₹500 elsewhere',  good: true },
           ].map((c, i) => (
             <div key={c.label} style={{
               textAlign: 'center', padding: '8px 24px',

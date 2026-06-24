@@ -36,7 +36,8 @@ router.patch('/profile', async (req: AuthRequest, res: Response): Promise<void> 
     socialDiscord: z.string().optional(),
     socialKick: z.string().optional(),
     discordWebhookUrl: z.string().url().optional().or(z.literal('')),
-    minDonationAmount: z.number().int().min(11).max(10000).optional(),
+    minDonationAmount: z.number().int().min(1).max(10000).optional(),
+    messageMaxLength: z.number().int().min(10).max(500).optional(),
   })
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) {

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { api } from '../../lib/api'
 
-interface Props { messageLink?: string; overlayToken?: string; overlayUrl?: string; qrDataUrl?: string; inline?: boolean }
+interface Props { messageLink?: string; overlayToken?: string; overlayUrl?: string; qrDataUrl?: string; inline?: boolean; username?: string }
 
 function CopyField({ label, value, masked }: { label: string; value: string; masked?: boolean }) {
   const [show, setShow] = useState(false)
@@ -36,8 +36,22 @@ const btnStyle: React.CSSProperties = {
   color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
 }
 
-function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl }: Omit<Props, 'inline'>) {
+function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: initUsername }: Omit<Props, 'inline'>) {
   const [testing, setTesting] = useState(false)
+  const [currentLink, setCurrentLink] = useState(messageLink)
+  const [usernameInput, setUsernameInput] = useState('')
+  const [settingUsername, setSettingUsername] = useState(false)
+
+  async function submitUsername() {
+    if (!usernameInput.trim()) return
+    setSettingUsername(true)
+    try {
+      const updated = await api.post<any>('/api/streamer/profile/username', { username: usernameInput.trim() })
+      const link = `${window.location.origin}/send-message/${updated.username}`
+      setCurrentLink(link)
+      toast.success('Username set! Your donation link is ready.')
+    } catch (e: any) { toast.error(e.message) } finally { setSettingUsername(false) }
+  }
 
   async function sendTestAlert() {
     setTesting(true)
@@ -53,13 +67,26 @@ function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl }: Omit<Prop
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, flex: 1 }}>
-      {messageLink
-        ? <CopyField label="Donation Link" value={messageLink} />
+      {currentLink
+        ? <CopyField label="Donation Link" value={currentLink} />
         : (
-          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)' }}>
-            <p style={{ fontSize: 12, color: '#f59e0b', fontWeight: 500 }}>
-              <Link href="/dashboard/profile" style={{ textDecoration: 'underline', fontWeight: 700 }}>Set your username</Link> to activate your donation link
-            </p>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Donation Link Username</p>
+            <div style={{ padding: '8px 12px', borderRadius: 9, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', marginBottom: 10 }}>
+              <p style={{ fontSize: 11, color: '#f59e0b', margin: 0 }}>⚠ One-time only — cannot be changed after setting</p>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={usernameInput}
+                onChange={e => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                placeholder="yourusername"
+                onKeyDown={e => e.key === 'Enter' && submitUsername()}
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#f1f5f9', outline: 'none' }}
+              />
+              <button onClick={submitUsername} disabled={settingUsername || !usernameInput} style={{ padding: '9px 16px', borderRadius: 9, background: 'linear-gradient(135deg,#7c3aed,#db2777)', border: 'none', color: 'white', fontSize: 13, fontWeight: 700, cursor: settingUsername ? 'not-allowed' : 'pointer', opacity: !usernameInput ? 0.5 : 1, flexShrink: 0 }}>
+                {settingUsername ? '…' : 'Set'}
+              </button>
+            </div>
           </div>
         )
       }

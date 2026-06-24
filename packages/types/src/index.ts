@@ -68,6 +68,7 @@ export interface DonationPageStreamer {
   channelLink: string | null
   isVerified: boolean
   minDonationAmount: number
+  messageMaxLength: number
   voiceTiers: VoiceTier[]
   quickAmounts: number[]
   socialTwitter: string | null

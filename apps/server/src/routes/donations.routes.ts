@@ -30,9 +30,10 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
     channelLink: profile.channelLink,
     isVerified: profile.isVerified,
     minDonationAmount: profile.minDonationAmount,
+    messageMaxLength: (profile as any).messageMaxLength ?? 100,
     voiceTiers: profile.voiceTiers,
     activeGoal: profile.goals[0] ?? null,
-    quickAmounts: [25, 50, 100, 250, 500, 1000],
+    quickAmounts: [100, 250, 500, 1000, 2000, 5000],
     socialTwitter: profile.socialTwitter,
     socialInstagram: profile.socialInstagram,
     socialYoutube: profile.socialYoutube,
@@ -63,9 +64,9 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
   const schema = z.object({
     streamerId: z.string(),
     donorName: z.string().min(1).max(100),
-    message: z.string().max(10).optional(),
+    message: z.string().max(500).optional(),
     voiceMessageUrl: z.string().url().optional(),
-    amount: z.number().int().min(11).max(10000),
+    amount: z.number().int().min(1).max(10000),
     viewerId: z.string().optional(),
   })
   const parsed = schema.safeParse(req.body)
@@ -77,6 +78,11 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
   if (!streamer) { res.status(404).json({ error: 'Streamer not found' }); return }
   if (amount < streamer.minDonationAmount) {
     res.status(400).json({ error: `Minimum donation is ₹${streamer.minDonationAmount}` })
+    return
+  }
+  const maxMsgLen = (streamer as any).messageMaxLength ?? 100
+  if (message && message.length > maxMsgLen) {
+    res.status(400).json({ error: `Message too long — max ${maxMsgLen} characters` })
     return
   }
 

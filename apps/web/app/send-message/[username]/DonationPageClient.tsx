@@ -6,7 +6,7 @@ import { api } from '../../../lib/api'
 import { formatINR } from '../../../lib/utils'
 import type { DonationPageStreamer } from '@streampay/types'
 
-const QUICK_AMOUNTS = [25, 51, 101, 251, 501, 1001]
+const ALL_QUICK_AMOUNTS = [50, 100, 250, 500, 1000, 2000, 5000]
 
 const inp: React.CSSProperties = {
   width: '100%', padding: '11px 14px', borderRadius: 10, fontSize: 13,
@@ -187,7 +187,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-              {QUICK_AMOUNTS.map(a => (
+              {ALL_QUICK_AMOUNTS.filter(a => a >= streamer.minDonationAmount).slice(0, 6).map(a => (
                 <button key={a} onClick={() => selectAmount(a)} style={{
                   padding: '11px 0', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   background: amount === a ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.04)',
@@ -256,10 +256,10 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
 
             {messageType === 'text' && (
               <div>
-                <textarea value={message} onChange={e => setMessage(e.target.value.slice(0, 10))} rows={3}
+                <textarea value={message} onChange={e => setMessage(e.target.value.slice(0, streamer.messageMaxLength ?? 100))} rows={3}
                   placeholder="Send a message to the streamer…"
                   style={{ ...inp, resize: 'none' as const }} />
-                <p style={{ fontSize: 11, color: '#334155', marginTop: 5 }}>{message.length}/10 characters</p>
+                <p style={{ fontSize: 11, color: '#334155', marginTop: 5 }}>{message.length}/{streamer.messageMaxLength ?? 100} characters</p>
               </div>
             )}
 
