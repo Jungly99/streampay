@@ -60,6 +60,13 @@ router.patch('/users/:id', requirePermission('users'), async (req: AdminRequest,
 })
 
 router.delete('/users/:id', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const streamer = await prisma.streamerProfile.findUnique({ where: { userId: req.params.id } })
+  if (streamer) {
+    // Delete FK-dependent records that lack onDelete: Cascade in the right order
+    await prisma.invoice.deleteMany({ where: { streamerId: streamer.id } })
+    await prisma.donation.deleteMany({ where: { streamerId: streamer.id } })
+    await prisma.settlement.deleteMany({ where: { streamerId: streamer.id } })
+  }
   await prisma.user.delete({ where: { id: req.params.id } })
   res.json({ ok: true })
 })

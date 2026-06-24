@@ -189,10 +189,15 @@ export default function AdminDashboard() {
   }
   async function deleteUser() {
     if (!confirmDelete) return
-    await api(`/users/${confirmDelete.id}`, { method:'DELETE' })
-    setUsers(p=>p.filter(u=>u.id!==confirmDelete.id))
-    setStreamers(p=>p.filter(s=>s.userId!==confirmDelete.id))
-    setConfirmDelete(null); showToast('User deleted')
+    try {
+      await api(`/users/${confirmDelete.id}`, { method:'DELETE' })
+      setUsers(p=>p.filter(u=>u.id!==confirmDelete.id))
+      setStreamers(p=>p.filter(s=>s.userId!==confirmDelete.id))
+      setConfirmDelete(null); showToast('User deleted')
+    } catch(e:any) {
+      showToast(`Delete failed: ${e.message}`)
+      setConfirmDelete(null)
+    }
   }
 
   // ── Donation actions ──────────────────────────────────────────────────────────
