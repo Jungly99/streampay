@@ -217,6 +217,48 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
             )}
           </div>
 
+          {/* Message Tiers */}
+          {(streamer.messageTiers?.length ?? 0) > 0 && (
+            <div style={{ ...card, padding: '20px 22px' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 4 }}>Message Tiers</p>
+              <p style={{ fontSize: 11, color: '#475569', marginBottom: 14 }}>Tip more to unlock longer messages</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[...streamer.messageTiers].sort((a, b) => a.minAmount - b.minAmount).map((tier, i) => {
+                  const isActive = finalAmount > 0 && finalAmount >= tier.minAmount && (
+                    i === streamer.messageTiers.length - 1 ||
+                    finalAmount < streamer.messageTiers.sort((a, b) => a.minAmount - b.minAmount)[i + 1]!.minAmount
+                  )
+                  const isUnlocked = finalAmount >= tier.minAmount
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '9px 12px', borderRadius: 9, transition: 'all 0.2s',
+                      background: isActive ? 'rgba(124,58,237,0.12)' : isUnlocked ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isActive ? 'rgba(124,58,237,0.35)' : isUnlocked ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 14, width: 18, textAlign: 'center' }}>
+                          {isActive ? '●' : isUnlocked ? '✓' : '○'}
+                        </span>
+                        <div>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: isActive ? '#a78bfa' : isUnlocked ? '#10b981' : '#475569' }}>
+                            ₹{tier.minAmount}+
+                          </span>
+                          <span style={{ fontSize: 12, color: '#334155', marginLeft: 6 }}>
+                            {isActive ? 'your current tier' : isUnlocked ? 'unlocked' : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isActive ? '#a78bfa' : isUnlocked ? '#10b981' : '#334155' }}>
+                        {tier.charLimit} chars
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Leaderboard */}
           {leaderboard.length > 0 && (
             <div style={{ ...card, padding: '20px 22px' }}>
