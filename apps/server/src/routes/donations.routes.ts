@@ -17,8 +17,12 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
       goals: { where: { isActive: true }, take: 1 },
     },
   })
-  if (!profile || !profile.isActive) {
+  if (!profile) {
     res.status(404).json({ error: 'Streamer not found' })
+    return
+  }
+  if (!profile.isActive) {
+    res.status(200).json({ inactive: true, channelName: profile.channelName, avatarUrl: profile.avatarUrl })
     return
   }
   res.json({
