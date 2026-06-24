@@ -53,7 +53,7 @@ export default async function DashboardPage() {
               boxShadow: isActive ? '0 0 6px #10b981' : '0 0 6px #f87171',
             }} />
             <span style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#10b981' : '#f87171' }}>
-              {isActive ? 'Active' : 'Inactive'}
+              {isActive ? 'Active' : 'Deactivated'}
             </span>
           </div>
           {links.messageLink && (
