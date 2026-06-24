@@ -19,6 +19,7 @@ import webhookRoutes from './routes/webhooks.routes'
 import adminRoutes from './routes/admin.routes'
 import adminAuthRoutes from './routes/adminAuth.routes'
 import ttsRoutes from './routes/tts.routes'
+import supportRoutes from './routes/support.routes'
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -59,6 +60,7 @@ app.use('/api/webhooks', webhookRoutes)
 app.use('/api/admin/auth', adminAuthRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/tts', ttsRoutes)
+app.use('/api/support', supportRoutes)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 

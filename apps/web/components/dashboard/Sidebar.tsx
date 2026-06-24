@@ -30,6 +30,8 @@ const BASE_NAV_GROUPS: NavGroup[] = [
       { href: '/dashboard/overlay',              color: '#14b8a6', symbol: '◈',  label: 'Overlay',         sub: 'Customize Alerts',        premium: false },
       { href: '/dashboard/celebrity-voice',      color: '#f59e0b', symbol: '🎤', label: 'Celebrity Voice', sub: 'AI Voices & Pricing',     premium: true },
       { href: 'https://discord.gg/eztips',       color: '#5865f2', symbol: '⌘',  label: 'Discord',         sub: 'Join our community',      external: true, premium: false },
+      { href: '/support-us',                     color: '#ec4899', symbol: '💜', label: 'Support Us',      sub: 'Help keep eztips alive',  premium: false },
+      { href: '/changelog',                      color: '#0891b2', symbol: '✦',  label: "What's New",      sub: 'Features & fixes',        premium: false },
     ],
   },
 ]
