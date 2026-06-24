@@ -108,8 +108,17 @@ export default function OverlayClient({ token }: { token: string }) {
       }
       if (settings.ttsEnabled && current.message && 'speechSynthesis' in window) {
         const u = new SpeechSynthesisUtterance(`${current.donorName} donated ₹${current.amount}. ${current.message}`)
-        u.lang = settings.ttsVoice ?? 'en-IN'
+        const targetLang = settings.ttsVoice ?? 'en-IN'
+        u.lang = targetLang
         u.volume = (settings.ttsVolume ?? 100) / 100
+        u.rate = settings.ttsRate ?? 1.0
+        u.pitch = settings.ttsPitch ?? 1.0
+        // Try to find an exact voice match; fall back to same-language prefix; then default
+        const voices = speechSynthesis.getVoices()
+        const exact = voices.find(v => v.lang === targetLang)
+        const prefix = voices.find(v => v.lang.startsWith(targetLang.split('-')[0] ?? ''))
+        if (exact) u.voice = exact
+        else if (prefix) u.voice = prefix
         setTimeout(() => speechSynthesis.speak(u), delay)
       }
     }

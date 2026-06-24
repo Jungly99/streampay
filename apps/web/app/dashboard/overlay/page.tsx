@@ -321,6 +321,11 @@ export default function OverlayPage() {
                     ['ta-IN','Tamil – India'],['te-IN','Telugu – India'],
                     ['en-US','English – US'],['en-GB','English – UK'],
                   ].map(([v,n])=>({value:v!,label:n!}))} />
+                  <div style={{ marginTop:6, padding:'8px 10px', borderRadius:8, background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.18)' }}>
+                    <p style={{ fontSize:11, color:'#f59e0b', margin:0, lineHeight:1.5 }}>
+                      <strong>Voice availability depends on your OS.</strong> English – India and Hindi – India work on most devices. Other languages require the matching language pack installed on your computer. If a language isn&apos;t available, TTS falls back to English.
+                    </p>
+                  </div>
                 </div>
                 <Slider label="Volume" value={s.ttsVolume} min={0} max={100} unit="%" onChange={v=>set('ttsVolume',v)}/>
                 <Slider label="Speed" value={s.ttsRate} min={0.5} max={2} step={0.1} unit="×" onChange={v=>set('ttsRate',v)}/>
