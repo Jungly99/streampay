@@ -369,6 +369,35 @@ router.post('/test-alert', async (req: AuthRequest, res: Response): Promise<void
   res.json({ success: true, amount: testAmounts[idx], name: testNames[idx] })
 })
 
+// ── TIP SETTINGS ───────────────────────────────────────────────────────────
+router.get('/tip-settings', async (req: AuthRequest, res: Response): Promise<void> => {
+  const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
+  if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
+  res.json({
+    minDonationAmount: profile.minDonationAmount,
+    messageTiers: (profile as any).messageTiers ?? [],
+  })
+})
+
+router.patch('/tip-settings', async (req: AuthRequest, res: Response): Promise<void> => {
+  const tierSchema = z.object({ minAmount: z.number().int().min(1), charLimit: z.number().int().min(1).max(500) })
+  const schema = z.object({
+    minDonationAmount: z.number().int().min(1).max(10000),
+    messageTiers: z.array(tierSchema).max(20),
+  })
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    const first = Object.values(parsed.error.flatten().fieldErrors).flat()[0] ?? 'Validation failed'
+    res.status(400).json({ error: first }); return
+  }
+  const { minDonationAmount, messageTiers } = parsed.data
+  await prisma.streamerProfile.update({
+    where: { userId: req.user!.userId },
+    data: { minDonationAmount, messageTiers: messageTiers as any },
+  })
+  res.json({ minDonationAmount, messageTiers })
+})
+
 // ── ANALYTICS ──────────────────────────────────────────────────────────────
 router.get('/analytics', async (req: AuthRequest, res: Response): Promise<void> => {
   const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })

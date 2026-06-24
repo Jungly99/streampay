@@ -69,6 +69,7 @@ export interface DonationPageStreamer {
   isVerified: boolean
   minDonationAmount: number
   messageMaxLength: number
+  messageTiers: MessageTier[]
   voiceTiers: VoiceTier[]
   quickAmounts: number[]
   socialTwitter: string | null
@@ -77,6 +78,11 @@ export interface DonationPageStreamer {
   socialTwitch: string | null
   socialDiscord: string | null
   socialKick: string | null
+}
+
+export interface MessageTier {
+  minAmount: number
+  charLimit: number
 }
 
 export interface VoiceTier {

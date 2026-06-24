@@ -71,6 +71,7 @@ model StreamerProfile {
   isActive              Boolean  @default(true) @map("is_active")
   minDonationAmount     Int      @default(100) @map("min_donation_amount")
   messageMaxLength      Int      @default(100) @map("message_max_length")
+  messageTiers          Json     @default("[]") @map("message_tiers")
   overlayToken          String?  @unique @map("overlay_token")
   cashfreeBeneficiaryId String?  @map("cashfree_beneficiary_id")
   discordWebhookUrl     String?  @map("discord_webhook_url")

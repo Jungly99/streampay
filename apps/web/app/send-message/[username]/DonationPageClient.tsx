@@ -31,6 +31,17 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
   const [leaderboard, setLeaderboard] = useState<any[]>([])
 
   const finalAmount = amount || Number(customAmount) || 0
+
+  function getCharLimit(amt: number): number {
+    const tiers = streamer.messageTiers ?? []
+    if (!tiers.length) return streamer.messageMaxLength ?? 100
+    const sorted = [...tiers].sort((a, b) => a.minAmount - b.minAmount)
+    let limit = sorted[0]?.charLimit ?? 100
+    for (const t of sorted) { if (amt >= t.minAmount) limit = t.charLimit; else break }
+    return limit
+  }
+  const charLimit = finalAmount > 0 ? getCharLimit(finalAmount) : (streamer.messageTiers?.length ? (streamer.messageTiers[0] as any)?.charLimit ?? 100 : streamer.messageMaxLength ?? 100)
+
   const allowedVoiceDuration = streamer.voiceTiers
     ?.filter(t => t.isEnabled && finalAmount >= t.minAmount)
     ?.reduce((max, t) => Math.max(max, t.durationSeconds), 0) ?? 0
@@ -256,10 +267,15 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
 
             {messageType === 'text' && (
               <div>
-                <textarea value={message} onChange={e => setMessage(e.target.value.slice(0, streamer.messageMaxLength ?? 100))} rows={3}
+                <textarea value={message} onChange={e => setMessage(e.target.value.slice(0, charLimit))} rows={3}
                   placeholder="Send a message to the streamer…"
                   style={{ ...inp, resize: 'none' as const }} />
-                <p style={{ fontSize: 11, color: '#334155', marginTop: 5 }}>{message.length}/{streamer.messageMaxLength ?? 100} characters</p>
+                <p style={{ fontSize: 11, color: '#334155', marginTop: 5 }}>
+                  {message.length}/{charLimit} characters
+                  {streamer.messageTiers?.length > 0 && finalAmount > 0 && (
+                    <span style={{ color: '#7c3aed', marginLeft: 8 }}>• tip more to unlock longer messages</span>
+                  )}
+                </p>
               </div>
             )}
 

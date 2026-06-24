@@ -31,6 +31,7 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
     isVerified: profile.isVerified,
     minDonationAmount: profile.minDonationAmount,
     messageMaxLength: (profile as any).messageMaxLength ?? 100,
+    messageTiers: (profile as any).messageTiers ?? [],
     voiceTiers: profile.voiceTiers,
     activeGoal: profile.goals[0] ?? null,
     quickAmounts: [100, 250, 500, 1000, 2000, 5000],

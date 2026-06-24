@@ -62,8 +62,6 @@ export default function ProfilePage() {
         socialTwitch: profile.socialTwitch ?? '',
         socialDiscord: profile.socialDiscord ?? '',
         socialKick: profile.socialKick ?? '',
-        minDonationAmount: profile.minDonationAmount ?? 100,
-        messageMaxLength: profile.messageMaxLength ?? 100,
       })
       await fetchAll()
       toast.success('Profile saved!')
@@ -147,34 +145,6 @@ if (!profile) return (
             <Field label="Channel Link">
               <input value={profile.channelLink ?? ''} onChange={e => setProfile((p: any) => ({ ...p, channelLink: e.target.value }))} placeholder="https://youtube.com/@yourname" style={inputStyle} />
             </Field>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelStyle}>Min Tip Amount (₹)</label>
-                <input type="number" value={profile.minDonationAmount ?? 100} min={1} max={10000}
-                  onChange={e => setProfile((p: any) => ({ ...p, minDonationAmount: Number(e.target.value) }))}
-                  style={inputStyle} />
-                <p style={{ fontSize: 11, color: '#475569', marginTop: 5 }}>Viewers can't tip below this</p>
-              </div>
-              <div>
-                <label style={labelStyle}>Message Length Limit</label>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                  {[50, 100, 150, 200].map(n => (
-                    <button key={n} onClick={() => setProfile((p: any) => ({ ...p, messageMaxLength: n }))}
-                      style={{ padding: '4px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                        background: (profile.messageMaxLength ?? 100) === n ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.04)',
-                        border: (profile.messageMaxLength ?? 100) === n ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                        color: (profile.messageMaxLength ?? 100) === n ? '#a78bfa' : '#64748b' }}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-                <input type="number" value={profile.messageMaxLength ?? 100} min={10} max={500}
-                  onChange={e => setProfile((p: any) => ({ ...p, messageMaxLength: Number(e.target.value) }))}
-                  style={inputStyle} />
-                <p style={{ fontSize: 11, color: '#475569', marginTop: 5 }}>Max chars per donation message</p>
-              </div>
-            </div>
 
             <Field label="Bio">
               <textarea value={profile.bio ?? ''} onChange={e => setProfile((p: any) => ({ ...p, bio: e.target.value }))} rows={3}
