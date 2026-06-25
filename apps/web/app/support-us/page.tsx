@@ -2,8 +2,18 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const RZP_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? ''
+
+function loadRazorpay(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).Razorpay) { resolve(); return }
+    const s = document.createElement('script')
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    s.onload = () => resolve()
+    s.onerror = () => reject(new Error('Failed to load Razorpay'))
+    document.head.appendChild(s)
+  })
+}
 
 const QUICK_AMOUNTS = [11, 51, 101, 251, 501, 1001]
 
@@ -27,7 +37,8 @@ export default function SupportUsPage() {
     if (!amt || amt < 1) return
     setLoading(true)
     try {
-      const res = await fetch(`${BACKEND_URL}/api/support/create-order`, {
+      await loadRazorpay()
+      const res = await fetch('/backend/api/support/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: amt }),
@@ -48,8 +59,7 @@ export default function SupportUsPage() {
         modal: { ondismiss: () => setLoading(false) },
       })
       rzp.open()
-    } catch { alert('Something went wrong'); setLoading(false) }
-    setLoading(false)
+    } catch (e: any) { alert(e?.message ?? 'Something went wrong'); setLoading(false) }
   }
 
   const S: React.CSSProperties = {
@@ -83,7 +93,6 @@ export default function SupportUsPage() {
 
   return (
     <div style={S}>
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async />
 
       {/* Nav */}
       <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

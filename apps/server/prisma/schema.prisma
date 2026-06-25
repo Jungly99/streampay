@@ -151,6 +151,7 @@ model AlertSettings {
   minTtsAmount         Int             @default(0) @map("min_tts_amount")
 
   goalBarColor         String          @default("#7c3aed") @map("goal_bar_color")
+  goalBarOpacity       Int             @default(100) @map("goal_bar_opacity")
   enableGoalCelebration Boolean        @default(true) @map("enable_goal_celebration")
 
   enableBirthday       Boolean         @default(false) @map("enable_birthday")

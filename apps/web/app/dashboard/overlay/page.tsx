@@ -95,7 +95,7 @@ export default function OverlayPage() {
     ttsEnabled:true, ttsVolume:100, ttsVoice:'en-IN', ttsRate:1.0, ttsPitch:1.0,
     enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1,
     minAlertAmount:0, minTtsAmount:0,
-    goalBarColor:'#7c3aed', enableGoalCelebration:true,
+    goalBarColor:'#7c3aed', goalBarOpacity:100, enableGoalCelebration:true,
     enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
     enableProfanityFilter:true, customBlocklist:'',
   })
@@ -150,7 +150,7 @@ export default function OverlayPage() {
   }
 
   const GOAL_DEFAULTS = {
-    goalBarColor:'#7c3aed', enableGoalCelebration:true,
+    goalBarColor:'#7c3aed', goalBarOpacity:100, enableGoalCelebration:true,
     enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
   }
 
@@ -432,6 +432,7 @@ export default function OverlayPage() {
                 </button>
               </div>
               <div><span style={lbl}>Progress Bar Color</span><input type="color" value={s.goalBarColor} onChange={e=>set('goalBarColor',e.target.value)} style={colorBox}/></div>
+              <Slider label="Goal Bar Opacity" value={s.goalBarOpacity??100} min={0} max={100} unit="%" onChange={v=>set('goalBarOpacity',v)}/>
               <Row label="Goal Celebration" tip="Confetti burst and special alert when goal is reached"><Toggle on={s.enableGoalCelebration} onChange={v=>set('enableGoalCelebration',v)}/></Row>
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={async ()=>{
@@ -589,7 +590,7 @@ export default function OverlayPage() {
 
             {/* Goal bar preview — updates live as goal settings change */}
             {tab==='goal' && (
-              <div style={{ background:'#000', borderRadius:10, padding:18 }}>
+              <div style={{ background:'#000', borderRadius:10, padding:18, opacity:(s.goalBarOpacity??100)/100 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10, alignItems:'center' }}>
                   <span style={{ color:'white', fontWeight:700, fontSize:13 }}>{goal.title || 'Donation Goal'}</span>
                   <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>₹{goal.currentAmount??0} / ₹{goal.targetAmount}</span>

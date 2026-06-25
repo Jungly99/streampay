@@ -31,6 +31,7 @@ const STYLES = `
 export default function GoalOverlayClient({ token }: { token: string }) {
   const [goal, setGoal]           = useState<GoalState | null>(null)
   const [barColor, setBarColor]   = useState('#7c3aed')
+  const [opacity, setOpacity]     = useState(100)
   const [ready, setReady]         = useState(false)
   const [celebrating, setCelebrating] = useState(false)
   const prevPct = useRef(0)
@@ -40,6 +41,7 @@ export default function GoalOverlayClient({ token }: { token: string }) {
       .then(r => r.json())
       .then(d => {
         if (d.settings?.goalBarColor) setBarColor(d.settings.goalBarColor)
+        if (d.settings?.goalBarOpacity != null) setOpacity(d.settings.goalBarOpacity)
         if (d.activeGoal) {
           setGoal({
             title:         d.activeGoal.title,
@@ -56,9 +58,11 @@ export default function GoalOverlayClient({ token }: { token: string }) {
     socket.on('connect', () => socket.emit('join-overlay', { token }))
     socket.on('overlay-joined', ({ settings }: any) => {
       if (settings?.goalBarColor) setBarColor(settings.goalBarColor)
+      if (settings?.goalBarOpacity != null) setOpacity(settings.goalBarOpacity)
     })
     socket.on('settings-updated', (s: any) => {
       if (s?.goalBarColor) setBarColor(s.goalBarColor)
+      if (s?.goalBarOpacity != null) setOpacity(s.goalBarOpacity)
     })
     socket.on('goal-updated', (data: any) => {
       setGoal(g => ({
@@ -97,6 +101,7 @@ export default function GoalOverlayClient({ token }: { token: string }) {
           bottom:    '15%',
           left:      '50%',
           width:     'min(680px, 88vw)',
+          opacity:   opacity / 100,
           animation: celebrating
             ? 'celebrate 0.7s ease'
             : ready ? 'popIn 0.35s ease forwards' : undefined,

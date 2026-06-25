@@ -1,0 +1,1 @@
+ALTER TABLE "alert_settings" ADD COLUMN IF NOT EXISTS "goal_bar_opacity" INTEGER NOT NULL DEFAULT 100;
