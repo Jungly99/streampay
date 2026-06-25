@@ -227,7 +227,7 @@ export default function OverlayClient({ token }: { token: string }) {
   const emoji = current ? getTier(current.amount)?.emoji ?? '🎉' : '🎉'
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'transparent', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'transparent' }}>
       {transparentStyle}
 
       {/* Alert — centered in 800×800 OBS source */}

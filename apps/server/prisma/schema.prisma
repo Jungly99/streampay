@@ -136,7 +136,7 @@ model AlertSettings {
 
   enableShadow         Boolean         @default(false) @map("enable_shadow")
   shadowBlur           Int             @default(20) @map("shadow_blur")
-  shadowColor          String          @default("#000000") @map("shadow_color")
+  shadowColor          String          @default("#ffffff") @map("shadow_color")
   shadowOpacity        Int             @default(30) @map("shadow_opacity")
   shadowOffsetX        Int             @default(0) @map("shadow_offset_x")
   shadowOffsetY        Int             @default(8) @map("shadow_offset_y")

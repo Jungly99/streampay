@@ -90,7 +90,7 @@ export default function OverlayPage() {
     template:'superchat', bgColor:'#1a1a2e', bgOpacity:100, textColor:'#ffffff',
     fontSize:24, fontStyle:'Arial', textBold:true, textItalic:false, textUnderline:false,
     animationStyle:'slideDown', enableBorder:false, alertDuration:8,
-    enableShadow:false, shadowBlur:20, shadowColor:'#000000', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
+    enableShadow:false, shadowBlur:20, shadowColor:'#ffffff', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
     enableGradientBg:false,
     ttsEnabled:true, ttsVolume:100, ttsVoice:'en-IN', ttsRate:1.0, ttsPitch:1.0,
     enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1,
@@ -145,7 +145,7 @@ export default function OverlayPage() {
     template:'superchat', bgColor:'#1a1a2e', bgOpacity:100, textColor:'#ffffff',
     fontSize:24, fontStyle:'Arial', textBold:true, textItalic:false, textUnderline:false,
     animationStyle:'slideDown', enableBorder:false, alertDuration:8,
-    enableShadow:false, shadowBlur:20, shadowColor:'#000000', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
+    enableShadow:false, shadowBlur:20, shadowColor:'#ffffff', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
     enableGradientBg:false, minAlertAmount:0,
   }
 
@@ -541,9 +541,9 @@ export default function OverlayPage() {
 
             {/* Alert preview — appearance / tts / safety */}
             {(tab==='appearance'||tab==='tts'||tab==='safety') && (
-              <div style={{ background:'#000', borderRadius:10, minHeight:140, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflow:'hidden' }}>
+              <div style={{ background:'#000', borderRadius:10, minHeight:140, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
                 {s.template === 'superchat' && (
-                  <div style={{ borderRadius:12, overflow:'hidden', width:'100%', fontFamily:s.fontStyle, background:previewBg, border:s.enableBorder?`2px solid ${s.textColor}`:'none' }}>
+                  <div style={{ borderRadius:12, overflow:'hidden', width:'100%', fontFamily:s.fontStyle, background:previewBg, border:s.enableBorder?`2px solid ${s.textColor}`:'none', boxShadow:s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px ${s.shadowColor}${Math.round(s.shadowOpacity*2.55).toString(16).padStart(2,'0')}`:'none' }}>
                     <div style={{ padding:'10px 14px', display:'flex', alignItems:'center', gap:10, background:`${s.textColor}18` }}>
                       <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#7c3aed,#db2777)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:'white', flexShrink:0 }}>A</div>
                       <div style={{ flex:1, minWidth:0 }}>
@@ -558,7 +558,7 @@ export default function OverlayPage() {
                   </div>
                 )}
                 {s.template === 'colorful' && (
-                  <div style={{ borderRadius:14, padding:'14px 16px', width:'100%', background:previewBg, border:s.enableBorder?`2px solid ${s.textColor}`:'none', fontFamily:s.fontStyle }}>
+                  <div style={{ borderRadius:14, padding:'14px 16px', width:'100%', background:previewBg, border:s.enableBorder?`2px solid ${s.textColor}`:'none', fontFamily:s.fontStyle, boxShadow:s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px ${s.shadowColor}${Math.round(s.shadowOpacity*2.55).toString(16).padStart(2,'0')}`:'none' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
                       <div style={{ width:28, height:28, borderRadius:'50%', background:s.textColor, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:previewBg||'#000', flexShrink:0 }}>A</div>
                       <div>
@@ -578,7 +578,7 @@ export default function OverlayPage() {
                     fontStyle: s.textItalic?'italic':'normal',
                     textDecoration: s.textUnderline?'underline':'none',
                     border: s.enableBorder?`2px solid ${s.textColor}50`:'none',
-                    boxShadow: s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px rgba(0,0,0,${s.shadowOpacity/100})`:'none',
+                    boxShadow: s.enableShadow?`${s.shadowOffsetX}px ${s.shadowOffsetY}px ${s.shadowBlur}px ${s.shadowColor}${Math.round(s.shadowOpacity*2.55).toString(16).padStart(2,'0')}`:'none',
                   }}>
                     <p style={{ fontWeight:700, margin:0 }}>🎉 Arjun donated ₹500</p>
                     <p style={{ opacity:0.8, fontSize:'0.85em', margin:'4px 0 0' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
