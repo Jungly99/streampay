@@ -7,8 +7,8 @@ import toast from 'react-hot-toast'
 type Tab = 'appearance' | 'tts' | 'goal' | 'safety' | 'leaderboard'
 
 const TEMPLATES = [
-  { id: 'superchat', emoji: '💬', label: 'eztips',    desc: 'Auto-colors by donation tier' },
-  { id: 'colorful',  emoji: '🌈', label: 'Vibrant',   desc: 'Rich gradient backgrounds' },
+  { id: 'superchat', emoji: '💬', label: 'eztips',    desc: 'Structured card, your colors' },
+  { id: 'colorful',  emoji: '🌈', label: 'Vibrant',   desc: 'Bold layout, your colors' },
   { id: 'custom',    emoji: '✦',  label: 'Minimal',   desc: 'Clean, fully your own' },
 ]
 const FONTS = ['Arial','Verdana','Georgia','Courier New','Impact','Trebuchet MS','Poppins']
@@ -307,7 +307,7 @@ export default function OverlayPage() {
               <p style={sH}><span>✦</span> Advanced Effects</p>
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 <Row label="Card Border" tip="Outline the alert card with tier color"><Toggle on={s.enableBorder} onChange={v=>set('enableBorder',v)}/></Row>
-                <Row label="Gradient Background" tip="Blends background with donation tier color"><Toggle on={s.enableGradientBg} onChange={v=>set('enableGradientBg',v)}/></Row>
+                <Row label="Gradient Background" tip="Adds a gradient tint to your background color"><Toggle on={s.enableGradientBg} onChange={v=>set('enableGradientBg',v)}/></Row>
                 <Row label="Drop Shadow" tip="Soft shadow beneath the alert card"><Toggle on={s.enableShadow} onChange={v=>set('enableShadow',v)}/></Row>
                 {s.enableShadow && (
                   <div style={{ paddingLeft:12, borderLeft:'2px solid rgba(124,58,237,0.3)', display:'flex', flexDirection:'column', gap:12 }}>
