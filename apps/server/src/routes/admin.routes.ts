@@ -376,4 +376,12 @@ router.delete('/admin-users/:id', requireSuperAdmin, async (req: AdminRequest, r
   res.json({ ok: true })
 })
 
+router.get('/support-payments', requireSuperAdmin, async (_req: AdminRequest, res: Response): Promise<void> => {
+  const payments = await prisma.supportPayment.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+  })
+  res.json(payments)
+})
+
 export default router

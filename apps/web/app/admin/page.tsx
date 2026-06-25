@@ -13,8 +13,9 @@ interface Donation { id:string; donorName:string; message:string|null; amount:nu
 interface Settlement { id:string; grossAmount:number; feeAmount:string; netAmount:string; status:'INITIATED'|'SUCCESS'|'FAILED'; initiatedAt:string; settledAt:string|null; failureReason:string|null; cfTransferId:string|null; streamer:{username:string|null;channelName:string|null;user:{email:string};bankDetails:BankDetails|null} }
 interface Role { id:string; name:string; permissions:AdminPerms; _count?:{admins:number}; createdAt:string }
 interface AdminUser { id:string; email:string; name:string|null; avatar:string|null; isSuperAdmin:boolean; role:Role|null; createdAt:string }
+interface SupportPayment { id:string; orderId:string; paymentId:string|null; amount:number; name:string|null; message:string|null; status:string; createdAt:string; paidAt:string|null }
 
-type TabType = 'overview'|'streamers'|'users'|'deleted'|'donations'|'settlements'|'team'
+type TabType = 'overview'|'streamers'|'users'|'deleted'|'donations'|'settlements'|'support'|'team'
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const fmt = (n:number) => `₹${n.toLocaleString('en-IN')}`
@@ -60,9 +61,10 @@ export default function AdminDashboard() {
   const [stats, setStats]           = useState<Stats|null>(null)
   const [streamers, setStreamers]   = useState<Streamer[]>([])
   const [users, setUsers]           = useState<User[]>([])
-  const [donations, setDonations]   = useState<Donation[]>([])
-  const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [donations, setDonations]       = useState<Donation[]>([])
+  const [settlements, setSettlements]   = useState<Settlement[]>([])
   const [deletedUsers, setDeletedUsers] = useState<User[]>([])
+  const [supportPayments, setSupportPayments] = useState<SupportPayment[]>([])
   const [roles, setRoles]           = useState<Role[]>([])
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
 
@@ -126,6 +128,7 @@ export default function AdminDashboard() {
     if (tab==='users' && (admin.isSuperAdmin||admin.permissions.users)) api('/users').then(setUsers).catch(()=>{})
     if (tab==='donations' && (admin.isSuperAdmin||admin.permissions.donations)) api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}`).then((d:any)=>setDonations(d.donations)).catch(()=>{})
     if (tab==='settlements' && (admin.isSuperAdmin||admin.permissions.settlements)) api(`/settlements${settlementFilter?`?status=${settlementFilter}`:''}`).then(setSettlements).catch(()=>{})
+    if (tab==='support' && admin.isSuperAdmin) api('/support-payments').then(setSupportPayments).catch(()=>{})
   }, [admin, tab, api, donationFilter, settlementFilter])
 
   useEffect(() => {
@@ -139,6 +142,7 @@ export default function AdminDashboard() {
     if (tab==='users' && (admin.isSuperAdmin||admin.permissions.users)) api(`/users${userSearch?`?search=${userSearch}`:''}`).then(setUsers).catch(()=>{})
     if (tab==='donations' && (admin.isSuperAdmin||admin.permissions.donations)) api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${donationSearch}`:''}`).then((d:any)=>setDonations(d.donations)).catch(()=>{})
     if (tab==='settlements' && (admin.isSuperAdmin||admin.permissions.settlements)) api(`/settlements${settlementFilter?`?status=${settlementFilter}`:''}`).then(setSettlements).catch(()=>{})
+    if (tab==='support' && admin.isSuperAdmin) api('/support-payments').then(setSupportPayments).catch(()=>{})
     if (tab==='deleted' && (admin.isSuperAdmin||admin.permissions.restore_accounts)) api('/deleted-users').then(setDeletedUsers).catch(()=>{})
     if (tab==='team' && admin.isSuperAdmin) {
       api('/roles').then(setRoles).catch(()=>{})
@@ -287,6 +291,7 @@ export default function AdminDashboard() {
     { key:'deleted'     as TabType, label:'🗑 Deleted',  show:canRestore },
     { key:'donations'   as TabType, label:'Donations',   show:canSee('donations') },
     { key:'settlements' as TabType, label:'Settlements', show:canSee('settlements') },
+    { key:'support'     as TabType, label:'💜 Support Us', show:admin.isSuperAdmin },
     { key:'team'        as TabType, label:'Team',        show:admin.isSuperAdmin },
   ] as Array<{key:TabType;label:string;show:boolean}>).filter(t=>t.show)
 
@@ -626,6 +631,46 @@ export default function AdminDashboard() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* ═══ SUPPORT US PAYMENTS ════════════════════════════════════════════════ */}
+        {tab==='support' && admin.isSuperAdmin && (
+          <div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <div>
+                <h2 style={{ fontWeight:800, fontSize:17, color:'#f1f5f9', margin:0 }}>Support Us Transactions</h2>
+                <p style={{ fontSize:12, color:'#475569', margin:'4px 0 0' }}>Donations received via the Support Us page</p>
+              </div>
+              <div style={{ fontSize:13, color:'#a78bfa', fontWeight:700 }}>
+                Total: {fmt(supportPayments.filter(p=>p.status==='SUCCESS').reduce((s,p)=>s+p.amount,0))} ({supportPayments.filter(p=>p.status==='SUCCESS').length} payments)
+              </div>
+            </div>
+            <div style={{ ...card, overflow:'hidden' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                <thead>
+                  <tr style={{ borderBottom:'1px solid #2d2d4e' }}>
+                    {['Date','Name','Amount','Message','Status','Payment ID'].map(h=>(
+                      <th key={h} style={{ padding:'12px 16px', textAlign:'left', color:'#475569', fontSize:11, fontWeight:700, letterSpacing:.5, textTransform:'uppercase' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {supportPayments.length===0 ? (
+                    <tr><td colSpan={6} style={{ padding:40, textAlign:'center', color:'#334155', fontSize:14 }}>No support payments yet</td></tr>
+                  ) : supportPayments.map(p=>(
+                    <tr key={p.id} style={{ borderBottom:'1px solid #1e1e35' }}>
+                      <td style={{ padding:'12px 16px', color:'#94a3b8', whiteSpace:'nowrap' }}>{new Date(p.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</td>
+                      <td style={{ padding:'12px 16px', color:'#e2e8f0', fontWeight:600 }}>{p.name||'Anonymous'}</td>
+                      <td style={{ padding:'12px 16px', color:'#a78bfa', fontWeight:700 }}>{fmt(p.amount)}</td>
+                      <td style={{ padding:'12px 16px', color:'#64748b', maxWidth:200 }}>{p.message||'—'}</td>
+                      <td style={{ padding:'12px 16px' }}><Badge v={p.status}/></td>
+                      <td style={{ padding:'12px 16px', color:'#334155', fontSize:11, fontFamily:'monospace' }}>{p.paymentId||'—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

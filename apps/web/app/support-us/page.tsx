@@ -55,7 +55,14 @@ export default function SupportUsPage() {
         description: 'Support eztips — keep the platform alive ❤️',
         prefill: { name: name || undefined },
         theme: { color: '#7c3aed' },
-        handler: () => { setPaidAmount(amt); setPaid(true) },
+        handler: (resp: any) => {
+          fetch('/backend/api/support/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: data.orderId, paymentId: resp.razorpay_payment_id }),
+          }).catch(() => {})
+          setPaidAmount(amt); setPaid(true)
+        },
         modal: { ondismiss: () => setLoading(false) },
       })
       rzp.open()
