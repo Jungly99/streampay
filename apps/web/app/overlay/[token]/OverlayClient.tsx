@@ -8,6 +8,19 @@ interface QueueItem extends NewDonationEvent {
   id: string
 }
 
+function applyProfanityFilter(text: string, settings: AlertSettings): string {
+  if (!settings.enableProfanityFilter || !settings.customBlocklist) return text
+  const words = settings.customBlocklist.split(',').map(w => w.trim()).filter(Boolean)
+  let result = text
+  for (const word of words) {
+    if (!word) continue
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const re = new RegExp(escaped, 'gi')
+    result = result.replace(re, m => m[0] + '*'.repeat(Math.max(m.length - 1, 3)))
+  }
+  return result
+}
+
 const AMOUNT_TIERS = [
   { min: 1000, emoji: '👑', color: '#ffd700' },
   { min: 500,  emoji: '🔥', color: '#ff6b35' },
@@ -107,7 +120,8 @@ export default function OverlayClient({ token }: { token: string }) {
         } catch { /* audio not available */ }
       }
 
-      const ttsText = `${current.donorName} donated ₹${current.amount}. ${current.message ?? ''}`
+      const filteredMessage = current.message ? applyProfanityFilter(current.message, settings) : ''
+      const ttsText = `${current.donorName} donated ₹${current.amount}. ${filteredMessage}`
       const isCelebrityVoice = !!(
         settings.celebrityVoiceEnabled &&
         settings.celebrityVoiceId &&
@@ -249,9 +263,9 @@ export default function OverlayClient({ token }: { token: string }) {
                       ₹{current.amount}
                     </div>
                   </div>
-                  {current.message && (
+                  {filteredMessage && (
                     <div style={{ padding: '12px 20px', backgroundColor: `${tc}0d` }}>
-                      <p style={{ color: tc, margin: 0, fontSize: Math.max((settings.fontSize ?? 18) - 3, 12) }}>&quot;{current.message}&quot;</p>
+                      <p style={{ color: tc, margin: 0, fontSize: Math.max((settings.fontSize ?? 18) - 3, 12) }}>&quot;{filteredMessage}&quot;</p>
                     </div>
                   )}
                 </div>
@@ -259,21 +273,21 @@ export default function OverlayClient({ token }: { token: string }) {
 
               {settings.template === 'colorful' && (
                 <div style={{ borderRadius: 16, padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: current.message ? 10 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: filteredMessage ? 10 : 0 }}>
                     <span style={{ fontSize: 36 }}>{emoji}</span>
                     <div>
                       <p style={{ fontWeight: 700, color: tc, fontSize: settings.fontSize ?? 20, margin: 0 }}>{current.donorName}</p>
                       <p style={{ color: tc, opacity: 0.8, fontWeight: 700, fontSize: Math.max((settings.fontSize ?? 20) - 2, 13), margin: 0 }}>donated ₹{current.amount}!</p>
                     </div>
                   </div>
-                  {current.message && <p style={{ color: tc, opacity: 0.85, fontStyle: 'italic', margin: 0, fontSize: Math.max((settings.fontSize ?? 20) - 4, 13) }}>&quot;{current.message}&quot;</p>}
+                  {filteredMessage && <p style={{ color: tc, opacity: 0.85, fontStyle: 'italic', margin: 0, fontSize: Math.max((settings.fontSize ?? 20) - 4, 13) }}>&quot;{filteredMessage}&quot;</p>}
                 </div>
               )}
 
               {settings.template === 'custom' && (
                 <div style={{ borderRadius: 16, padding: 20 }}>
                   <p style={{ fontWeight: 700, fontSize: settings.fontSize ?? 20, margin: 0, color: tc }}>{emoji} {current.donorName} donated ₹{current.amount}</p>
-                  {current.message && <p style={{ marginTop: 8, opacity: 0.8, margin: '8px 0 0', color: tc }}>&quot;{current.message}&quot;</p>}
+                  {filteredMessage && <p style={{ marginTop: 8, opacity: 0.8, margin: '8px 0 0', color: tc }}>&quot;{filteredMessage}&quot;</p>}
                 </div>
               )}
 
