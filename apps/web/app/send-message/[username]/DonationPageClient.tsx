@@ -100,7 +100,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
         description: `Donation to ${streamer.channelName}`,
         order_id: res.razorpayOrderId,
         handler: () => {
-          window.location.href = `/payment/success?order_id=${res.donationId}`
+          window.location.href = `/payment/success?donation_id=${res.donationId}`
         },
         prefill: { name: donorName.trim(), email: 'donor@streampay.in', contact: '9999999999' },
         theme: { color: '#7c3aed' },
