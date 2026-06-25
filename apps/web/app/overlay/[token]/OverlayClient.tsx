@@ -203,23 +203,28 @@ export default function OverlayClient({ token }: { token: string }) {
       })()
     : '0 25px 50px rgba(0,0,0,0.4)'
 
+  const bg = settings.bgOpacity === 0 ? 'transparent' : settings.bgColor
   const bgStyle: React.CSSProperties = settings.enableGradientBg
-    ? { background: `linear-gradient(135deg,${settings.bgColor},${tier?.color ?? '#8b5cf6'}33)` }
-    : { backgroundColor: settings.bgOpacity === 0 ? 'transparent' : settings.bgColor }
+    ? { background: `linear-gradient(135deg,${settings.bgColor},${settings.bgColor}aa)` }
+    : { backgroundColor: bg }
 
+  const tc = settings.textColor  // streamer text color
   const cardStyle: React.CSSProperties = {
     ...bgStyle,
-    color: settings.textColor,
+    color: tc,
     fontSize: settings.fontSize,
     fontFamily: settings.fontStyle,
     fontWeight: settings.textBold ? 'bold' : 'normal',
     fontStyle: settings.textItalic ? 'italic' : 'normal',
     textDecoration: settings.textUnderline ? 'underline' : 'none',
-    border: settings.enableBorder ? `2px solid ${tier?.color ?? '#8b5cf6'}` : 'none',
+    border: settings.enableBorder ? `2px solid ${tc}` : 'none',
     borderRadius: 20,
     position: 'relative',
     boxShadow: shadowCss,
   }
+
+  // Emoji still shows tier (cosmetic only — no color impact)
+  const emoji = current ? getTier(current.amount)?.emoji ?? '🎉' : '🎉'
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'transparent', overflow: 'hidden' }}>
@@ -229,46 +234,46 @@ export default function OverlayClient({ token }: { token: string }) {
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'min(500px, 90vw)' }}>
         <Confetti active={showConfetti} />
         <AnimatePresence>
-          {current && tier && (
+          {current && (
             <motion.div key={current.id} {...anim} style={cardStyle}>
 
               {settings.template === 'superchat' && (
                 <div style={{ borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, backgroundColor: tier.color + '33' }}>
-                    <span style={{ fontSize: 28 }}>{tier.emoji}</span>
+                  <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, backgroundColor: `${tc}18` }}>
+                    <span style={{ fontSize: 28 }}>{emoji}</span>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontWeight: 700, color: 'white', fontSize: 18, margin: 0 }}>{current.donorName}</p>
-                      <p style={{ color: tier.color, fontSize: 13, margin: 0 }}>donated ₹{current.amount}</p>
+                      <p style={{ fontWeight: 700, color: tc, fontSize: settings.fontSize ?? 18, margin: 0 }}>{current.donorName}</p>
+                      <p style={{ color: tc, opacity: 0.7, fontSize: Math.max((settings.fontSize ?? 18) - 5, 11), margin: 0 }}>donated ₹{current.amount}</p>
                     </div>
-                    <div style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700, color: 'white', backgroundColor: tier.color, flexShrink: 0 }}>
+                    <div style={{ padding: '6px 14px', borderRadius: 20, fontSize: Math.max((settings.fontSize ?? 18) - 5, 11), fontWeight: 700, color: bg, backgroundColor: tc, flexShrink: 0 }}>
                       ₹{current.amount}
                     </div>
                   </div>
                   {current.message && (
-                    <div style={{ padding: '12px 20px', background: 'rgba(0,0,0,0.65)' }}>
-                      <p style={{ color: 'white', margin: 0, fontSize: 15 }}>&quot;{current.message}&quot;</p>
+                    <div style={{ padding: '12px 20px', backgroundColor: `${tc}0d` }}>
+                      <p style={{ color: tc, margin: 0, fontSize: Math.max((settings.fontSize ?? 18) - 3, 12) }}>&quot;{current.message}&quot;</p>
                     </div>
                   )}
                 </div>
               )}
 
               {settings.template === 'colorful' && (
-                <div style={{ borderRadius: 16, padding: 20, background: `linear-gradient(135deg, ${tier.color}33, ${tier.color}11)`, border: `1px solid ${tier.color}55` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                    <span style={{ fontSize: 36 }}>{tier.emoji}</span>
+                <div style={{ borderRadius: 16, padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: current.message ? 10 : 0 }}>
+                    <span style={{ fontSize: 36 }}>{emoji}</span>
                     <div>
-                      <p style={{ fontWeight: 700, color: 'white', fontSize: 20, margin: 0 }}>{current.donorName}</p>
-                      <p style={{ color: tier.color, fontWeight: 700, fontSize: 18, margin: 0 }}>donated ₹{current.amount}!</p>
+                      <p style={{ fontWeight: 700, color: tc, fontSize: settings.fontSize ?? 20, margin: 0 }}>{current.donorName}</p>
+                      <p style={{ color: tc, opacity: 0.8, fontWeight: 700, fontSize: Math.max((settings.fontSize ?? 20) - 2, 13), margin: 0 }}>donated ₹{current.amount}!</p>
                     </div>
                   </div>
-                  {current.message && <p style={{ color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', margin: 0 }}>&quot;{current.message}&quot;</p>}
+                  {current.message && <p style={{ color: tc, opacity: 0.85, fontStyle: 'italic', margin: 0, fontSize: Math.max((settings.fontSize ?? 20) - 4, 13) }}>&quot;{current.message}&quot;</p>}
                 </div>
               )}
 
               {settings.template === 'custom' && (
                 <div style={{ borderRadius: 16, padding: 20 }}>
-                  <p style={{ fontWeight: 700, fontSize: 20, margin: 0 }}>{tier.emoji} {current.donorName} donated ₹{current.amount}</p>
-                  {current.message && <p style={{ marginTop: 8, opacity: 0.8, margin: '8px 0 0' }}>&quot;{current.message}&quot;</p>}
+                  <p style={{ fontWeight: 700, fontSize: settings.fontSize ?? 20, margin: 0, color: tc }}>{emoji} {current.donorName} donated ₹{current.amount}</p>
+                  {current.message && <p style={{ marginTop: 8, opacity: 0.8, margin: '8px 0 0', color: tc }}>&quot;{current.message}&quot;</p>}
                 </div>
               )}
 

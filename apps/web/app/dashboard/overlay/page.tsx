@@ -207,10 +207,8 @@ export default function OverlayPage() {
     ['leaderboard','🏆','Leaderboard'],
   ]
 
-  // Live preview render
-  const TIERS = [{ min:1000, color:'#ffd700' },{ min:500, color:'#ff6b35' },{ min:100, color:'#8b5cf6' },{ min:0, color:'#06b6d4' }]
-  const tier = TIERS.find(t => 100 >= t.min) ?? TIERS[TIERS.length-1]!
-  const previewBg = s.enableGradientBg ? `linear-gradient(135deg,${s.bgColor},${tier.color}33)` : (s.bgOpacity===0 ? 'transparent' : s.bgColor)
+  // Live preview render — uses streamer colors only, no tier overrides
+  const previewBg = s.enableGradientBg ? `linear-gradient(135deg,${s.bgColor},${s.bgColor}aa)` : (s.bgOpacity===0 ? 'transparent' : s.bgColor)
 
   return (
     <div style={{ padding:'24px 28px', minHeight:'100%', fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif' }}>
@@ -545,29 +543,29 @@ export default function OverlayPage() {
             {(tab==='appearance'||tab==='tts'||tab==='safety') && (
               <div style={{ background:'#000', borderRadius:10, minHeight:140, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflow:'hidden' }}>
                 {s.template === 'superchat' && (
-                  <div style={{ borderRadius:12, overflow:'hidden', width:'100%', fontFamily:s.fontStyle, fontSize:s.fontSize*0.5 }}>
-                    <div style={{ padding:'10px 14px', display:'flex', alignItems:'center', gap:10, background:`${tier.color}33` }}>
+                  <div style={{ borderRadius:12, overflow:'hidden', width:'100%', fontFamily:s.fontStyle, background:previewBg, border:s.enableBorder?`2px solid ${s.textColor}`:'none' }}>
+                    <div style={{ padding:'10px 14px', display:'flex', alignItems:'center', gap:10, background:`${s.textColor}18` }}>
                       <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#7c3aed,#db2777)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:'white', flexShrink:0 }}>A</div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <p style={{ fontSize:12, fontWeight:700, color:'white', margin:0 }}>Arjun</p>
-                        <p style={{ fontSize:10, color:'rgba(255,255,255,0.6)', margin:0 }}>🎉 donated</p>
+                        <p style={{ fontSize:12, fontWeight:s.textBold?'bold':'normal', color:s.textColor, margin:0 }}>Arjun</p>
+                        <p style={{ fontSize:10, color:s.textColor, opacity:0.7, margin:0 }}>🎉 donated</p>
                       </div>
-                      <div style={{ padding:'4px 10px', borderRadius:20, fontSize:12, fontWeight:700, color:'white', background:tier.color }}>₹500</div>
+                      <div style={{ padding:'4px 10px', borderRadius:20, fontSize:12, fontWeight:700, color:previewBg, background:s.textColor }}>₹500</div>
                     </div>
-                    <div style={{ padding:'10px 14px', background:'rgba(0,0,0,0.65)' }}>
-                      <p style={{ fontSize:12, color:'rgba(255,255,255,0.9)', margin:0 }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
+                    <div style={{ padding:'10px 14px', background:`${s.textColor}0d` }}>
+                      <p style={{ fontSize:11, color:s.textColor, margin:0, fontStyle:s.textItalic?'italic':'normal', textDecoration:s.textUnderline?'underline':'none' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
                     </div>
                   </div>
                 )}
                 {s.template === 'colorful' && (
-                  <div style={{ borderRadius:14, padding:'14px 16px', width:'100%', background:`linear-gradient(135deg,${tier.color}33,${tier.color}11)`, border:`1px solid ${tier.color}55`, fontFamily:s.fontStyle, fontSize:s.fontSize*0.5 }}>
+                  <div style={{ borderRadius:14, padding:'14px 16px', width:'100%', background:previewBg, border:s.enableBorder?`2px solid ${s.textColor}`:'none', fontFamily:s.fontStyle }}>
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                      <div style={{ width:28, height:28, borderRadius:'50%', background:tier.color, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:'white', flexShrink:0 }}>A</div>
+                      <div style={{ width:28, height:28, borderRadius:'50%', background:s.textColor, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:previewBg||'#000', flexShrink:0 }}>A</div>
                       <div>
-                        <p style={{ fontSize:12, fontWeight:700, color:'white', margin:0 }}>Arjun donated <span style={{ color:tier.color }}>₹500</span></p>
+                        <p style={{ fontSize:12, fontWeight:s.textBold?'bold':'normal', color:s.textColor, margin:0 }}>Arjun donated ₹500</p>
                       </div>
                     </div>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.8)', margin:0 }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
+                    <p style={{ fontSize:11, color:s.textColor, opacity:0.85, margin:0, fontStyle:s.textItalic?'italic':'normal', textDecoration:s.textUnderline?'underline':'none' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
                   </div>
                 )}
                 {s.template === 'custom' && (
