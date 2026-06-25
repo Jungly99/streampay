@@ -304,14 +304,16 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
           {/* Message type toggle */}
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10 }}>MESSAGE TYPE</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: streamer.voiceMessagesEnabled ? '1fr 1fr' : '1fr', gap: 8, marginBottom: 14 }}>
               <button onClick={() => setMessageType('text')} style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', background: messageType === 'text' ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.03)', border: `2px solid ${messageType === 'text' ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.07)'}`, color: messageType === 'text' ? '#f8fafc' : '#64748b', fontSize: 13, fontWeight: 700 }}>
                 Text
               </button>
-              <button onClick={() => setMessageType('voice')} style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', background: messageType === 'voice' ? 'rgba(219,39,119,0.12)' : 'rgba(255,255,255,0.03)', border: `2px solid ${messageType === 'voice' ? 'rgba(219,39,119,0.4)' : 'rgba(255,255,255,0.07)'}`, color: messageType === 'voice' ? '#f8fafc' : '#64748b', fontSize: 13, fontWeight: 700, position: 'relative' }}>
-                Voice
-                <span style={{ position: 'absolute', top: -6, right: -4, fontSize: 9, fontWeight: 800, background: '#db2777', color: 'white', padding: '1px 5px', borderRadius: 10 }}>NEW</span>
-              </button>
+              {streamer.voiceMessagesEnabled && (
+                <button onClick={() => setMessageType('voice')} style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', background: messageType === 'voice' ? 'rgba(219,39,119,0.12)' : 'rgba(255,255,255,0.03)', border: `2px solid ${messageType === 'voice' ? 'rgba(219,39,119,0.4)' : 'rgba(255,255,255,0.07)'}`, color: messageType === 'voice' ? '#f8fafc' : '#64748b', fontSize: 13, fontWeight: 700, position: 'relative' }}>
+                  Voice
+                  <span style={{ position: 'absolute', top: -6, right: -4, fontSize: 9, fontWeight: 800, background: '#db2777', color: 'white', padding: '1px 5px', borderRadius: 10 }}>NEW</span>
+                </button>
+              )}
             </div>
 
             {messageType === 'text' && (

@@ -296,6 +296,20 @@ model AdminRole {
   @@map("admin_roles")
 }
 
+model SupportPayment {
+  id        String    @id @default(uuid())
+  orderId   String    @unique @map("order_id")
+  paymentId String?   @map("payment_id")
+  amount    Int
+  name      String?
+  message   String?
+  status    String    @default("PENDING")
+  createdAt DateTime  @default(now()) @map("created_at")
+  paidAt    DateTime? @map("paid_at")
+
+  @@map("support_payments")
+}
+
 model AdminUser {
   id           String     @id @default(uuid())
   email        String     @unique

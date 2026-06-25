@@ -27,7 +27,7 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
   }
   const alertSettings = await prisma.alertSettings.findUnique({
     where: { streamerId: profile.id },
-    select: { celebrityVoiceEnabled: true, celebrityVoiceMinAmount: true },
+    select: { celebrityVoiceEnabled: true, celebrityVoiceMinAmount: true, voiceMessagesEnabled: true },
   })
   res.json({
     id: profile.id,
@@ -49,6 +49,7 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
     socialTwitch: profile.socialTwitch,
     socialDiscord: profile.socialDiscord,
     socialKick: profile.socialKick,
+    voiceMessagesEnabled: alertSettings?.voiceMessagesEnabled ?? false,
     celebrityVoiceEnabled: alertSettings?.celebrityVoiceEnabled ?? false,
     celebrityVoiceMinAmount: alertSettings?.celebrityVoiceMinAmount ?? 1000,
   })
