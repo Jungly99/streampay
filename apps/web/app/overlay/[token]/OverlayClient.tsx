@@ -277,24 +277,7 @@ export default function OverlayClient({ token }: { token: string }) {
         </AnimatePresence>
       </div>
 
-      {/* Goal bar — bottom center */}
-      {goal && goal.targetAmount > 0 && (
-        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', width: 500, maxWidth: '90vw' }}>
-          <div style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', borderRadius: 16, padding: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'white', marginBottom: 8 }}>
-              <span style={{ fontWeight: 600 }}>{goal.title}</span>
-              <span>₹{goal.currentAmount} / ₹{goal.targetAmount}</span>
-            </div>
-            <div style={{ height: 10, background: 'rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' }}>
-              <motion.div
-                style={{ height: '100%', borderRadius: 10, background: 'linear-gradient(90deg,#7c3aed,#db2777)' }}
-                animate={{ width: `${Math.min((goal.currentAmount / goal.targetAmount) * 100, 100)}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Goal bar lives at /overlay/[token]/goal — separate OBS browser source */}
     </div>
   )
 }
