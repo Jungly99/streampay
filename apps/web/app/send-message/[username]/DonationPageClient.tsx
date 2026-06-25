@@ -136,7 +136,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
           </div>
           <div style={{ padding: '0 28px 24px' }}>
             {/* Avatar — overlaps banner with negative margin */}
-            <div style={{ marginTop: -42, marginBottom: 14 }}>
+            <div style={{ marginTop: -42, marginBottom: 14, position: 'relative', zIndex: 1 }}>
               {streamer.avatarUrl ? (
                 <img src={streamer.avatarUrl} alt={streamer.channelName} style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: '3px solid #07071a', boxShadow: '0 0 0 3px rgba(124,58,237,0.5), 0 8px 24px rgba(0,0,0,0.6)', display: 'block' }} />
               ) : (
