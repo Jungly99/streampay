@@ -71,19 +71,18 @@ router.get('/overlay-leaderboard/:token', async (req: Request, res: Response): P
   const profile = await prisma.streamerProfile.findUnique({ where: { overlayToken: req.params.token } })
   if (!profile) { res.status(404).json({ error: 'Invalid token' }); return }
 
-  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
   const [topRows, recent] = await Promise.all([
     prisma.donation.groupBy({
       by: ['donorName'],
-      where: { streamerId: profile.id, status: 'SUCCESS', paidAt: { gte: monthStart } },
+      where: { streamerId: profile.id, status: 'SUCCESS' },
       _sum: { amount: true },
       orderBy: { _sum: { amount: 'desc' } },
-      take: 5,
+      take: 10,
     }),
     prisma.donation.findMany({
       where: { streamerId: profile.id, status: 'SUCCESS' },
       orderBy: { paidAt: 'desc' },
-      take: 8,
+      take: 10,
       select: { donorName: true, amount: true, paidAt: true },
     }),
   ])

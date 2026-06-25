@@ -6,7 +6,7 @@ import type { NewDonationEvent } from '@streampay/types'
 interface Donor { rank: number; name: string; total: number }
 
 const MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
-const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+const BACKEND = ''  // use relative /backend proxy so OBS browser source works
 
 function readParams() {
   if (typeof window === 'undefined') return { color: '#7c3aed', count: 5, title: 'Top Donors' }
@@ -25,7 +25,7 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
   useEffect(() => { setParams(readParams()) }, [])
 
   useEffect(() => {
-    fetch(`${BACKEND}/api/donations/overlay-leaderboard/${token}`)
+    fetch(`/backend/api/donations/overlay-leaderboard/${token}`)
       .then(r => r.json())
       .then(d => setDonors((d.topDonors ?? []).slice(0, params.count)))
       .catch(() => {})
@@ -54,9 +54,9 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
   if (!donors.length) return (
     <div style={{ background: 'transparent', padding: 8, minWidth: 260 }}>
       <style>{`html,body{background:transparent!important;margin:0;padding:0}*{box-sizing:border-box}`}</style>
-      <div style={{ background: 'rgba(10,10,26,0.75)', backdropFilter: 'blur(12px)', borderRadius: 16, padding: '14px 16px', border: `1px solid ${params.color}20` }}>
-        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 800, color: params.color + '80', letterSpacing: '0.06em', textTransform: 'uppercase' }}>🏆 {params.title}</p>
-        <p style={{ margin: 0, fontSize: 11, color: '#1e293b', textAlign: 'center', padding: '8px 0' }}>Waiting for donations…</p>
+      <div style={{ background: 'rgba(10,10,26,0.85)', backdropFilter: 'blur(12px)', borderRadius: 16, padding: '14px 16px', border: `1px solid ${params.color}30` }}>
+        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 800, color: params.color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>🏆 {params.title}</p>
+        <p style={{ margin: 0, fontSize: 11, color: '#64748b', textAlign: 'center', padding: '8px 0' }}>No donations yet this month</p>
       </div>
     </div>
   )
