@@ -95,12 +95,17 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
   }
 })
 
-// GET /api/admin/auth/me
-router.get('/me', (req: Request, res: Response): void => {
+// GET /api/admin/auth/me — always fetch fresh permissions from DB so role changes take effect immediately
+router.get('/me', async (req: Request, res: Response): Promise<void> => {
   const token = req.cookies?.eztips_admin_token
   if (!token) { res.status(401).json({ error: 'Not authenticated' }); return }
   try {
     const admin = verifyAdminToken(token)
+    if (!admin.isSuperAdmin) {
+      const adminUser = await prisma.adminUser.findUnique({ where: { id: admin.adminId }, include: { role: true } })
+      if (!adminUser) { res.status(401).json({ error: 'Admin not found' }); return }
+      admin.permissions = (adminUser.role?.permissions ?? {}) as unknown as AdminPermissions
+    }
     res.json({ admin })
   } catch {
     res.status(401).json({ error: 'Invalid token' })
