@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getSocket } from '../../../../lib/socket'
+import { getSocket } from '../../../../../lib/socket'
 import type { NewDonationEvent } from '@streampay/types'
 
 interface RecentDonor { name: string; amount: number; id: string }
@@ -19,7 +19,9 @@ export default function RecentDonorsClient({ token }: { token: string }) {
       ))
       .catch(() => {})
 
-    const socket = getSocket(token)
+    const socket = getSocket()
+    socket.connect()
+    socket.on('connect', () => socket.emit('join-overlay', { token }))
     socket.on('new-donation', (data: NewDonationEvent) => {
       setDonors(prev => [
         { name: data.donorName, amount: data.amount, id: `${Date.now()}` },

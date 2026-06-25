@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getSocket } from '../../../../lib/socket'
+import { getSocket } from '../../../../../lib/socket'
 import type { NewDonationEvent } from '@streampay/types'
 
 interface Donor { rank: number; name: string; total: number }
@@ -17,19 +17,21 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
       .then(d => setDonors(d.topDonors ?? []))
       .catch(() => {})
 
-    const socket = getSocket(token)
+    const socket = getSocket()
+    socket.connect()
+    socket.on('connect', () => socket.emit('join-overlay', { token }))
     socket.on('new-donation', (data: NewDonationEvent) => {
       setDonors(prev => {
         const updated = [...prev]
         const idx = updated.findIndex(d => d.name.toLowerCase() === data.donorName.toLowerCase())
-        if (idx >= 0) {
-          updated[idx] = { ...updated[idx], total: updated[idx].total + data.amount }
+        if (idx >= 0 && updated[idx]) {
+          updated[idx] = { name: updated[idx]!.name, rank: updated[idx]!.rank, total: updated[idx]!.total + data.amount }
         } else {
           updated.push({ rank: updated.length + 1, name: data.donorName, total: data.amount })
         }
         return updated
           .sort((a, b) => b.total - a.total)
-          .map((d, i) => ({ ...d, rank: i + 1 }))
+          .map((d, i): Donor => ({ name: d.name, total: d.total, rank: i + 1 }))
           .slice(0, 5)
       })
     })

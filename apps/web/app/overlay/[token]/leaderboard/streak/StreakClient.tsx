@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getSocket } from '../../../../lib/socket'
+import { getSocket } from '../../../../../lib/socket'
 import type { NewDonationEvent } from '@streampay/types'
 
 const RESET_AFTER_MS = 5 * 60 * 1000 // reset streak if no donation in 5 min
@@ -14,7 +14,9 @@ export default function StreakClient({ token }: { token: string }) {
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const socket = getSocket(token)
+    const socket = getSocket()
+    socket.connect()
+    socket.on('connect', () => socket.emit('join-overlay', { token }))
     socket.on('new-donation', (data: NewDonationEvent) => {
       setStreak(s => s + 1)
       setLastDonor(data.donorName)
