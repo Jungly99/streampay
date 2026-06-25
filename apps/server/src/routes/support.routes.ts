@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import Razorpay from 'razorpay'
 import { env } from '../config/env'
 import { prisma } from '../db/prisma'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 const router = Router()
 
@@ -20,7 +20,7 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
 
   await prisma.supportPayment.create({
     data: {
-      id: uuidv4(),
+      id: randomUUID(),
       orderId: order.id,
       amount: Math.round(amount),
       name: name || null,
