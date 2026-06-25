@@ -120,8 +120,8 @@ export default function OverlayClient({ token }: { token: string }) {
         } catch { /* audio not available */ }
       }
 
-      const filteredMessage = current.message ? applyProfanityFilter(current.message, settings) : ''
-      const ttsText = `${current.donorName} donated ₹${current.amount}. ${filteredMessage}`
+      const ttsFiltered = current.message ? applyProfanityFilter(current.message, settings) : ''
+      const ttsText = `${current.donorName} donated ₹${current.amount}. ${ttsFiltered}`
       const isCelebrityVoice = !!(
         settings.celebrityVoiceEnabled &&
         settings.celebrityVoiceId &&
@@ -206,6 +206,7 @@ export default function OverlayClient({ token }: { token: string }) {
 
   const anim = ANIMATIONS[(settings.animationStyle as keyof typeof ANIMATIONS)] ?? ANIMATIONS.slideDown
   const tier = current ? getTier(current.amount) : null
+  const filteredMessage = current?.message ? applyProfanityFilter(current.message, settings) : ''
 
   const shadowCss = settings.enableShadow
     ? (() => {
