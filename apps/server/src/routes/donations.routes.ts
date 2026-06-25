@@ -68,28 +68,33 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
 
 // Public: get leaderboard data for overlay (by token)
 router.get('/overlay-leaderboard/:token', async (req: Request, res: Response): Promise<void> => {
-  const profile = await prisma.streamerProfile.findUnique({ where: { overlayToken: req.params.token } })
-  if (!profile) { res.status(404).json({ error: 'Invalid token' }); return }
+  try {
+    const profile = await prisma.streamerProfile.findUnique({ where: { overlayToken: req.params.token } })
+    if (!profile) { res.status(404).json({ error: 'Invalid token' }); return }
 
-  const [topRows, recent] = await Promise.all([
-    prisma.donation.groupBy({
-      by: ['donorName'],
-      where: { streamerId: profile.id, status: 'SUCCESS' },
-      _sum: { amount: true },
-      orderBy: { _sum: { amount: 'desc' } },
-      take: 10,
-    }),
-    prisma.donation.findMany({
-      where: { streamerId: profile.id, status: 'SUCCESS' },
-      orderBy: { paidAt: 'desc' },
-      take: 10,
-      select: { donorName: true, amount: true, paidAt: true },
-    }),
-  ])
-  res.json({
-    topDonors: topRows.map((r, i) => ({ rank: i + 1, name: r.donorName, total: r._sum.amount ?? 0 })),
-    recentDonors: recent.map(d => ({ name: d.donorName, amount: d.amount, paidAt: d.paidAt })),
-  })
+    const [topRows, recent] = await Promise.all([
+      prisma.donation.groupBy({
+        by: ['donorName'],
+        where: { streamerId: profile.id, status: 'SUCCESS' },
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: 'desc' } },
+        take: 10,
+      }),
+      prisma.donation.findMany({
+        where: { streamerId: profile.id, status: 'SUCCESS' },
+        orderBy: { paidAt: 'desc' },
+        take: 10,
+        select: { donorName: true, amount: true, paidAt: true },
+      }),
+    ])
+    res.json({
+      topDonors: topRows.map((r, i) => ({ rank: i + 1, name: r.donorName, total: r._sum.amount ?? 0 })),
+      recentDonors: recent.map(d => ({ name: d.donorName, amount: d.amount, paidAt: d.paidAt })),
+    })
+  } catch (e) {
+    console.error('overlay-leaderboard error:', e)
+    res.status(500).json({ error: 'Internal error', topDonors: [], recentDonors: [] })
+  }
 })
 
 // Public: get top donors for leaderboard on donation page

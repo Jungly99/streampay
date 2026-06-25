@@ -134,47 +134,50 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
           <div style={{ height: 110, background: 'linear-gradient(135deg,#3b0764 0%,#701a75 50%,#1e1b4b 100%)', position: 'relative' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 20px)' }} />
           </div>
-          <div style={{ padding: '0 28px 24px', marginTop: -44 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, flexWrap: 'wrap' }}>
-              {/* Avatar */}
+          <div style={{ padding: '0 28px 24px' }}>
+            {/* Avatar — overlaps banner with negative margin */}
+            <div style={{ marginTop: -42, marginBottom: 14 }}>
               {streamer.avatarUrl ? (
-                <img src={streamer.avatarUrl} alt={streamer.channelName} style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: '3px solid #07071a', boxShadow: '0 0 0 3px rgba(124,58,237,0.5), 0 8px 24px rgba(0,0,0,0.6)', flexShrink: 0 }} />
+                <img src={streamer.avatarUrl} alt={streamer.channelName} style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: '3px solid #07071a', boxShadow: '0 0 0 3px rgba(124,58,237,0.5), 0 8px 24px rgba(0,0,0,0.6)', display: 'block' }} />
               ) : (
-                <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: 'white', border: '3px solid #07071a', boxShadow: '0 0 0 3px rgba(124,58,237,0.5)', flexShrink: 0 }}>
+                <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: 'white', border: '3px solid #07071a', boxShadow: '0 0 0 3px rgba(124,58,237,0.5)' }}>
                   {streamer.channelName?.[0]?.toUpperCase() ?? 'S'}
                 </div>
               )}
-              {/* Name + badges + socials */}
-              <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-                  <h1 style={{ fontSize: 22, fontWeight: 900, color: '#f1f5f9', margin: 0, letterSpacing: '-0.5px' }}>Support {streamer.channelName}</h1>
-                  {streamer.isVerified && <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', padding: '3px 10px', borderRadius: 20 }}>✓ Verified</span>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12, color: '#475569' }}>No account required</span>
-                  {streamer.bio && <span style={{ fontSize: 12, color: '#334155' }}>·</span>}
-                  {streamer.bio && <span style={{ fontSize: 12, color: '#64748b' }}>{streamer.bio}</span>}
-                </div>
-                {/* Socials + visit channel */}
-                {(() => {
-                  const links = SOCIALS.filter(s => (streamer as any)[s.key])
-                  return (links.length > 0 || streamer.channelLink) ? (
-                    <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                      {streamer.channelLink && (
-                        <a href={streamer.channelLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#a78bfa', fontWeight: 600, textDecoration: 'none', padding: '5px 12px', borderRadius: 8, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                          🔗 Visit Channel
-                        </a>
-                      )}
-                      {links.map(s => (
-                        <a key={s.key} href={(streamer as any)[s.key]} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 20, background: `${s.color}12`, border: `1px solid ${s.color}30`, fontSize: 12, fontWeight: 600, color: s.color, textDecoration: 'none' }}>
-                          <span>{s.icon}</span> {s.label}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null
-                })()}
-              </div>
             </div>
+
+            {/* Title row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#f1f5f9', margin: 0, letterSpacing: '-0.5px' }}>Support {streamer.channelName}</h1>
+                {streamer.isVerified && <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', padding: '3px 10px', borderRadius: 20 }}>✓ Verified</span>}
+              </div>
+              {streamer.channelLink && (
+                <a href={streamer.channelLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#a78bfa', fontWeight: 600, textDecoration: 'none', padding: '5px 12px', borderRadius: 8, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', flexShrink: 0 }}>
+                  🔗 Visit Channel
+                </a>
+              )}
+            </div>
+
+            {/* Subtitle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: streamer.bio ? 8 : 0, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: '#475569' }}>No account required</span>
+              {streamer.bio && <><span style={{ fontSize: 12, color: '#334155' }}>·</span><span style={{ fontSize: 12, color: '#64748b' }}>{streamer.bio}</span></>}
+            </div>
+
+            {/* Socials */}
+            {(() => {
+              const links = SOCIALS.filter(s => (streamer as any)[s.key])
+              return links.length > 0 ? (
+                <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {links.map(s => (
+                    <a key={s.key} href={(streamer as any)[s.key]} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 20, background: `${s.color}12`, border: `1px solid ${s.color}30`, fontSize: 12, fontWeight: 600, color: s.color, textDecoration: 'none' }}>
+                      <span>{s.icon}</span> {s.label}
+                    </a>
+                  ))}
+                </div>
+              ) : null
+            })()}
           </div>
         </div>
       </div>
