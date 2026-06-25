@@ -74,13 +74,12 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
 
   async function handlePay() {
     if (!finalAmount || finalAmount < streamer.minDonationAmount) { toast.error(`Minimum: ${formatINR(streamer.minDonationAmount)}`); return }
-    if (!donorName.trim()) { toast.error('Please enter your name'); return }
-    localStorage.setItem('streampay_donor_name', donorName.trim())
+    if (donorName.trim()) localStorage.setItem('streampay_donor_name', donorName.trim())
     setLoading(true)
     try {
       const res = await api.post<{ donationId: string; razorpayOrderId: string; amount: number; currency: string }>(
         '/api/donations/create-order',
-        { streamerId: streamer.id, donorName: donorName.trim(), message: message.trim() || undefined, amount: finalAmount }
+        { streamerId: streamer.id, donorName: donorName.trim() || 'Anonymous', message: message.trim() || undefined, amount: finalAmount }
       )
 
       // Load Razorpay script
@@ -296,8 +295,8 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
 
           {/* Name */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>YOUR NAME</label>
-            <input value={donorName} onChange={e => setDonorName(e.target.value)} maxLength={30} placeholder="Enter your name" style={inp} />
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>YOUR NAME <span style={{ fontWeight: 400, textTransform: 'none', color: '#334155' }}>(optional)</span></label>
+            <input value={donorName} onChange={e => setDonorName(e.target.value)} maxLength={30} placeholder="Anonymous" style={inp} />
             <p style={{ fontSize: 11, color: '#334155', marginTop: 5 }}>{donorName.length}/30 · Saved for next visit · No account needed</p>
           </div>
 
@@ -359,11 +358,11 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
 
           {/* Pay button */}
           <div style={{ marginTop: 'auto' }}>
-            <button onClick={handlePay} disabled={loading || !finalAmount || !donorName.trim()} style={{
-              width: '100%', padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: !finalAmount || !donorName.trim() ? 'not-allowed' : 'pointer',
-              background: !finalAmount || !donorName.trim() ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#7c3aed,#db2777)',
-              border: 'none', color: !finalAmount || !donorName.trim() ? '#334155' : 'white',
-              boxShadow: !finalAmount || !donorName.trim() ? 'none' : '0 0 30px rgba(124,58,237,0.35)',
+            <button onClick={handlePay} disabled={loading || !finalAmount} style={{
+              width: '100%', padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: !finalAmount ? 'not-allowed' : 'pointer',
+              background: !finalAmount ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#7c3aed,#db2777)',
+              border: 'none', color: !finalAmount ? '#334155' : 'white',
+              boxShadow: !finalAmount ? 'none' : '0 0 30px rgba(124,58,237,0.35)',
               opacity: loading ? 0.7 : 1, transition: 'all 0.15s',
             }}>
               {loading ? 'Processing…' : `Pay ${finalAmount ? formatINR(finalAmount) : '₹___'} →`}
