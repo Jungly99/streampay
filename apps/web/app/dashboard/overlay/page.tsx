@@ -518,6 +518,11 @@ export default function OverlayPage() {
           {/* ── LEADERBOARD ───────────────────────────── */}
           {tab==='leaderboard' && overlayToken && (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div style={{ display:'flex', justifyContent:'flex-end' }}>
+                <button onClick={()=>{ setLbColors({top:'#7c3aed',recent:'#10b981',streak:'#f59e0b'}); setLbTitles({top:'Top Donors',recent:'Recent Donors',streak:'Donation Train'}); setLbCounts({top:5,recent:6}); setLbResetMin(5); toast.success('Leaderboard settings reset') }} style={{ padding:'7px 14px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', color:'#f87171', display:'flex', alignItems:'center', gap:6 }}>
+                  ↺ Reset to Defaults
+                </button>
+              </div>
               {/* Sub-tab switcher */}
               <div style={{ display:'flex', gap:4, background:'rgba(255,255,255,0.02)', borderRadius:10, padding:4, border:'1px solid rgba(255,255,255,0.05)' }}>
                 {([['top','🥇','Top Donors','#fbbf24'],['recent','👥','Recent','#10b981'],['streak','⚡','Train','#a855f7']] as const).map(([k,e,n,c])=>(

@@ -52,8 +52,12 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
   }, [token])
 
   if (!donors.length) return (
-    <div style={{ background: 'transparent' }}>
-      <style>{`html,body{background:transparent!important;margin:0;padding:0}`}</style>
+    <div style={{ background: 'transparent', padding: 8, minWidth: 260 }}>
+      <style>{`html,body{background:transparent!important;margin:0;padding:0}*{box-sizing:border-box}`}</style>
+      <div style={{ background: 'rgba(10,10,26,0.75)', backdropFilter: 'blur(12px)', borderRadius: 16, padding: '14px 16px', border: `1px solid ${params.color}20` }}>
+        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 800, color: params.color + '80', letterSpacing: '0.06em', textTransform: 'uppercase' }}>🏆 {params.title}</p>
+        <p style={{ margin: 0, fontSize: 11, color: '#1e293b', textAlign: 'center', padding: '8px 0' }}>Waiting for donations…</p>
+      </div>
     </div>
   )
 
