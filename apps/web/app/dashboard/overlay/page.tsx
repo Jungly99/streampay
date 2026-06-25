@@ -481,22 +481,30 @@ export default function OverlayPage() {
           </>}
 
           {/* ── LEADERBOARD ───────────────────────────── */}
-          {tab==='leaderboard' && (
-            <div style={{ ...C, padding:'36px 24px', textAlign:'center' }}>
-              <span style={{ fontSize:48 }}>🏆</span>
-              <p style={{ fontSize:17, fontWeight:700, color:'#f1f5f9', margin:'14px 0 8px' }}>Leaderboard Overlays</p>
-              <p style={{ fontSize:13, color:'#475569', maxWidth:340, margin:'0 auto 20px' }}>
-                Top Supporter, Recent Donors, and Support Streak overlays are coming in the next update.
-                These will be separate OBS Browser Sources you can position anywhere on your scene.
-              </p>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, maxWidth:420, margin:'0 auto' }}>
-                {[['🥇','Top Donor','#ffd700'],['👥','Recent Donors','#06b6d4'],['⚡','Streak','#a855f7']].map(([e,n,c])=>(
-                  <div key={n} style={{ background:`${c}10`, border:`1px solid ${c}25`, borderRadius:12, padding:'16px 10px' }}>
-                    <span style={{ fontSize:28 }}>{e}</span>
-                    <p style={{ fontSize:12, fontWeight:600, color:'#94a3b8', margin:'8px 0 0' }}>{n}</p>
-                    <span style={{ fontSize:10, color:c, fontWeight:700, marginTop:4, display:'block' }}>Coming Soon</span>
+          {tab==='leaderboard' && overlayToken && (
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              {([
+                { key:'top',    emoji:'🥇', label:'Top Donor Overlay',     color:'#fbbf24', desc:'Shows your top 5 donors this month. Updates live as donations come in.' },
+                { key:'recent', emoji:'👥', label:'Recent Donors Overlay',  color:'#10b981', desc:'Shows the last 6 donors in real-time as they donate.' },
+                { key:'streak', emoji:'⚡', label:'Donation Train Overlay', color:'#a855f7', desc:'Shows a live streak counter — resets after 5 min of no donations.' },
+              ] as const).map(({ key, emoji, label, color, desc }) => {
+                const url = `${SITE}/overlay/${overlayToken}/leaderboard/${key}`
+                const masked = url.replace(overlayToken, '•'.repeat(16))
+                return (
+                  <div key={key} style={{ ...C, padding:'16px 20px' }}>
+                    <p style={sH}><span>{emoji}</span> {label}</p>
+                    <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>{desc} Add as a separate OBS Browser Source.</p>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
+                      <span style={{ flex:1, fontSize:12, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{masked}</span>
+                      <button onClick={()=>{ navigator.clipboard.writeText(url); toast.success('Copied!') }} style={{ background:`${color}20`, border:`1px solid ${color}40`, borderRadius:7, cursor:'pointer', fontSize:12, color, padding:'5px 10px', fontWeight:700, flexShrink:0 }}>Copy</button>
+                    </div>
                   </div>
-                ))}
+                )
+              })}
+              <div style={{ ...C, padding:'12px 16px' }}>
+                <p style={{ fontSize:11, color:'#f59e0b', margin:0, display:'flex', alignItems:'center', gap:5 }}>
+                  <span>⚠️</span> Each overlay is a separate OBS Browser Source (300×400px recommended, transparent background).
+                </p>
               </div>
             </div>
           )}
