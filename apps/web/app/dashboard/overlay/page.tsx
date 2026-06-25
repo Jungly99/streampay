@@ -106,6 +106,30 @@ export default function OverlayPage() {
   const [showGoalToken, setShowGoalToken] = useState(false)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [lbTab, setLbTab] = useState<'top'|'recent'|'streak'>('top')
+  const [lbColors, setLbColors] = useState({ top: '#7c3aed', recent: '#10b981', streak: '#f59e0b' })
+  const [lbTitles, setLbTitles] = useState({ top: 'Top Donors', recent: 'Recent Donors', streak: 'Donation Train' })
+  const [lbCounts, setLbCounts] = useState({ top: 5, recent: 6 })
+  const [lbResetMin, setLbResetMin] = useState(5)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('eztips_lb_settings')
+      if (saved) {
+        const p = JSON.parse(saved)
+        if (p.colors) setLbColors(p.colors)
+        if (p.titles) setLbTitles(p.titles)
+        if (p.counts) setLbCounts(p.counts)
+        if (p.resetMin != null) setLbResetMin(p.resetMin)
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eztips_lb_settings', JSON.stringify({ colors: lbColors, titles: lbTitles, counts: lbCounts, resetMin: lbResetMin }))
+    } catch {}
+  }, [lbColors, lbTitles, lbCounts, lbResetMin])
 
   useEffect(() => {
     Promise.all([
@@ -193,6 +217,17 @@ export default function OverlayPage() {
   }
 
   const SITE = typeof window !== 'undefined' ? window.location.origin : 'https://eztips.live'
+
+  const buildLbUrl = (key: 'top'|'recent'|'streak') => {
+    if (!overlayToken) return ''
+    const params = new URLSearchParams()
+    params.set('c', lbColors[key].replace('#',''))
+    params.set('t', key==='top' ? lbTitles.top : key==='recent' ? lbTitles.recent : lbTitles.streak)
+    if (key==='top') params.set('n', String(lbCounts.top))
+    if (key==='recent') params.set('n', String(lbCounts.recent))
+    if (key==='streak') params.set('r', String(lbResetMin))
+    return `${SITE}/overlay/${overlayToken}/leaderboard/${key}?${params.toString()}`
+  }
   const overlayUrl     = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
   const goalOverlayUrl = overlayToken ? `${SITE}/overlay/${overlayToken}/goal` : ''
   const maskUrl = (url: string) => overlayToken ? url.replace(overlayToken, '•'.repeat(16)) : url
@@ -482,28 +517,74 @@ export default function OverlayPage() {
 
           {/* ── LEADERBOARD ───────────────────────────── */}
           {tab==='leaderboard' && overlayToken && (
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              {([
-                { key:'top',    emoji:'🥇', label:'Top Donor Overlay',     color:'#fbbf24', desc:'Shows your top 5 donors this month. Updates live as donations come in.' },
-                { key:'recent', emoji:'👥', label:'Recent Donors Overlay',  color:'#10b981', desc:'Shows the last 6 donors in real-time as they donate.' },
-                { key:'streak', emoji:'⚡', label:'Donation Train Overlay', color:'#a855f7', desc:'Shows a live streak counter — resets after 5 min of no donations.' },
-              ] as const).map(({ key, emoji, label, color, desc }) => {
-                const url = `${SITE}/overlay/${overlayToken}/leaderboard/${key}`
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {/* Sub-tab switcher */}
+              <div style={{ display:'flex', gap:4, background:'rgba(255,255,255,0.02)', borderRadius:10, padding:4, border:'1px solid rgba(255,255,255,0.05)' }}>
+                {([['top','🥇','Top Donors','#fbbf24'],['recent','👥','Recent','#10b981'],['streak','⚡','Train','#a855f7']] as const).map(([k,e,n,c])=>(
+                  <button key={k} onClick={()=>setLbTab(k)} style={{ flex:1, padding:'8px 4px', borderRadius:7, fontSize:12, fontWeight:700, cursor:'pointer', border:`1.5px solid ${lbTab===k?c+'60':'transparent'}`, background:lbTab===k?`${c}15`:'transparent', color:lbTab===k?c:'#64748b', transition:'all 0.15s' }}>
+                    {e} {n}
+                  </button>
+                ))}
+              </div>
+
+              {/* Top Donors settings */}
+              {lbTab==='top' && (
+                <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
+                  <p style={sH}><span>🥇</span> Top Donors Overlay</p>
+                  <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows your top N donors this month. Updates live as donations arrive.</p>
+                  <div><span style={lbl}>Title</span><input value={lbTitles.top} onChange={e=>setLbTitles(p=>({...p,top:e.target.value}))} style={inp}/></div>
+                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.top} onChange={e=>setLbColors(p=>({...p,top:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Entries to show" value={lbCounts.top} min={3} max={10} onChange={v=>setLbCounts(p=>({...p,top:v}))}/>
+                </div>
+              )}
+
+              {/* Recent Donors settings */}
+              {lbTab==='recent' && (
+                <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
+                  <p style={sH}><span>👥</span> Recent Donors Overlay</p>
+                  <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows the last N donors in real-time as they donate.</p>
+                  <div><span style={lbl}>Title</span><input value={lbTitles.recent} onChange={e=>setLbTitles(p=>({...p,recent:e.target.value}))} style={inp}/></div>
+                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.recent} onChange={e=>setLbColors(p=>({...p,recent:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Entries to show" value={lbCounts.recent} min={3} max={8} onChange={v=>setLbCounts(p=>({...p,recent:v}))}/>
+                </div>
+              )}
+
+              {/* Donation Train settings */}
+              {lbTab==='streak' && (
+                <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
+                  <p style={sH}><span>⚡</span> Donation Train Overlay</p>
+                  <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows a live streak counter with total raised. Resets after inactivity.</p>
+                  <div><span style={lbl}>Title</span><input value={lbTitles.streak} onChange={e=>setLbTitles(p=>({...p,streak:e.target.value}))} style={inp}/></div>
+                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.streak} onChange={e=>setLbColors(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
+                  <div>
+                    <span style={lbl}>Reset Timer</span>
+                    <Select value={String(lbResetMin)} onChange={v=>setLbResetMin(Number(v))} options={[{value:'2',label:'2 minutes'},{value:'5',label:'5 minutes (default)'},{value:'10',label:'10 minutes'}]}/>
+                    <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Train resets if no donations arrive within this time</p>
+                  </div>
+                </div>
+              )}
+
+              {/* URL card for active sub-tab */}
+              {(['top','recent','streak'] as const).map(key => {
+                if (key !== lbTab) return null
+                const url = buildLbUrl(key)
                 const masked = url.replace(overlayToken, '•'.repeat(16))
+                const accentColors: Record<string,string> = { top:'#fbbf24', recent:'#10b981', streak:'#a855f7' }
+                const col = accentColors[key]!
                 return (
-                  <div key={key} style={{ ...C, padding:'16px 20px' }}>
-                    <p style={sH}><span>{emoji}</span> {label}</p>
-                    <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>{desc} Add as a separate OBS Browser Source.</p>
+                  <div key={key} style={{ ...C, padding:'14px 18px' }}>
+                    <p style={{ fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.04em', textTransform:'uppercase', margin:'0 0 10px' }}>OBS Browser Source URL</p>
                     <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
-                      <span style={{ flex:1, fontSize:12, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{masked}</span>
-                      <button onClick={()=>{ navigator.clipboard.writeText(url); toast.success('Copied!') }} style={{ background:`${color}20`, border:`1px solid ${color}40`, borderRadius:7, cursor:'pointer', fontSize:12, color, padding:'5px 10px', fontWeight:700, flexShrink:0 }}>Copy</button>
+                      <span style={{ flex:1, fontSize:11, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{masked}</span>
+                      <button onClick={()=>{ navigator.clipboard.writeText(url); toast.success('Copied!') }} style={{ background:`${col}20`, border:`1px solid ${col}40`, borderRadius:7, cursor:'pointer', fontSize:12, color:col, padding:'5px 10px', fontWeight:700, flexShrink:0 }}>Copy</button>
                     </div>
                   </div>
                 )
               })}
+
               <div style={{ ...C, padding:'12px 16px' }}>
                 <p style={{ fontSize:11, color:'#f59e0b', margin:0, display:'flex', alignItems:'center', gap:5 }}>
-                  <span>⚠️</span> Each overlay is a separate OBS Browser Source (300×400px recommended, transparent background).
+                  <span>⚠️</span> Each overlay is a separate OBS Browser Source (300×400px, transparent). Re-copy URL after changing settings.
                 </p>
               </div>
             </div>
@@ -621,20 +702,57 @@ export default function OverlayPage() {
               </div>
             )}
 
-            {/* Leaderboard placeholder preview */}
+            {/* Leaderboard live preview — updates with settings */}
             {tab==='leaderboard' && (
-              <div style={{ background:'#000', borderRadius:10, padding:18 }}>
-                <p style={{ color:'rgba(255,255,255,0.3)', fontSize:11, textAlign:'center', margin:0 }}>Leaderboard overlays</p>
-                <p style={{ color:'rgba(255,255,255,0.15)', fontSize:10, textAlign:'center', margin:'4px 0 0' }}>coming soon</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:14 }}>
-                  {[['🥇','Arjun K.','₹2,500'],['🥈','Priya M.','₹1,200'],['🥉','Rohan S.','₹800']].map(([e,n,a],i)=>(
-                    <div key={i} style={{ display:'flex', alignItems:'center', gap:8, opacity:0.4+i*0.1, filter:'blur(1px)' }}>
-                      <span style={{ fontSize:14 }}>{e}</span>
-                      <span style={{ flex:1, fontSize:11, color:'white' }}>{n}</span>
-                      <span style={{ fontSize:11, color:'#a78bfa', fontWeight:700 }}>{a}</span>
+              <div style={{ background:'#0a0a1a', borderRadius:10, padding:14, border:`1px solid ${lbColors[lbTab]}25` }}>
+                {lbTab==='top' && (
+                  <>
+                    <p style={{ fontSize:10, fontWeight:800, color:lbColors.top, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 10px' }}>
+                      🏆 {lbTitles.top || 'Top Donors'}
+                    </p>
+                    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                      {[
+                        { n:'Arjun K.', a:'₹2,500', medal:'🥇' },
+                        { n:'Priya M.', a:'₹1,200', medal:'🥈' },
+                        { n:'Rohan S.', a:'₹800',   medal:'🥉' },
+                      ].slice(0, Math.min(lbCounts.top, 3)).map((row, i) => (
+                        <div key={i} style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 8px', borderRadius:8, background:i===0?`${lbColors.top}18`:'rgba(255,255,255,0.03)', border:`1px solid ${i===0?lbColors.top+'40':'rgba(255,255,255,0.06)'}` }}>
+                          <span style={{ fontSize:13 }}>{row.medal}</span>
+                          <span style={{ flex:1, fontSize:11, fontWeight:700, color:i===0?lbColors.top:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
+                          <span style={{ fontSize:11, fontWeight:800, color:i===0?lbColors.top:'#a78bfa' }}>{row.a}</span>
+                        </div>
+                      ))}
+                      {lbCounts.top > 3 && <p style={{ fontSize:9, color:'#334155', margin:'4px 0 0', textAlign:'center' }}>+{lbCounts.top-3} more entries on stream</p>}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
+                {lbTab==='recent' && (
+                  <>
+                    <p style={{ fontSize:10, fontWeight:800, color:lbColors.recent, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 10px' }}>
+                      👥 {lbTitles.recent || 'Recent Donors'}
+                    </p>
+                    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                      {[{n:'Arjun K.',a:'₹500'},{n:'Priya M.',a:'₹100'},{n:'Neha G.',a:'₹250'},{n:'Rohan S.',a:'₹50'}].slice(0, Math.min(lbCounts.recent,4)).map((row,i)=>(
+                        <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 8px', borderRadius:8, background:i===0?`${lbColors.recent}15`:'rgba(255,255,255,0.02)', border:`1px solid ${i===0?lbColors.recent+'40':'rgba(255,255,255,0.05)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
+                          <span style={{ fontSize:11, fontWeight:700, color:i===0?lbColors.recent:'#94a3b8' }}>{row.n}</span>
+                          <span style={{ fontSize:11, fontWeight:800, color:i===0?lbColors.recent:'#64748b' }}>{row.a}</span>
+                        </div>
+                      ))}
+                      {lbCounts.recent > 4 && <p style={{ fontSize:9, color:'#334155', margin:'4px 0 0', textAlign:'center' }}>+{lbCounts.recent-4} more on stream</p>}
+                    </div>
+                  </>
+                )}
+                {lbTab==='streak' && (
+                  <div style={{ textAlign:'center', padding:'8px 0' }}>
+                    <p style={{ fontSize:10, fontWeight:800, color:lbColors.streak, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 10px' }}>
+                      ⚡ {lbTitles.streak || 'Donation Train'}
+                    </p>
+                    <div style={{ fontSize:38, fontWeight:900, color:lbColors.streak, lineHeight:1, textShadow:`0 0 20px ${lbColors.streak}80` }}>3x</div>
+                    <div style={{ fontSize:10, color:'#94a3b8', marginTop:6 }}>consecutive donations</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#10b981', marginTop:8 }}>₹850 total</div>
+                    <div style={{ fontSize:9, color:'#334155', marginTop:4 }}>Resets after {lbResetMin} min inactivity</div>
+                  </div>
+                )}
               </div>
             )}
 
