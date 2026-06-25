@@ -6,8 +6,6 @@ import type { NewDonationEvent } from '@streampay/types'
 
 interface RecentDonor { name: string; amount: number; id: string }
 
-const BACKEND = ''  // use relative /backend proxy so OBS browser source works
-
 function readParams() {
   if (typeof window === 'undefined') return { color: '#10b981', count: 6, title: 'Recent Donors' }
   const p = new URLSearchParams(window.location.search)
@@ -21,8 +19,25 @@ function readParams() {
 export default function RecentDonorsClient({ token }: { token: string }) {
   const [donors, setDonors] = useState<RecentDonor[]>([])
   const [params, setParams] = useState(readParams)
+  const [activeIdx, setActiveIdx] = useState(0)
+  const [nameSpin, setNameSpin] = useState(-1)
+  const [mounted, setMounted] = useState(false)
 
-  useEffect(() => { setParams(readParams()) }, [])
+  useEffect(() => { setParams(readParams()); setMounted(true) }, [])
+
+  // Rotate spotlight through each recent donor
+  useEffect(() => {
+    if (donors.length <= 1) return
+    const id = setInterval(() => {
+      setActiveIdx(prev => {
+        const next = (prev + 1) % donors.length
+        setNameSpin(next)
+        setTimeout(() => setNameSpin(-1), 500)
+        return next
+      })
+    }, 2500)
+    return () => clearInterval(id)
+  }, [donors.length])
 
   useEffect(() => {
     fetch(`/backend/api/donations/overlay-leaderboard/${token}`)
@@ -56,7 +71,13 @@ export default function RecentDonorsClient({ token }: { token: string }) {
 
   return (
     <div style={{ background: 'transparent', padding: 8, minWidth: 240 }}>
-      <style>{`html,body{background:transparent!important;margin:0;padding:0}*{box-sizing:border-box}`}</style>
+      <style>{`
+        html,body{background:transparent!important;margin:0;padding:0}
+        *{box-sizing:border-box}
+        @keyframes rc-pulse{0%,100%{box-shadow:0 0 8px ${params.color}50,0 2px 12px rgba(0,0,0,0.4)}50%{box-shadow:0 0 22px ${params.color}99,0 4px 24px rgba(0,0,0,0.6)}}
+        @keyframes rc-pop{0%{transform:scale(1)}40%{transform:scale(1.25) rotate(-8deg)}70%{transform:scale(0.95) rotate(4deg)}100%{transform:scale(1) rotate(0deg)}}
+        @keyframes rc-shimmer{0%{opacity:0.7}50%{opacity:1}100%{opacity:0.7}}
+      `}</style>
       <div style={{
         background: 'rgba(10,10,26,0.85)', backdropFilter: 'blur(12px)',
         borderRadius: 16, padding: '14px 16px', border: `1px solid ${params.color}40`,
@@ -66,25 +87,55 @@ export default function RecentDonorsClient({ token }: { token: string }) {
           👥 {params.title}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <AnimatePresence initial={false}>
-            {donors.map((d, i) => (
-              <motion.div
-                key={d.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '7px 12px', borderRadius: 9,
-                  background: i === 0 ? `${params.color}15` : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${i === 0 ? params.color + '40' : 'rgba(255,255,255,0.06)'}`,
-                  opacity: Math.max(1 - i * 0.15, 0.4),
-                }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: i === 0 ? params.color : '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>{d.name}</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: i === 0 ? params.color : '#64748b', flexShrink: 0, marginLeft: 8 }}>₹{d.amount.toLocaleString('en-IN')}</span>
-              </motion.div>
-            ))}
+          <AnimatePresence initial={mounted}>
+            {donors.map((d, i) => {
+              const isActive = i === activeIdx
+              const isPop = i === nameSpin
+              return (
+                <motion.div
+                  key={d.id}
+                  layout
+                  initial={{ opacity: 0, x: -20, scale: 0.92 }}
+                  animate={{ opacity: Math.max(1 - i * 0.12, 0.35), x: 0, scale: isActive ? 1.04 : 1 }}
+                  exit={{ opacity: 0, x: 20, scale: 0.9 }}
+                  transition={{ duration: 0.3, layout: { duration: 0.4, type: 'spring', stiffness: 300, damping: 30 } }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '7px 12px', borderRadius: 9,
+                    background: isActive
+                      ? `linear-gradient(135deg, ${params.color}22 0%, ${params.color}08 100%)`
+                      : i === 0 ? `${params.color}12` : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${isActive ? params.color + '75' : i === 0 ? params.color + '35' : 'rgba(255,255,255,0.06)'}`,
+                    animation: isActive ? 'rc-pulse 1.6s ease-in-out infinite' : undefined,
+                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                    <span style={{
+                      fontSize: 14, display: 'inline-block', flexShrink: 0,
+                      animation: isPop ? 'rc-pop 0.5s ease-in-out' : undefined,
+                      filter: isActive ? `drop-shadow(0 0 5px ${params.color}bb)` : undefined,
+                    }}>
+                      {i === 0 ? '🕐' : i === 1 ? '🕑' : i === 2 ? '🕒' : '👤'}
+                    </span>
+                    <span style={{
+                      fontSize: 13, fontWeight: isActive ? 800 : 600,
+                      color: isActive ? '#ffffff' : i === 0 ? params.color : '#94a3b8',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130,
+                      textShadow: isActive ? `0 0 12px ${params.color}80` : undefined,
+                      animation: isActive ? 'rc-shimmer 1.6s ease-in-out infinite' : undefined,
+                    }}>
+                      {d.name}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, flexShrink: 0, marginLeft: 8,
+                    color: isActive ? params.color : i === 0 ? params.color : '#64748b',
+                    textShadow: isActive ? `0 0 10px ${params.color}cc` : undefined,
+                  }}>
+                    ₹{d.amount.toLocaleString('en-IN')}
+                  </span>
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
         </div>
       </div>
