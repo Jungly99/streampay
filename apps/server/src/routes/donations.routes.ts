@@ -22,7 +22,18 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
     return
   }
   if (!profile.isActive) {
-    res.status(200).json({ inactive: true, channelName: profile.channelName, avatarUrl: profile.avatarUrl })
+    res.status(200).json({
+      inactive: true,
+      channelName: profile.channelName,
+      avatarUrl: profile.avatarUrl,
+      socialTwitter: profile.socialTwitter,
+      socialInstagram: profile.socialInstagram,
+      socialYoutube: profile.socialYoutube,
+      socialTwitch: profile.socialTwitch,
+      socialDiscord: profile.socialDiscord,
+      socialKick: profile.socialKick,
+      channelLink: profile.channelLink,
+    })
     return
   }
   const alertSettings = await prisma.alertSettings.findUnique({
