@@ -81,6 +81,7 @@ export interface DonationPageStreamer {
   socialTwitch: string | null
   socialDiscord: string | null
   socialKick: string | null
+  voiceMessagesEnabled: boolean
   celebrityVoiceEnabled: boolean
   celebrityVoiceMinAmount: number
 }
