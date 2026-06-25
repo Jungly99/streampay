@@ -3,15 +3,11 @@ import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { api } from '../../../lib/api'
 import { formatINR } from '../../../lib/utils'
+import { useTheme } from '../../../lib/theme'
+import { useIsMobile } from '../../../lib/useIsMobile'
 import type { DonationPageStreamer } from '@streampay/types'
 
 const ALL_QUICK_AMOUNTS = [50, 100, 250, 500, 1000, 2000, 5000]
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '12px 14px', borderRadius: 10, fontSize: 14,
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-  color: '#f8fafc', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
-}
 
 const SOCIALS = [
   { key: 'socialTwitter',   icon: '𝕏',  label: 'Twitter',  color: '#e7e7e7' },
@@ -23,6 +19,25 @@ const SOCIALS = [
 ] as const
 
 export default function DonationPageClient({ streamer }: { streamer: DonationPageStreamer & { activeGoal?: any } }) {
+  const { isDark } = useTheme()
+  const isMobile = useIsMobile()
+
+  // Theme-aware colors
+  const pageBg      = isDark ? '#07071a' : '#f0f2fc'
+  const card        = isDark ? { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16 } as const
+                             : { background: 'rgba(255,255,255,0.9)',  border: '1px solid rgba(100,80,220,0.1)',  borderRadius: 16 } as const
+  const inp: React.CSSProperties = {
+    width: '100%', padding: '12px 14px', borderRadius: 10, fontSize: 14,
+    background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+    border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(100,80,220,0.15)',
+    color: isDark ? '#f8fafc' : '#1e1b4b', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+  }
+  const textPrimary = isDark ? '#f1f5f9' : '#1e1b4b'
+  const textSecond  = isDark ? '#94a3b8' : '#4c4a82'
+  const textMuted   = isDark ? '#64748b' : '#7c78b8'
+  const topBarBg    = isDark ? 'rgba(7,7,26,0.85)' : 'rgba(240,242,252,0.9)'
+  const topBarBorder = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(100,80,220,0.1)'
+
   const [amount, setAmount] = useState<number | ''>('')
   const [customAmount, setCustomAmount] = useState('')
   const [donorName, setDonorName] = useState('')
@@ -110,26 +125,21 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
     } catch (e: any) { toast.error(e.message); setLoading(false) }
   }
 
-  const card: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-    borderRadius: 16, backdropFilter: 'blur(8px)',
-  }
-
   const sortedTiers = [...(streamer.messageTiers ?? [])].sort((a, b) => a.minAmount - b.minAmount)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#07071a', color: '#f8fafc', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: pageBg, color: textPrimary, fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
 
       {/* Top bar */}
-      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: 12, color: '#334155' }}>Powered by </span>
+      <div style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(100,80,220,0.08)'}`, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: topBarBg, backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <span style={{ fontSize: 12, color: textMuted }}>Powered by </span>
         <span style={{ fontSize: 12, fontWeight: 800, background: 'linear-gradient(135deg,#a78bfa,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: '0 4px' }}>eztips</span>
-        <span style={{ fontSize: 12, color: '#334155' }}> · 0% fee on viewers · Secured by Razorpay</span>
+        <span style={{ fontSize: 12, color: textMuted }}> · 0% fee on viewers · Secured by Razorpay</span>
       </div>
 
       {/* ── HERO (full-width) ── */}
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '24px 20px 0' }}>
-        <div style={{ ...card, overflow: 'hidden', marginBottom: 24 }}>
+        <div style={{ ...card, overflow: 'hidden', marginBottom: 24, backdropFilter: 'blur(8px)' }}>
           {/* Banner */}
           <div style={{ height: 110, position: 'relative', background: streamer.bannerUrl ? 'transparent' : 'linear-gradient(135deg,#3b0764 0%,#701a75 50%,#1e1b4b 100%)' }}>
             {streamer.bannerUrl
@@ -141,9 +151,9 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
             {/* Avatar — overlaps banner with negative margin */}
             <div style={{ marginTop: -42, marginBottom: 14, position: 'relative', zIndex: 1 }}>
               {streamer.avatarUrl ? (
-                <img src={streamer.avatarUrl} alt={streamer.channelName} style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: '3px solid #07071a', boxShadow: '0 0 0 3px rgba(124,58,237,0.5), 0 8px 24px rgba(0,0,0,0.6)', display: 'block' }} />
+                <img src={streamer.avatarUrl} alt={streamer.channelName} style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${pageBg}`, boxShadow: '0 0 0 3px rgba(124,58,237,0.5), 0 8px 24px rgba(0,0,0,0.6)', display: 'block' }} />
               ) : (
-                <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: 'white', border: '3px solid #07071a', boxShadow: '0 0 0 3px rgba(124,58,237,0.5)' }}>
+                <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: 'white', border: `3px solid ${pageBg}`, boxShadow: '0 0 0 3px rgba(124,58,237,0.5)' }}>
                   {streamer.channelName?.[0]?.toUpperCase() ?? 'S'}
                 </div>
               )}
@@ -152,7 +162,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
             {/* Title row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#f1f5f9', margin: 0, letterSpacing: '-0.5px' }}>Support {streamer.channelName}</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: textPrimary, margin: 0, letterSpacing: '-0.5px' }}>Support {streamer.channelName}</h1>
                 {streamer.isVerified && <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', padding: '3px 10px', borderRadius: 20 }}>✓ Verified</span>}
               </div>
               {streamer.channelLink && (
@@ -164,8 +174,8 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
 
             {/* Subtitle */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: streamer.bio ? 8 : 0, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12, color: '#475569' }}>No account required</span>
-              {streamer.bio && <><span style={{ fontSize: 12, color: '#334155' }}>·</span><span style={{ fontSize: 12, color: '#64748b' }}>{streamer.bio}</span></>}
+              <span style={{ fontSize: 12, color: textMuted }}>No account required</span>
+              {streamer.bio && <><span style={{ fontSize: 12, color: textMuted }}>·</span><span style={{ fontSize: 12, color: textSecond }}>{streamer.bio}</span></>}
             </div>
 
             {/* Socials */}
@@ -186,14 +196,14 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
       </div>
 
       {/* ── 2-COLUMN GRID ── */}
-      <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 20px 60px', display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'start' }}>
+      <div className="donation-layout">
 
         {/* ── LEFT COLUMN ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Amount selector */}
           <div style={{ ...card, padding: '20px 22px' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 14px' }}>Select Amount</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: textSecond, letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 14px' }}>Select Amount</p>
 
             <input type="number" value={customAmount} min={streamer.minDonationAmount} max={10000}
               onChange={e => { setCustomAmount(e.target.value); setAmount('') }}
@@ -233,7 +243,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
           {sortedTiers.length > 0 && (
             <div style={{ ...card, padding: '20px 22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>Message Tiers</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: textSecond, letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>Message Tiers</p>
                 <span style={{ fontSize: 11, color: '#475569' }}>Tip more → longer messages</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -265,7 +275,7 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
           {/* Leaderboard */}
           {leaderboard.length > 0 && (
             <div style={{ ...card, padding: '20px 22px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 16px' }}>🏆 Top Supporters</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: textSecond, letterSpacing: '0.05em', textTransform: 'uppercase', margin: '0 0 16px' }}>🏆 Top Supporters</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {leaderboard.slice(0, 5).map((l, i) => (
                   <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -289,12 +299,12 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
         </div>
 
         {/* ── RIGHT COLUMN (sticky) ── */}
-        <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div className="donation-sticky" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           <div style={{ ...card, padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             <div>
-              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#f1f5f9', margin: '0 0 4px', letterSpacing: '-0.3px' }}>Your Message</h2>
-              <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Anonymous donations welcome — no account needed</p>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: textPrimary, margin: '0 0 4px', letterSpacing: '-0.3px' }}>Your Message</h2>
+              <p style={{ fontSize: 12, color: textMuted, margin: 0 }}>Anonymous donations welcome — no account needed</p>
             </div>
 
             {/* Name */}

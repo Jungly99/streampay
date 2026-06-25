@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
-/* ── Design tokens ─────────────────────────────────── */
-:root {
+/* ── Design tokens — Dark (default) ───────────────────── */
+:root, [data-theme="dark"] {
   --bg:        #06060f;
+  --bg-2:      #07071a;
   --surface:   rgba(255,255,255,0.03);
   --surface-2: rgba(255,255,255,0.06);
   --border:    rgba(255,255,255,0.07);
@@ -15,6 +16,21 @@
   --text-2:    #94a3b8;
   --text-3:    #475569;
   --radius:    14px;
+  color-scheme: dark;
+}
+
+/* ── Design tokens — Light ─────────────────────────────── */
+[data-theme="light"] {
+  --bg:        #f0f2fc;
+  --bg-2:      #e8edf8;
+  --surface:   rgba(255,255,255,0.92);
+  --surface-2: #ffffff;
+  --border:    rgba(100,80,220,0.1);
+  --border-2:  rgba(100,80,220,0.2);
+  --text-1:    #1e1b4b;
+  --text-2:    #4c4a82;
+  --text-3:    #7c78b8;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; padding: 0; margin: 0; }
@@ -25,6 +41,8 @@ html, body {
   font-family: 'Geist', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -44,6 +62,9 @@ a { color: inherit; text-decoration: none; }
 .card-hover:hover {
   border-color: rgba(124,58,237,0.3);
   background: rgba(124,58,237,0.04);
+}
+[data-theme="light"] .card-hover:hover {
+  background: rgba(124,58,237,0.06);
 }
 
 /* ── Gradient text ──────────────────────────────────── */
@@ -81,6 +102,7 @@ a { color: inherit; text-decoration: none; }
 }
 .toggle-track.on  { background: linear-gradient(135deg,#7c3aed,#db2777); }
 .toggle-track.off { background: rgba(255,255,255,0.12); }
+[data-theme="light"] .toggle-track.off { background: rgba(0,0,0,0.15); }
 .toggle-track.on .toggle-thumb { transform: translateX(20px); }
 
 /* ── Ambient background blobs ───────────────────────── */
@@ -101,6 +123,12 @@ a { color: inherit; text-decoration: none; }
   background: radial-gradient(circle, rgba(219,39,119,0.07) 0%, transparent 65%);
   animation: drift 15s ease-in-out infinite reverse;
 }
+[data-theme="light"] .ambient::before {
+  background: radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 65%);
+}
+[data-theme="light"] .ambient::after {
+  background: radial-gradient(circle, rgba(219,39,119,0.05) 0%, transparent 65%);
+}
 @keyframes drift {
   0%,100% { transform: translate(0,0) scale(1); }
   50%      { transform: translate(2%,3%) scale(1.04); }
@@ -111,6 +139,9 @@ input[type="range"] {
   -webkit-appearance: none; appearance: none;
   width: 100%; height: 3px; border-radius: 2px;
   background: rgba(255,255,255,0.1); outline: none; cursor: pointer;
+}
+[data-theme="light"] input[type="range"] {
+  background: rgba(0,0,0,0.12);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 16px; height: 16px;
@@ -123,11 +154,98 @@ input[type="range"]::-webkit-slider-thumb {
 ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.5); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.8); }
+[data-theme="light"] ::-webkit-scrollbar-track { background: rgba(0,0,0,0.04); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); }
 
-/* ── Legacy aliases (used in some pages) ────────────── */
-.glass-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+/* ── Dashboard mobile sidebar ───────────────────────── */
+.sidebar-drawer {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex;
 }
-.gradient-text { } /* handled by g-text */
+.sidebar-drawer-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(2px);
+}
+.sidebar-drawer-panel {
+  position: relative; z-index: 1;
+  width: 252px; height: 100%;
+  overflow-y: auto;
+  animation: slideInLeft 0.25s ease;
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Mobile topbar ──────────────────────────────────── */
+.mobile-topbar {
+  display: none;
+  position: sticky; top: 0; z-index: 50;
+  height: 52px; padding: 0 16px;
+  align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+@media (max-width: 768px) {
+  .mobile-topbar { display: flex; }
+  .desktop-sidebar { display: none !important; }
+  .dashboard-main  { padding-bottom: 24px; }
+}
+
+/* ── Donation page responsive ───────────────────────── */
+.donation-layout {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 24px;
+  align-items: start;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+}
+@media (max-width: 900px) {
+  .donation-layout { grid-template-columns: 1fr; }
+}
+.donation-sticky {
+  position: sticky;
+  top: 24px;
+}
+@media (max-width: 900px) {
+  .donation-sticky { position: relative; top: 0; }
+}
+
+/* ── Light mode form elements ───────────────────────── */
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  background: rgba(0,0,0,0.04) !important;
+  border-color: rgba(100,80,220,0.15) !important;
+  color: #1e1b4b !important;
+}
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: rgba(100,80,220,0.4) !important;
+}
+
+/* ── Light mode dashboard ───────────────────────────── */
+[data-theme="light"] .dashboard-root { background: #f0f2fc; }
+
+/* Override headings and key text nodes in light mode */
+[data-theme="light"] .dashboard-main h1,
+[data-theme="light"] .dashboard-main h2,
+[data-theme="light"] .dashboard-main h3 { color: #1e1b4b !important; }
+
+/* Form controls inside dashboard */
+[data-theme="light"] .dashboard-main input:not([type="range"]),
+[data-theme="light"] .dashboard-main textarea,
+[data-theme="light"] .dashboard-main select {
+  background: rgba(0,0,0,0.04) !important;
+  border-color: rgba(100,80,220,0.15) !important;
+  color: #1e1b4b !important;
+}
+[data-theme="light"] .dashboard-main input::placeholder,
+[data-theme="light"] .dashboard-main textarea::placeholder { color: rgba(100,80,220,0.4) !important; }
+
+/* ── Legacy aliases ─────────────────────────────────── */
+.glass-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.gradient-text { }

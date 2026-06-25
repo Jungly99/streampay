@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import Sidebar from '../../components/dashboard/Sidebar'
-import VerificationGate from '../../components/dashboard/VerificationGate'
+import DashboardShell from '../../components/dashboard/DashboardShell'
 
 async function getUser() {
   const cookieStore = await cookies()
@@ -37,24 +36,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (user.accountType !== 'streamer') redirect('/fan')
 
   const stats = await getStats(token!.value)
-  const isVerified: boolean = user.streamerProfile?.isVerified ?? false
-  const verificationRequestedAt: string | null = user.streamerProfile?.verificationRequestedAt ?? null
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#06060f' }}>
-      <Sidebar
-        channelName={user.streamerProfile?.channelName ?? user.displayName ?? 'Streamer'}
-        email={user.email ?? ''}
-        username={user.streamerProfile?.username ?? ''}
-        overlayToken={user.streamerProfile?.overlayToken ?? ''}
-        todayEarnings={stats.todayEarnings ?? 0}
-        followers={stats.followerCount ?? 0}
-        isPremium={user.streamerProfile?.isPremium ?? false}
-      />
-      <main className="flex-1 overflow-y-auto h-full">
-        <VerificationGate isVerified={isVerified} verificationRequestedAt={verificationRequestedAt} />
-        {children}
-      </main>
-    </div>
+    <DashboardShell
+      channelName={user.streamerProfile?.channelName ?? user.displayName ?? 'Streamer'}
+      email={user.email ?? ''}
+      username={user.streamerProfile?.username ?? ''}
+      overlayToken={user.streamerProfile?.overlayToken ?? ''}
+      todayEarnings={stats.todayEarnings ?? 0}
+      followers={stats.followerCount ?? 0}
+      isPremium={user.streamerProfile?.isPremium ?? false}
+      isVerified={user.streamerProfile?.isVerified ?? false}
+      verificationRequestedAt={user.streamerProfile?.verificationRequestedAt ?? null}
+    >
+      {children}
+    </DashboardShell>
   )
 }
