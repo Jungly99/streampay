@@ -62,6 +62,7 @@ model StreamerProfile {
   channelLink           String?  @map("channel_link")
   bio                   String?
   avatarUrl             String?  @map("avatar_url")
+  bannerUrl             String?  @map("banner_url")
   socialTwitter         String?  @map("social_twitter")
   socialInstagram       String?  @map("social_instagram")
   socialYoutube         String?  @map("social_youtube")

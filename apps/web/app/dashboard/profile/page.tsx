@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -35,6 +36,15 @@ export default function ProfilePage() {
     if (file.size > 2 * 1024 * 1024) { toast.error('Image must be under 2MB'); return }
     const reader = new FileReader()
     reader.onload = ev => setProfile((p: any) => ({ ...p, avatarUrl: ev.target?.result as string }))
+    reader.readAsDataURL(file)
+  }
+
+  function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 3 * 1024 * 1024) { toast.error('Banner must be under 3MB'); return }
+    const reader = new FileReader()
+    reader.onload = ev => setProfile((p: any) => ({ ...p, bannerUrl: ev.target?.result as string }))
     reader.readAsDataURL(file)
   }
 
@@ -57,6 +67,7 @@ export default function ProfilePage() {
         bio: profile.bio ?? '',
         channelLink: profile.channelLink ?? '',
         avatarUrl: profile.avatarUrl ?? '',
+        bannerUrl: profile.bannerUrl ?? '',
         socialTwitter: profile.socialTwitter ?? '',
         socialInstagram: profile.socialInstagram ?? '',
         socialYoutube: profile.socialYoutube ?? '',
@@ -225,6 +236,68 @@ if (!profile) return (
 
       {tab === 'profile' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* ── Channel Banner ── */}
+          <div style={{ ...C, padding: '22px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: 0 }}>Channel Banner</p>
+                <p style={{ fontSize: 12, color: '#475569', margin: '4px 0 0' }}>Shown as the hero background on your donation page</p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {profile.bannerUrl && (
+                  <button onClick={() => setProfile((p: any) => ({ ...p, bannerUrl: '' }))} style={{ padding: '7px 14px', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                    Remove
+                  </button>
+                )}
+                <button onClick={() => bannerInputRef.current?.click()} style={{ padding: '7px 16px', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)', color: '#a78bfa' }}>
+                  {profile.bannerUrl ? '🔄 Change Banner' : '📷 Upload Banner'}
+                </button>
+              </div>
+            </div>
+            <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleBannerChange} style={{ display: 'none' }} />
+
+            {/* Banner preview / upload area */}
+            <div
+              onClick={() => !profile.bannerUrl && bannerInputRef.current?.click()}
+              style={{
+                width: '100%', height: 160, borderRadius: 12, overflow: 'hidden',
+                background: profile.bannerUrl ? 'transparent' : 'rgba(255,255,255,0.02)',
+                border: profile.bannerUrl ? 'none' : '2px dashed rgba(124,58,237,0.3)',
+                cursor: profile.bannerUrl ? 'default' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative',
+              }}>
+              {profile.bannerUrl ? (
+                <img src={profile.bannerUrl} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>🖼️</div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#64748b', margin: 0 }}>Click to upload banner</p>
+                  <p style={{ fontSize: 11, color: '#334155', margin: '4px 0 0' }}>or drag & drop</p>
+                </div>
+              )}
+            </div>
+
+            {/* Specs — like YouTube */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 14 }}>
+              {[
+                { label: 'Recommended size', value: '1920 × 480 px' },
+                { label: 'Minimum width', value: '1024 px' },
+                { label: 'Max file size', value: '3 MB' },
+                { label: 'File types', value: 'JPG, PNG, WebP, GIF' },
+              ].map(spec => (
+                <div key={spec.label} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 9, padding: '10px 12px' }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', margin: '0 0 4px' }}>{spec.label}</p>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', margin: 0 }}>{spec.value}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: '#475569', margin: '10px 0 0', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span>💡</span> Banner appears behind your avatar on your public donation page. Landscape banners work best.
+            </p>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'stretch' }}>
             {/* Basic Info */}
             <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>

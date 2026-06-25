@@ -111,6 +111,13 @@ export default function OverlayPage() {
   const [lbTitles, setLbTitles] = useState({ top: 'Top Donors', recent: 'Recent Donors', streak: 'Donation Train' })
   const [lbCounts, setLbCounts] = useState({ top: 5, recent: 6 })
   const [lbResetMin, setLbResetMin] = useState(5)
+  const [lbBg, setLbBg] = useState({ top: '#0a0a1a', recent: '#0a0a1a', streak: '#0a0a1a' })
+  const [lbOpacity, setLbOpacity] = useState({ top: 85, recent: 85, streak: 88 })
+  const [lbTextColor, setLbTextColor] = useState({ top: '#e2e8f0', recent: '#e2e8f0', streak: '#e2e8f0' })
+  const [lbFontSize, setLbFontSize] = useState({ top: 13, recent: 13, streak: 13 })
+  const [lbFont, setLbFont] = useState({ top: 'Arial', recent: 'Arial', streak: 'Arial' })
+  const [lbBold, setLbBold] = useState({ top: true, recent: true, streak: true })
+  const [lbRotSpeed, setLbRotSpeed] = useState({ top: 2.5, recent: 2.5 })
 
   useEffect(() => {
     try {
@@ -121,13 +128,20 @@ export default function OverlayPage() {
         if (p.titles) setLbTitles(p.titles)
         if (p.counts) setLbCounts(p.counts)
         if (p.resetMin != null) setLbResetMin(p.resetMin)
+        if (p.bg) setLbBg(p.bg)
+        if (p.opacity) setLbOpacity(p.opacity)
+        if (p.textColor) setLbTextColor(p.textColor)
+        if (p.fontSize) setLbFontSize(p.fontSize)
+        if (p.font) setLbFont(p.font)
+        if (p.bold) setLbBold(p.bold)
+        if (p.rotSpeed) setLbRotSpeed(p.rotSpeed)
       }
     } catch {}
   }, [])
 
   useEffect(() => {
     try {
-      localStorage.setItem('eztips_lb_settings', JSON.stringify({ colors: lbColors, titles: lbTitles, counts: lbCounts, resetMin: lbResetMin }))
+      localStorage.setItem('eztips_lb_settings', JSON.stringify({ colors: lbColors, titles: lbTitles, counts: lbCounts, resetMin: lbResetMin, bg: lbBg, opacity: lbOpacity, textColor: lbTextColor, fontSize: lbFontSize, font: lbFont, bold: lbBold, rotSpeed: lbRotSpeed }))
     } catch {}
   }, [lbColors, lbTitles, lbCounts, lbResetMin])
 
@@ -220,13 +234,19 @@ export default function OverlayPage() {
 
   const buildLbUrl = (key: 'top'|'recent'|'streak') => {
     if (!overlayToken) return ''
-    const params = new URLSearchParams()
-    params.set('c', lbColors[key].replace('#',''))
-    params.set('t', key==='top' ? lbTitles.top : key==='recent' ? lbTitles.recent : lbTitles.streak)
-    if (key==='top') params.set('n', String(lbCounts.top))
-    if (key==='recent') params.set('n', String(lbCounts.recent))
-    if (key==='streak') params.set('r', String(lbResetMin))
-    return `${SITE}/overlay/${overlayToken}/leaderboard/${key}?${params.toString()}`
+    const p = new URLSearchParams()
+    p.set('c',  lbColors[key].replace('#',''))
+    p.set('t',  key==='top' ? lbTitles.top : key==='recent' ? lbTitles.recent : lbTitles.streak)
+    p.set('bg', lbBg[key].replace('#',''))
+    p.set('op', String(lbOpacity[key]))
+    p.set('fc', lbTextColor[key].replace('#',''))
+    p.set('fs', String(lbFontSize[key]))
+    p.set('ff', lbFont[key])
+    p.set('fw', lbBold[key] ? '700' : '400')
+    if (key==='top')    { p.set('n', String(lbCounts.top));    p.set('rs', String(lbRotSpeed.top)) }
+    if (key==='recent') { p.set('n', String(lbCounts.recent)); p.set('rs', String(lbRotSpeed.recent)) }
+    if (key==='streak') p.set('r', String(lbResetMin))
+    return `${SITE}/overlay/${overlayToken}/leaderboard/${key}?${p.toString()}`
   }
   const overlayUrl     = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
   const goalOverlayUrl = overlayToken ? `${SITE}/overlay/${overlayToken}/goal` : ''
@@ -519,7 +539,7 @@ export default function OverlayPage() {
           {tab==='leaderboard' && overlayToken && (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ display:'flex', justifyContent:'flex-end' }}>
-                <button onClick={()=>{ setLbColors({top:'#7c3aed',recent:'#10b981',streak:'#f59e0b'}); setLbTitles({top:'Top Donors',recent:'Recent Donors',streak:'Donation Train'}); setLbCounts({top:5,recent:6}); setLbResetMin(5); toast.success('Leaderboard settings reset') }} style={{ padding:'7px 14px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', color:'#f87171', display:'flex', alignItems:'center', gap:6 }}>
+                <button onClick={()=>{ setLbColors({top:'#7c3aed',recent:'#10b981',streak:'#f59e0b'}); setLbTitles({top:'Top Donors',recent:'Recent Donors',streak:'Donation Train'}); setLbCounts({top:5,recent:6}); setLbResetMin(5); setLbBg({top:'#0a0a1a',recent:'#0a0a1a',streak:'#0a0a1a'}); setLbOpacity({top:85,recent:85,streak:88}); setLbTextColor({top:'#e2e8f0',recent:'#e2e8f0',streak:'#e2e8f0'}); setLbFontSize({top:13,recent:13,streak:13}); setLbFont({top:'Arial',recent:'Arial',streak:'Arial'}); setLbBold({top:true,recent:true,streak:true}); setLbRotSpeed({top:2.5,recent:2.5}); toast.success('Leaderboard settings reset') }} style={{ padding:'7px 14px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', color:'#f87171', display:'flex', alignItems:'center', gap:6 }}>
                   ↺ Reset to Defaults
                 </button>
               </div>
@@ -536,10 +556,21 @@ export default function OverlayPage() {
               {lbTab==='top' && (
                 <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
                   <p style={sH}><span>🥇</span> Top Donors Overlay</p>
-                  <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows your top N donors this month. Updates live as donations arrive.</p>
+                  <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows your top N donors all-time. Updates live as donations arrive.</p>
+                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.top} onChange={e=>setLbTitles(p=>({...p,top:e.target.value}))} style={inp}/></div>
-                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.top} onChange={e=>setLbColors(p=>({...p,top:e.target.value}))} style={colorBox}/></div>
                   <Slider label="Entries to show" value={lbCounts.top} min={3} max={10} onChange={v=>setLbCounts(p=>({...p,top:v}))}/>
+                  <Slider label="Rotation speed" value={lbRotSpeed.top} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,top:v}))}/>
+                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.top} onChange={e=>setLbColors(p=>({...p,top:e.target.value}))} style={colorBox}/></div>
+                  <div><span style={lbl}>Background Color</span><input type="color" value={lbBg.top} onChange={e=>setLbBg(p=>({...p,top:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Background Opacity" value={lbOpacity.top} min={0} max={100} unit="%" onChange={v=>setLbOpacity(p=>({...p,top:v}))}/>
+                  <div><span style={lbl}>Text Color</span><input type="color" value={lbTextColor.top} onChange={e=>setLbTextColor(p=>({...p,top:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Font Size (px)" value={lbFontSize.top} min={10} max={20} unit="px" onChange={v=>setLbFontSize(p=>({...p,top:v}))}/>
+                  <div><span style={lbl}>Font</span><Select value={lbFont.top} onChange={v=>setLbFont(p=>({...p,top:v}))} options={FONTS.map(f=>({value:f,label:f}))}/></div>
+                  <Row label="Bold text"><Toggle on={lbBold.top} onChange={v=>setLbBold(p=>({...p,top:v}))}/></Row>
                 </div>
               )}
 
@@ -548,9 +579,20 @@ export default function OverlayPage() {
                 <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
                   <p style={sH}><span>👥</span> Recent Donors Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows the last N donors in real-time as they donate.</p>
+                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.recent} onChange={e=>setLbTitles(p=>({...p,recent:e.target.value}))} style={inp}/></div>
-                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.recent} onChange={e=>setLbColors(p=>({...p,recent:e.target.value}))} style={colorBox}/></div>
                   <Slider label="Entries to show" value={lbCounts.recent} min={3} max={8} onChange={v=>setLbCounts(p=>({...p,recent:v}))}/>
+                  <Slider label="Rotation speed" value={lbRotSpeed.recent} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,recent:v}))}/>
+                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.recent} onChange={e=>setLbColors(p=>({...p,recent:e.target.value}))} style={colorBox}/></div>
+                  <div><span style={lbl}>Background Color</span><input type="color" value={lbBg.recent} onChange={e=>setLbBg(p=>({...p,recent:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Background Opacity" value={lbOpacity.recent} min={0} max={100} unit="%" onChange={v=>setLbOpacity(p=>({...p,recent:v}))}/>
+                  <div><span style={lbl}>Text Color</span><input type="color" value={lbTextColor.recent} onChange={e=>setLbTextColor(p=>({...p,recent:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Font Size (px)" value={lbFontSize.recent} min={10} max={20} unit="px" onChange={v=>setLbFontSize(p=>({...p,recent:v}))}/>
+                  <div><span style={lbl}>Font</span><Select value={lbFont.recent} onChange={v=>setLbFont(p=>({...p,recent:v}))} options={FONTS.map(f=>({value:f,label:f}))}/></div>
+                  <Row label="Bold text"><Toggle on={lbBold.recent} onChange={v=>setLbBold(p=>({...p,recent:v}))}/></Row>
                 </div>
               )}
 
@@ -559,13 +601,23 @@ export default function OverlayPage() {
                 <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
                   <p style={sH}><span>⚡</span> Donation Train Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows a live streak counter with total raised. Resets after inactivity.</p>
+                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.streak} onChange={e=>setLbTitles(p=>({...p,streak:e.target.value}))} style={inp}/></div>
-                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.streak} onChange={e=>setLbColors(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
                   <div>
                     <span style={lbl}>Reset Timer</span>
-                    <Select value={String(lbResetMin)} onChange={v=>setLbResetMin(Number(v))} options={[{value:'2',label:'2 minutes'},{value:'5',label:'5 minutes (default)'},{value:'10',label:'10 minutes'}]}/>
+                    <Select value={String(lbResetMin)} onChange={v=>setLbResetMin(Number(v))} options={[{value:'2',label:'2 minutes'},{value:'5',label:'5 minutes (default)'},{value:'10',label:'10 minutes'},{value:'15',label:'15 minutes'},{value:'30',label:'30 minutes'}]}/>
                     <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Train resets if no donations arrive within this time</p>
                   </div>
+                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.streak} onChange={e=>setLbColors(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
+                  <div><span style={lbl}>Background Color</span><input type="color" value={lbBg.streak} onChange={e=>setLbBg(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Background Opacity" value={lbOpacity.streak} min={0} max={100} unit="%" onChange={v=>setLbOpacity(p=>({...p,streak:v}))}/>
+                  <div><span style={lbl}>Text Color</span><input type="color" value={lbTextColor.streak} onChange={e=>setLbTextColor(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
+                  <Slider label="Font Size (px)" value={lbFontSize.streak} min={10} max={20} unit="px" onChange={v=>setLbFontSize(p=>({...p,streak:v}))}/>
+                  <div><span style={lbl}>Font</span><Select value={lbFont.streak} onChange={v=>setLbFont(p=>({...p,streak:v}))} options={FONTS.map(f=>({value:f,label:f}))}/></div>
+                  <Row label="Bold text"><Toggle on={lbBold.streak} onChange={v=>setLbBold(p=>({...p,streak:v}))}/></Row>
                 </div>
               )}
 

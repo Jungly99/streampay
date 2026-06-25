@@ -67,6 +67,7 @@ export interface DonationPageStreamer {
   username: string
   channelName: string
   avatarUrl: string | null
+  bannerUrl: string | null
   bio: string | null
   channelLink: string | null
   isVerified: boolean

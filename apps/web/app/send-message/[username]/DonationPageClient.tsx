@@ -131,8 +131,11 @@ export default function DonationPageClient({ streamer }: { streamer: DonationPag
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '24px 20px 0' }}>
         <div style={{ ...card, overflow: 'hidden', marginBottom: 24 }}>
           {/* Banner */}
-          <div style={{ height: 110, background: 'linear-gradient(135deg,#3b0764 0%,#701a75 50%,#1e1b4b 100%)', position: 'relative' }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 20px)' }} />
+          <div style={{ height: 110, position: 'relative', background: streamer.bannerUrl ? 'transparent' : 'linear-gradient(135deg,#3b0764 0%,#701a75 50%,#1e1b4b 100%)' }}>
+            {streamer.bannerUrl
+              ? <img src={streamer.bannerUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              : <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 20px)' }} />
+            }
           </div>
           <div style={{ padding: '0 28px 24px' }}>
             {/* Avatar — overlaps banner with negative margin */}

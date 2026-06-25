@@ -5,12 +5,18 @@ import { getSocket } from '../../../../../lib/socket'
 import type { NewDonationEvent } from '@streampay/types'
 
 function readParams() {
-  if (typeof window === 'undefined') return { color: '#f59e0b', resetMin: 5, title: 'Donation Train' }
+  if (typeof window === 'undefined') return { color: '#f59e0b', resetMin: 5, title: 'Donation Train', bg: '#0a0a1a', opacity: 88, textColor: '#e2e8f0', fontSize: 13, font: 'Arial', bold: true }
   const p = new URLSearchParams(window.location.search)
   return {
-    color: '#' + (p.get('c') ?? 'f59e0b'),
-    resetMin: Math.max(1, Math.min(30, Number(p.get('r') ?? '5'))),
-    title: p.get('t') ?? 'Donation Train',
+    color:     '#' + (p.get('c') ?? 'f59e0b'),
+    resetMin:  Math.max(1, Math.min(30, Number(p.get('r') ?? '5'))),
+    title:     p.get('t') ?? 'Donation Train',
+    bg:        '#' + (p.get('bg') ?? '0a0a1a'),
+    opacity:   Math.max(0, Math.min(100, Number(p.get('op') ?? '88'))),
+    textColor: '#' + (p.get('fc') ?? 'e2e8f0'),
+    fontSize:  Math.max(10, Math.min(20, Number(p.get('fs') ?? '13'))),
+    font:      p.get('ff') ?? 'Arial',
+    bold:      (p.get('fw') ?? '700') === '700',
   }
 }
 
@@ -53,25 +59,26 @@ export default function StreakClient({ token }: { token: string }) {
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             style={{
-              background: 'rgba(10,10,26,0.88)', backdropFilter: 'blur(12px)',
+              background: `${params.bg}${Math.round(params.opacity * 2.55).toString(16).padStart(2,'0')}`,
+              backdropFilter: 'blur(12px)', fontFamily: params.font,
               borderRadius: 16, padding: '16px 20px', border: `1px solid ${params.color}50`,
               boxShadow: `0 4px 32px rgba(0,0,0,0.5), 0 0 20px ${params.color}20`,
               textAlign: 'center', minWidth: 180,
             }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: params.color, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+            <div style={{ fontSize: params.fontSize - 2, fontWeight: 800, color: params.color, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
               ⚡ {params.title}
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, color: params.color, lineHeight: 1, marginBottom: 4, textShadow: `0 0 30px ${params.color}80` }}>
               {streak}x
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
+            <div style={{ fontSize: params.fontSize - 2, color: params.textColor, opacity: 0.7, marginBottom: 6 }}>
               consecutive donations
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#10b981' }}>
+            <div style={{ fontSize: params.fontSize + 1, fontWeight: params.bold ? 700 : 400, color: '#10b981' }}>
               ₹{totalInStreak.toLocaleString('en-IN')} total
             </div>
             {lastDonor && (
-              <div style={{ fontSize: 11, color: '#64748b', marginTop: 6 }}>
+              <div style={{ fontSize: params.fontSize - 2, color: params.textColor, opacity: 0.5, marginTop: 6 }}>
                 Latest: {lastDonor}
               </div>
             )}

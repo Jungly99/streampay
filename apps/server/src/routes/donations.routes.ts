@@ -45,6 +45,7 @@ router.get('/page/:username', async (req: Request, res: Response): Promise<void>
     username: profile.username,
     channelName: profile.channelName,
     avatarUrl: profile.avatarUrl,
+    bannerUrl: (profile as any).bannerUrl ?? null,
     bio: profile.bio,
     channelLink: profile.channelLink,
     isVerified: profile.isVerified,

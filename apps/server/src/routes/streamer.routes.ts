@@ -29,6 +29,7 @@ router.patch('/profile', async (req: AuthRequest, res: Response): Promise<void> 
     channelLink: z.string().url().optional().or(z.literal('')),
     bio: z.string().max(500).optional(),
     avatarUrl: z.string().optional().or(z.literal('')),
+    bannerUrl: z.string().optional().or(z.literal('')),
     socialTwitter: z.string().optional(),
     socialInstagram: z.string().optional(),
     socialYoutube: z.string().optional(),

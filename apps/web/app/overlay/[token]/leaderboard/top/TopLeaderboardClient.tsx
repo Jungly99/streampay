@@ -9,12 +9,19 @@ interface Donor { rank: number; name: string; total: number }
 const MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
 
 function readParams() {
-  if (typeof window === 'undefined') return { color: '#7c3aed', count: 5, title: 'Top Donors' }
+  if (typeof window === 'undefined') return { color: '#7c3aed', count: 5, title: 'Top Donors', bg: '#0a0a1a', opacity: 85, textColor: '#e2e8f0', fontSize: 13, font: 'Arial', bold: true, rotSpeed: 2.5 }
   const p = new URLSearchParams(window.location.search)
   return {
-    color: '#' + (p.get('c') ?? '7c3aed'),
-    count: Math.max(3, Math.min(10, Number(p.get('n') ?? '5'))),
-    title: p.get('t') ?? 'Top Donors',
+    color:     '#' + (p.get('c') ?? '7c3aed'),
+    count:     Math.max(3, Math.min(10, Number(p.get('n') ?? '5'))),
+    title:     p.get('t') ?? 'Top Donors',
+    bg:        '#' + (p.get('bg') ?? '0a0a1a'),
+    opacity:   Math.max(0, Math.min(100, Number(p.get('op') ?? '85'))),
+    textColor: '#' + (p.get('fc') ?? 'e2e8f0'),
+    fontSize:  Math.max(10, Math.min(20, Number(p.get('fs') ?? '13'))),
+    font:      p.get('ff') ?? 'Arial',
+    bold:      (p.get('fw') ?? '700') === '700',
+    rotSpeed:  Math.max(1, Math.min(10, Number(p.get('rs') ?? '2.5'))),
   }
 }
 
@@ -37,7 +44,7 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
         setTimeout(() => setMedalSpin(-1), 600)
         return next
       })
-    }, 2500)
+    }, params.rotSpeed * 1000)
     return () => clearInterval(id)
   }, [donors.length])
 
@@ -88,11 +95,12 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
         @keyframes lb-shimmer{0%{opacity:0.7}50%{opacity:1}100%{opacity:0.7}}
       `}</style>
       <div style={{
-        background: 'rgba(10,10,26,0.85)', backdropFilter: 'blur(12px)',
+        background: `${params.bg}${Math.round(params.opacity * 2.55).toString(16).padStart(2,'0')}`,
+        backdropFilter: 'blur(12px)', fontFamily: params.font,
         borderRadius: 16, padding: '14px 16px', border: `1px solid ${params.color}40`,
         boxShadow: `0 4px 32px rgba(0,0,0,0.5), 0 0 20px ${params.color}10`,
       }}>
-        <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: params.color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        <p style={{ margin: '0 0 12px', fontSize: params.fontSize, fontWeight: 800, color: params.color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           🏆 {params.title}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -125,8 +133,8 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
                     {MEDALS[i]}
                   </span>
                   <span style={{
-                    flex: 1, fontSize: 14, fontWeight: isActive ? 800 : 700,
-                    color: isActive ? '#ffffff' : '#e2e8f0',
+                    flex: 1, fontSize: params.fontSize + 1, fontWeight: isActive ? 800 : (params.bold ? 700 : 400),
+                    color: isActive ? '#ffffff' : params.textColor,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     textShadow: isActive ? `0 0 14px ${params.color}90` : undefined,
                     animation: isActive ? 'lb-shimmer 1.6s ease-in-out infinite' : undefined,
