@@ -27,4 +27,4 @@ primary_region = "bom"
   cpus = 1
 
 [deploy]
-  release_command = "node -e \"const{execSync}=require('child_process');execSync('npx prisma migrate deploy --schema=apps/server/prisma/schema.prisma',{stdio:'inherit'})\""
+  strategy = "immediate"
