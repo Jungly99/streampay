@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [tab, setTab] = useState<Tab>('profile')
   const [profile, setProfile] = useState<any>(null)
   const [bank, setBank] = useState<any>(null)
+  const [showAccNum, setShowAccNum] = useState(false)
   const [saving, setSaving] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -395,15 +396,50 @@ if (!profile) return (
               <p style={{ fontSize: 12, color: '#60a5fa' }}>Contact support after updating bank details</p>
             </div>
             {[
-              { key: 'accountHolderName', label: 'Account Holder Name', ph: 'Full name as on account', type: 'text' },
-              { key: 'accountNumber',     label: 'Account Number',       ph: 'Account number',          type: 'password' },
-              { key: 'ifscCode',          label: 'IFSC Code',            ph: 'e.g. SBIN0011785',        type: 'text' },
-              { key: 'bankName',          label: 'Bank Name',            ph: 'e.g. State Bank of India', type: 'text' },
+              { key: 'accountHolderName', label: 'Account Holder Name', ph: 'Full name as on account' },
+              { key: 'ifscCode',          label: 'IFSC Code',            ph: 'e.g. SBIN0011785' },
+              { key: 'bankName',          label: 'Bank Name',            ph: 'e.g. State Bank of India' },
             ].map(f => (
               <Field key={f.key} label={f.label}>
-                <input type={f.type} value={(bank as any)[f.key] ?? ''} onChange={e => setBank((b: any) => ({ ...b, [f.key]: e.target.value }))} placeholder={f.ph} style={inputStyle} />
+                <input type="text" value={(bank as any)[f.key] ?? ''} onChange={e => setBank((b: any) => ({ ...b, [f.key]: e.target.value }))} placeholder={f.ph} style={inputStyle} />
               </Field>
             ))}
+            <Field label="Account Number">
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showAccNum ? 'text' : 'password'}
+                  value={bank.accountNumber ?? ''}
+                  onChange={e => setBank((b: any) => ({ ...b, accountNumber: e.target.value }))}
+                  placeholder="Account number"
+                  style={{ ...inputStyle, paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAccNum(v => !v)}
+                  title={showAccNum ? 'Hide account number' : 'Show account number'}
+                  style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                    color: showAccNum ? '#a78bfa' : '#475569', lineHeight: 1,
+                  }}
+                >
+                  {showAccNum ? (
+                    /* Eye-off */
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    /* Eye */
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </Field>
             <div style={{ marginTop: 4, padding: '10px 14px', borderRadius: 10, background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.2)' }}>
               <p style={{ fontSize: 12, color: '#a78bfa', fontWeight: 600, marginBottom: 3 }}>5% Platform Fee</p>
               <p style={{ fontSize: 11, color: '#475569' }}>Only charged at settlement, never on donations</p>
