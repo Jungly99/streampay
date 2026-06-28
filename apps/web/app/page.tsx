@@ -25,28 +25,42 @@ export default function LandingPage() {
       {/* ── Nav ─────────────────────────────────────────────── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 40px',
-        background: 'rgba(6,6,15,0.85)', backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        height: 68, display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center',
+        padding: '0 32px',
+        background: 'rgba(6,6,15,0.88)', backdropFilter: 'blur(24px)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* left — empty slot keeps logo centered */}
+        <div />
+
+        {/* center — brand */}
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* icon mark */}
           <div style={{
-            width: 30, height: 30, borderRadius: 8,
+            width: 38, height: 38, borderRadius: 11,
             background: 'linear-gradient(135deg,#7c3aed,#db2777)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 14, color: 'white',
-          }}>S</div>
-          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>eztips</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            fontWeight: 900, fontSize: 18, color: 'white',
+            boxShadow: '0 0 24px rgba(124,58,237,0.55), 0 0 8px rgba(219,39,119,0.35)',
+          }}>⚡</div>
+          {/* wordmark */}
+          <span style={{
+            fontWeight: 800, fontSize: 22, letterSpacing: '-0.6px',
+            background: 'linear-gradient(135deg,#c4b5fd,#f9a8d4)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            filter: 'drop-shadow(0 0 12px rgba(167,139,250,0.5))',
+          }}>eztips</span>
+        </Link>
+
+        {/* right — auth buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
           <Link href="/login" style={{ fontSize: 13, color: '#64748b', padding: '7px 16px', borderRadius: 8, textDecoration: 'none' }}>
             Sign In
           </Link>
           <Link href="/signup" style={{
             fontSize: 13, fontWeight: 600, color: 'white', padding: '8px 20px', borderRadius: 9,
             background: 'linear-gradient(135deg,#7c3aed,#db2777)', textDecoration: 'none',
-            boxShadow: '0 0 20px rgba(124,58,237,0.35)',
+            boxShadow: '0 0 20px rgba(124,58,237,0.4)',
           }}>
             Get Started Free
           </Link>
@@ -54,14 +68,31 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────── */}
-      <section style={{ paddingTop: 160, paddingBottom: 100, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ paddingTop: 170, paddingBottom: 100, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         {/* glow orbs */}
-        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 800, height: 400, background: 'radial-gradient(ellipse at center top, rgba(124,58,237,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, background: 'radial-gradient(ellipse at center top, rgba(124,58,237,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
+          {/* brand wordmark in hero */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 28 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 15,
+              background: 'linear-gradient(135deg,#7c3aed,#db2777)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26, fontWeight: 900, color: 'white',
+              boxShadow: '0 0 40px rgba(124,58,237,0.6), 0 0 14px rgba(219,39,119,0.4)',
+            }}>⚡</div>
+            <span style={{
+              fontWeight: 900, fontSize: 42, letterSpacing: '-1.5px',
+              background: 'linear-gradient(135deg,#c4b5fd 30%,#f9a8d4 80%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 20px rgba(167,139,250,0.6))',
+            }}>eztips</span>
+          </div>
+
           {/* pill */}
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32,
+            display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 28,
             padding: '6px 16px', borderRadius: 99, fontSize: 12, fontWeight: 600,
             background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)', color: '#a78bfa',
           }}>
@@ -222,8 +253,8 @@ export default function LandingPage() {
       {/* ── Footer ──────────────────────────────────────────── */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '32px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 22, height: 22, borderRadius: 6, background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: 'white' }}>S</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>eztips</span>
+          <div style={{ width: 24, height: 24, borderRadius: 7, background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'white', boxShadow: '0 0 10px rgba(124,58,237,0.4)' }}>⚡</div>
+          <span style={{ fontSize: 14, fontWeight: 700, background: 'linear-gradient(135deg,#c4b5fd,#f9a8d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>eztips</span>
         </div>
         <p style={{ fontSize: 12, color: '#1e293b' }}>© 2026 eztips · Made for Indian Streamers</p>
         <div style={{ display: 'flex', gap: 20 }}>
