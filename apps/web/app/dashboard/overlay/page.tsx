@@ -438,14 +438,13 @@ export default function OverlayPage() {
                   <span style={lbl}>Choose Sound</span>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginTop:4 }}>
                     {[
-                      { id:'coin',       emoji:'🪙', label:'Coin' },
-                      { id:'ding',       emoji:'🔔', label:'Ding' },
-                      { id:'bell',       emoji:'🎵', label:'Bell' },
-                      { id:'chime',      emoji:'✨', label:'Chime' },
-                      { id:'pop',        emoji:'💥', label:'Pop' },
-                      { id:'levelup',    emoji:'⬆️', label:'Level Up' },
-                      { id:'custom_url', emoji:'🔗', label:'URL' },
-                      { id:'custom',     emoji:'🎧', label:'Upload' },
+                      { id:'coin',    emoji:'🪙', label:'Coin' },
+                      { id:'ding',    emoji:'🔔', label:'Ding' },
+                      { id:'bell',    emoji:'🎵', label:'Bell' },
+                      { id:'chime',   emoji:'✨', label:'Chime' },
+                      { id:'pop',     emoji:'💥', label:'Pop' },
+                      { id:'levelup', emoji:'⬆️', label:'Level Up' },
+                      { id:'custom',  emoji:'🎧', label:'Upload' },
                     ].map(preset => {
                       const active = (s.alertSoundType ?? 'coin') === preset.id
                       return (
@@ -465,7 +464,7 @@ export default function OverlayPage() {
                 </div>
 
                 {/* Preview button */}
-                {(s.alertSoundType ?? 'coin') !== 'custom' && (s.alertSoundType ?? 'coin') !== 'custom_url' && (
+                {(s.alertSoundType ?? 'coin') !== 'custom' && (
                   <button type="button" onClick={() => {
                     try {
                       const ctx = new AudioContext()
@@ -489,19 +488,6 @@ export default function OverlayPage() {
                   }} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>
                     ▶ Preview Sound
                   </button>
-                )}
-
-                {/* Custom URL */}
-                {s.alertSoundType === 'custom_url' && (
-                  <div>
-                    <span style={lbl}>Audio URL</span>
-                    <input value={s.customAlertSoundUrl ?? ''} onChange={e => set('customAlertSoundUrl', e.target.value)}
-                      placeholder="https://example.com/alert.mp3" style={inp} />
-                    <p style={{ fontSize:11, color:'#475569', marginTop:6 }}>Direct-access URL (no login required). Works in OBS overlay. Host on Google Drive, Dropbox, Discord CDN, or your own server.</p>
-                    {s.customAlertSoundUrl && (
-                      <button type="button" onClick={() => { try { const a = new Audio(s.customAlertSoundUrl); a.volume = (s.coinSoundVolume??50)/100; a.play() } catch{} }} style={{ marginTop:8, padding:'7px 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>▶ Preview URL</button>
-                    )}
-                  </div>
                 )}
 
                 {/* Custom file upload */}
