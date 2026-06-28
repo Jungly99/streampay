@@ -35,8 +35,8 @@ export default async function DashboardPage() {
       {/* ── Top header ───────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px' }}>Dashboard</h1>
-          <p style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.5px' }}>Dashboard</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
         {statItems.map(s => (
           <div key={s.label} style={{
             padding: '20px 20px 18px',
-            background: 'rgba(255,255,255,0.03)',
+            background: 'var(--surface)',
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 14, position: 'relative', overflow: 'hidden',
           }}>
@@ -85,8 +85,8 @@ export default async function DashboardPage() {
             <p style={{ fontSize: 11, fontWeight: 600, color: s.color, letterSpacing: '0.05em', marginBottom: 10, textTransform: 'uppercase' }}>
               {s.label}
             </p>
-            <p style={{ fontSize: 26, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', lineHeight: 1 }}>{s.value}</p>
-            <p style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>{s.sub}</p>
+            <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.5px', lineHeight: 1 }}>{s.value}</p>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>{s.sub}</p>
           </div>
         ))}
       </div>
@@ -96,11 +96,11 @@ export default async function DashboardPage() {
 
         {/* Links panel */}
         <div style={{
-          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+          background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: 14, padding: '22px 22px', display: 'flex', flexDirection: 'column', gap: 18, overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>Your Links</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>Your Links</p>
             <span style={{ fontSize: 11, color: links.messageLink ? '#10b981' : '#f59e0b',
               background: links.messageLink ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
               padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
@@ -123,10 +123,10 @@ export default async function DashboardPage() {
 
           {/* Quick actions */}
           <div style={{
-            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 14, padding: '18px 18px',
           }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>Quick Actions</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 14 }}>Quick Actions</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
                 { href: '/dashboard/messages',          label: 'Donations',           icon: '↓', color: '#7c3aed' },
@@ -138,8 +138,8 @@ export default async function DashboardPage() {
                 <Link key={a.href} href={a.href} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '10px 12px', borderRadius: 10,
-                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-                  fontSize: 13, fontWeight: 500, color: '#94a3b8',
+                  background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)',
+                  fontSize: 13, fontWeight: 500, color: 'var(--text-2)',
                   transition: 'all 0.15s', textDecoration: 'none',
                 }}>
                   <span style={{
@@ -155,10 +155,10 @@ export default async function DashboardPage() {
 
           {/* Setup checklist */}
           <div style={{
-            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 14, padding: '18px 18px', flex: 1,
           }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 14 }}>Setup Checklist</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 14 }}>Setup Checklist</p>
             {[
               { done: !!links.messageLink,               label: 'Donation link active' },
               { done: !!links.overlayToken,              label: 'OBS overlay ready' },
@@ -169,7 +169,7 @@ export default async function DashboardPage() {
                 <div style={{
                   width: 18, height: 18, borderRadius: 18, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: step.done ? '#059669' : 'rgba(255,255,255,0.07)',
+                  background: step.done ? '#059669' : 'var(--border)',
                   fontSize: 10, fontWeight: 700, color: 'white',
                 }}>{step.done ? '✓' : ''}</div>
                 <span style={{ fontSize: 12, color: step.done ? '#475569' : '#94a3b8', textDecoration: step.done ? 'line-through' : 'none' }}>

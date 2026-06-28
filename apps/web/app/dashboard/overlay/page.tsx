@@ -34,10 +34,10 @@ const ANIMATIONS = [
 // ── Style constants ──────────────────────────────────────────────────
 const C: React.CSSProperties = { background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:14 }
 const lbl: React.CSSProperties = { display:'block', fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:7 }
-const inp: React.CSSProperties = { width:'100%', padding:'9px 12px', borderRadius:9, fontSize:13, boxSizing:'border-box', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'#f1f5f9', outline:'none' }
+const inp: React.CSSProperties = { width:'100%', padding:'9px 12px', borderRadius:9, fontSize:13, boxSizing:'border-box', background:'var(--border)', border:'1px solid rgba(255,255,255,0.08)', color:'#f1f5f9', outline:'none' }
 const colorBox: React.CSSProperties = { width:'100%', height:38, borderRadius:9, border:'1px solid rgba(255,255,255,0.08)', background:'none', cursor:'pointer', padding:2 }
 const sH: React.CSSProperties = { fontSize:13, fontWeight:700, color:'#e2e8f0', marginBottom:14, display:'flex', alignItems:'center', gap:8 }
-const divider: React.CSSProperties = { height:1, background:'rgba(255,255,255,0.05)', margin:'14px 0' }
+const divider: React.CSSProperties = { height:1, background:'var(--surface-input)', margin:'14px 0' }
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -137,7 +137,7 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
                   color: o.value===value ? '#a78bfa' : '#e2e8f0',
                   border:'none', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer',
                 }}
-                onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                onMouseEnter={e=>(e.currentTarget.style.background='var(--surface-2)')}
                 onMouseLeave={e=>(e.currentTarget.style.background=o.value===value?'rgba(124,58,237,0.18)':'transparent')}
               >{o.label}</button>
             ))}
@@ -396,7 +396,7 @@ export default function OverlayPage() {
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:14 }}>
 
           {/* Tab bar */}
-          <div style={{ display:'flex', gap:4, background:'rgba(255,255,255,0.03)', borderRadius:12, padding:4, border:'1px solid rgba(255,255,255,0.06)', overflowX:'auto' }}>
+          <div style={{ display:'flex', gap:4, background:'var(--surface)', borderRadius:12, padding:4, border:'1px solid rgba(255,255,255,0.06)', overflowX:'auto' }}>
             {tabs.map(([t,icon,name]) => (
               <button key={t} onClick={() => setTab(t)} style={{
                 padding:'7px 14px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap',
@@ -424,7 +424,7 @@ export default function OverlayPage() {
                   <button key={t.id} onClick={() => set('template',t.id)} style={{
                     padding:'14px 10px', borderRadius:12, textAlign:'center', cursor:'pointer',
                     background: s.template===t.id ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.02)',
-                    border:`2px solid ${s.template===t.id ? '#7c3aed' : 'rgba(255,255,255,0.06)'}`,
+                    border:`2px solid ${s.template===t.id ? '#7c3aed' : 'var(--surface-2)'}`,
                     transition:'all 0.15s',
                   }}>
                     <span style={{ fontSize:24, display:'block', marginBottom:6 }}>{t.emoji}</span>
@@ -564,8 +564,8 @@ export default function OverlayPage() {
                       return (
                         <button key={preset.id} type="button" onClick={() => set('alertSoundType', preset.id)} style={{
                           padding:'10px 4px', borderRadius:10, fontSize:12, fontWeight:600, cursor:'pointer',
-                          background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
-                          border: `1.5px solid ${active ? 'rgba(124,58,237,0.6)' : 'rgba(255,255,255,0.07)'}`,
+                          background: active ? 'rgba(124,58,237,0.2)' : 'var(--surface)',
+                          border: `1.5px solid ${active ? 'rgba(124,58,237,0.6)' : 'var(--border)'}`,
                           color: active ? '#a78bfa' : '#64748b',
                           display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.15s',
                         }}>
@@ -586,7 +586,7 @@ export default function OverlayPage() {
                       ▶ Preview Sound
                     </button>
                   ) : (
-                    <button type="button" disabled style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'not-allowed', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', color:'#475569' }}>
+                    <button type="button" disabled style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'not-allowed', background:'var(--surface)', border:'1px solid rgba(255,255,255,0.08)', color:'#475569' }}>
                       ▶ Preview Sound (upload a file first)
                     </button>
                   )
@@ -684,7 +684,7 @@ export default function OverlayPage() {
                   <span style={{ fontWeight:600 }}>{goal.title || 'Goal Progress'}</span>
                   <span>₹{goal.currentAmount ?? 0} / ₹{goal.targetAmount}</span>
                 </div>
-                <div style={{ height:8, background:'rgba(255,255,255,0.08)', borderRadius:8 }}>
+                <div style={{ height:8, background:'var(--border)', borderRadius:8 }}>
                   <div style={{ height:'100%', width:`${Math.min(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100,100)}%`, borderRadius:8, background:`linear-gradient(90deg,${s.goalBarColor},#ec4899)`, transition:'width 0.5s' }}/>
                 </div>
                 <p style={{ fontSize:10, color:'#475569', margin:'6px 0 0' }}>
@@ -735,8 +735,8 @@ export default function OverlayPage() {
                     return (
                       <button key={l.id} type="button" onClick={() => set('goalLayout', l.id)} style={{
                         padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center',
-                        background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
-                        border:`1.5px solid ${active ? 'rgba(124,58,237,0.6)' : 'rgba(255,255,255,0.07)'}`,
+                        background: active ? 'rgba(124,58,237,0.2)' : 'var(--surface)',
+                        border:`1.5px solid ${active ? 'rgba(124,58,237,0.6)' : 'var(--border)'}`,
                         color: active ? '#a78bfa' : '#64748b', transition:'all 0.15s',
                       }}>
                         <div style={{ fontSize:18, marginBottom:3 }}>{l.icon}</div>
@@ -847,12 +847,12 @@ export default function OverlayPage() {
                 <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
                   <p style={sH}><span>🥇</span> Top Donors Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows your top N donors all-time. Updates live as donations arrive.</p>
-                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.top} onChange={e=>setLbTitles(p=>({...p,top:e.target.value}))} style={inp}/></div>
                   <Slider label="Entries to show" value={lbCounts.top} min={3} max={10} onChange={v=>setLbCounts(p=>({...p,top:v}))}/>
                   <Slider label="Rotation speed" value={lbRotSpeed.top} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,top:v}))}/>
-                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
                   <div>
                     <span style={lbl}>Widget Style</span>
@@ -863,7 +863,7 @@ export default function OverlayPage() {
                       ].map(l => {
                         const active = lbLayout.top === l.id
                         return (
-                          <button key={l.id} type="button" onClick={()=>setLbLayout(p=>({...p,top:l.id}))} style={{ padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center', background:active?'rgba(124,58,237,0.18)':'rgba(255,255,255,0.03)', border:`1.5px solid ${active?'rgba(124,58,237,0.6)':'rgba(255,255,255,0.07)'}`, color:active?'#a78bfa':'#64748b', transition:'all 0.15s' }}>
+                          <button key={l.id} type="button" onClick={()=>setLbLayout(p=>({...p,top:l.id}))} style={{ padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center', background:active?'rgba(124,58,237,0.18)':'var(--surface)', border:`1.5px solid ${active?'rgba(124,58,237,0.6)':'var(--border)'}`, color:active?'#a78bfa':'#64748b', transition:'all 0.15s' }}>
                             <div style={{ fontSize:18, marginBottom:3 }}>{l.icon}</div>
                             <div style={{ fontSize:11, fontWeight:700 }}>{l.name}</div>
                             <div style={{ fontSize:10, opacity:0.6, marginTop:1 }}>{l.desc}</div>
@@ -887,12 +887,12 @@ export default function OverlayPage() {
                 <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
                   <p style={sH}><span>👥</span> Recent Donors Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows the last N donors in real-time as they donate.</p>
-                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.recent} onChange={e=>setLbTitles(p=>({...p,recent:e.target.value}))} style={inp}/></div>
                   <Slider label="Entries to show" value={lbCounts.recent} min={3} max={8} onChange={v=>setLbCounts(p=>({...p,recent:v}))}/>
                   <Slider label="Rotation speed" value={lbRotSpeed.recent} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,recent:v}))}/>
-                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
                   <div>
                     <span style={lbl}>Widget Style</span>
@@ -903,7 +903,7 @@ export default function OverlayPage() {
                       ].map(l => {
                         const active = lbLayout.recent === l.id
                         return (
-                          <button key={l.id} type="button" onClick={()=>setLbLayout(p=>({...p,recent:l.id}))} style={{ padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center', background:active?'rgba(16,185,129,0.15)':'rgba(255,255,255,0.03)', border:`1.5px solid ${active?'rgba(16,185,129,0.5)':'rgba(255,255,255,0.07)'}`, color:active?'#6ee7b7':'#64748b', transition:'all 0.15s' }}>
+                          <button key={l.id} type="button" onClick={()=>setLbLayout(p=>({...p,recent:l.id}))} style={{ padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center', background:active?'rgba(16,185,129,0.15)':'var(--surface)', border:`1.5px solid ${active?'rgba(16,185,129,0.5)':'var(--border)'}`, color:active?'#6ee7b7':'#64748b', transition:'all 0.15s' }}>
                             <div style={{ fontSize:18, marginBottom:3 }}>{l.icon}</div>
                             <div style={{ fontSize:11, fontWeight:700 }}>{l.name}</div>
                             <div style={{ fontSize:10, opacity:0.6, marginTop:1 }}>{l.desc}</div>
@@ -927,7 +927,7 @@ export default function OverlayPage() {
                 <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
                   <p style={sH}><span>⚡</span> Donation Train Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows a live streak counter with total raised. Resets after inactivity.</p>
-                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.streak} onChange={e=>setLbTitles(p=>({...p,streak:e.target.value}))} style={inp}/></div>
                   <div>
@@ -935,7 +935,7 @@ export default function OverlayPage() {
                     <Select value={String(lbResetMin)} onChange={v=>setLbResetMin(Number(v))} options={[{value:'2',label:'2 minutes'},{value:'5',label:'5 minutes (default)'},{value:'10',label:'10 minutes'},{value:'15',label:'15 minutes'},{value:'30',label:'30 minutes'}]}/>
                     <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Train resets if no donations arrive within this time</p>
                   </div>
-                  <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
                   <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.streak} onChange={e=>setLbColors(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
                   <div><span style={lbl}>Background Color</span><input type="color" value={lbBg.streak} onChange={e=>setLbBg(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
@@ -957,7 +957,7 @@ export default function OverlayPage() {
                 return (
                   <div key={key} style={{ ...C, padding:'14px 18px' }}>
                     <p style={{ fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.04em', textTransform:'uppercase', margin:'0 0 10px' }}>OBS Browser Source URL</p>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--surface)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
                       <span style={{ flex:1, fontSize:11, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{masked}</span>
                       <button onClick={()=>{ navigator.clipboard.writeText(url); toast.success('Copied!') }} style={{ background:`${col}20`, border:`1px solid ${col}40`, borderRadius:7, cursor:'pointer', fontSize:12, color:col, padding:'5px 10px', fontWeight:700, flexShrink:0 }}>Copy</button>
                     </div>
@@ -978,7 +978,7 @@ export default function OverlayPage() {
             <div style={{ ...C, padding:'16px 20px' }}>
               <p style={sH}><span>📡</span> Alert Overlay — OBS Link</p>
               <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>Add to OBS as a Browser Source (1920×1080, transparent). Never share on stream.</p>
-              <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--surface)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
                 <span style={{ flex:1, fontSize:12, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{showToken ? overlayUrl : maskedUrl}</span>
                 <button onClick={()=>setShowToken(t=>!t)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'#64748b', flexShrink:0 }}>{showToken?'🙈':'👁️'}</button>
                 <button onClick={()=>{ navigator.clipboard.writeText(overlayUrl); toast.success('Copied!') }} style={{ background:'rgba(124,58,237,0.12)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:7, cursor:'pointer', fontSize:12, color:'#a78bfa', padding:'5px 10px', fontWeight:700 }}>Copy</button>
@@ -992,7 +992,7 @@ export default function OverlayPage() {
             <div style={{ ...C, padding:'16px 20px' }}>
               <p style={sH}><span>🎯</span> Goal Overlay — OBS Link</p>
               <p style={{ fontSize:12, color:'#475569', margin:'0 0 12px' }}>Add this as a <strong style={{ color:'#f1f5f9' }}>second separate</strong> Browser Source in OBS, positioned wherever you want the goal bar.</p>
-              <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--surface)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:'9px 12px' }}>
                 <span style={{ flex:1, fontSize:12, color:'#64748b', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{showGoalToken ? goalOverlayUrl : maskedGoalUrl}</span>
                 <button onClick={()=>setShowGoalToken(t=>!t)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'#64748b', flexShrink:0 }}>{showGoalToken?'🙈':'👁️'}</button>
                 <button onClick={()=>{ navigator.clipboard.writeText(goalOverlayUrl); toast.success('Copied!') }} style={{ background:'rgba(124,58,237,0.12)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:7, cursor:'pointer', fontSize:12, color:'#a78bfa', padding:'5px 10px', fontWeight:700 }}>Copy</button>
@@ -1160,7 +1160,7 @@ export default function OverlayPage() {
                         <span style={{ ...gTitleSt, color:gColor, textShadow:`0 0 8px ${gColor}cc,0 0 14px ${gColor}66` }}>{goal.title||'Donation Goal'}</span>
                         <span style={{ color:gText, opacity:0.7, fontSize:gFs*0.82 }}>{fmt(goal.currentAmount??0)} / {fmt(goal.targetAmount)}</span>
                       </div>
-                      <div style={{ height:gBh, background:'rgba(255,255,255,0.05)', borderRadius:gBh, overflow:'hidden', border:`1px solid ${gColor}33` }}>
+                      <div style={{ height:gBh, background:'var(--surface-input)', borderRadius:gBh, overflow:'hidden', border:`1px solid ${gColor}33` }}>
                         <div style={{ height:'100%', width:`${gPct}%`, background:`linear-gradient(90deg,${gColor},${gColor2})`, borderRadius:gBh, transition:'width 0.5s', boxShadow:`0 0 14px ${gColor},0 0 28px ${gColor}88` }}/>
                       </div>
                       <div style={{ display:'flex', justifyContent:'space-between', marginTop:6, fontFamily:gFf }}>
@@ -1202,7 +1202,7 @@ export default function OverlayPage() {
                       <p style={{ fontSize:fs, fontWeight:800, color:c, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 9px' }}>🏆 {lbTitles.top||'Top Donors'}</p>
                       <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
                         {[{n:'Arjun K.',a:'₹2,500',m:'🥇'},{n:'Priya M.',a:'₹1,200',m:'🥈'},{n:'Rohan S.',a:'₹800',m:'🥉'}].slice(0,Math.min(lbCounts.top,3)).map((row,i)=>(
-                          <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 7px', borderRadius:8, background:i===0?`${c}18`:'rgba(255,255,255,0.03)', border:`1px solid ${i===0?c+'40':'rgba(255,255,255,0.06)'}` }}>
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 7px', borderRadius:8, background:i===0?`${c}18`:'var(--surface)', border:`1px solid ${i===0?c+'40':'var(--surface-2)'}` }}>
                             <span style={{ fontSize:fs+2 }}>{row.m}</span>
                             <span style={{ flex:1, fontSize:fs, fontWeight:fw, color:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
                             <span style={{ fontSize:fs, fontWeight:800, color:c, flexShrink:0 }}>{row.a}</span>
@@ -1239,7 +1239,7 @@ export default function OverlayPage() {
                       <p style={{ fontSize:fs, fontWeight:800, color:c, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 9px' }}>👥 {lbTitles.recent||'Recent Donors'}</p>
                       <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
                         {([{n:'Arjun K.',a:'₹500',ic:'🕐'},{n:'Priya M.',a:'₹100',ic:'🕑'},{n:'Neha G.',a:'₹250',ic:'🕒'},{n:'Rohan S.',a:'₹50',ic:'🕓'}] as {n:string;a:string;ic:string}[]).slice(0,Math.min(lbCounts.recent,4)).map((row,i)=>(
-                          <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 7px', borderRadius:8, background:i===0?`${c}18`:'rgba(255,255,255,0.03)', border:`1px solid ${i===0?c+'40':'rgba(255,255,255,0.06)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 7px', borderRadius:8, background:i===0?`${c}18`:'var(--surface)', border:`1px solid ${i===0?c+'40':'var(--surface-2)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
                             <span style={{ fontSize:fs+1, flexShrink:0 }}>{row.ic}</span>
                             <span style={{ flex:1, fontSize:fs, fontWeight:fw, color:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
                             <span style={{ fontSize:fs, fontWeight:800, color:i===0?c:'#64748b', flexShrink:0 }}>{row.a}</span>

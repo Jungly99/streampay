@@ -9,14 +9,14 @@ type Tab = 'profile' | 'bank' | 'analytics'
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 13px', borderRadius: 9, fontSize: 13,
-  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
-  color: '#f8fafc', outline: 'none', boxSizing: 'border-box',
+  background: 'var(--border)', border: '1px solid rgba(255,255,255,0.09)',
+  color: 'var(--text-1)', outline: 'none', boxSizing: 'border-box',
 }
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 600, color: '#475569',
+  display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)',
   letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 7,
 }
-const C: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
+const C: React.CSSProperties = { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label style={labelStyle}>{label}</label>{children}</div>
@@ -113,7 +113,7 @@ export default function ProfilePage() {
   )
 
 if (!profile) return (
-    <div style={{ padding: 28, color: '#334155', fontSize: 13 }}>Loading profile…</div>
+    <div style={{ padding: 28, color: 'var(--text-3)', fontSize: 13 }}>Loading profile…</div>
   )
 
   return (
@@ -137,13 +137,13 @@ if (!profile) return (
             </div>
           </div>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f8fafc', marginBottom: 4 }}>{profile.channelName}</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>{profile.channelName}</h1>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {verifStatus === 'verified' && <span style={{ fontSize: 11, fontWeight: 600, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 20 }}>✓ Verified</span>}
               {verifStatus === 'pending' && <span style={{ fontSize: 11, fontWeight: 600, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 20 }}>⏳ Verification Pending</span>}
               {verifStatus === 'unverified' && <span style={{ fontSize: 11, fontWeight: 600, color: '#f87171', background: 'rgba(248,113,113,0.1)', padding: '2px 8px', borderRadius: 20 }}>○ Not Verified</span>}
               {profile.isActive && <span style={{ fontSize: 11, fontWeight: 600, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 20 }}>✓ Active</span>}
-              <span style={{ fontSize: 11, color: '#475569' }}>Click photo to change</span>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Click photo to change</span>
             </div>
           </div>
         </div>
@@ -173,7 +173,7 @@ if (!profile) return (
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', flexShrink: 0 }} />
           <div>
             <p style={{ fontSize: 13, fontWeight: 700, color: '#10b981', margin: 0 }}>Account Verified</p>
-            <p style={{ fontSize: 12, color: '#475569', margin: '2px 0 0' }}>Your account is verified — you have full access to all features.</p>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '2px 0 0' }}>Your account is verified — you have full access to all features.</p>
           </div>
         </div>
       )}
@@ -182,7 +182,7 @@ if (!profile) return (
           <span style={{ fontSize: 20, flexShrink: 0 }}>⏳</span>
           <div>
             <p style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b', margin: 0 }}>Verification Under Review</p>
-            <p style={{ fontSize: 12, color: '#475569', margin: '2px 0 0' }}>Requested on {new Date(profile.verificationRequestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. Our team will approve your account shortly.</p>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '2px 0 0' }}>Requested on {new Date(profile.verificationRequestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. Our team will approve your account shortly.</p>
           </div>
         </div>
       )}
@@ -227,7 +227,7 @@ if (!profile) return (
         {(['profile', 'bank', 'analytics'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             padding: '8px 18px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            background: tab === t ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.04)',
+            background: tab === t ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'var(--border)',
             border: tab === t ? 'none' : '1px solid rgba(255,255,255,0.07)',
             color: tab === t ? 'white' : '#64748b', transition: 'all 0.15s',
           }}>
@@ -243,8 +243,8 @@ if (!profile) return (
           <div style={{ ...C, padding: '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: 0 }}>Channel Banner</p>
-                <p style={{ fontSize: 12, color: '#475569', margin: '4px 0 0' }}>Shown as the hero background on your donation page</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Channel Banner</p>
+                <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>Shown as the hero background on your donation page</p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {profile.bannerUrl && (
@@ -275,8 +275,8 @@ if (!profile) return (
               ) : (
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>🖼️</div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#64748b', margin: 0 }}>Click to upload banner</p>
-                  <p style={{ fontSize: 11, color: '#334155', margin: '4px 0 0' }}>or drag & drop</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-3)', margin: 0 }}>Click to upload banner</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '4px 0 0' }}>or drag & drop</p>
                 </div>
               )}
             </div>
@@ -290,12 +290,12 @@ if (!profile) return (
                 { label: 'File types', value: 'JPG, PNG, WebP, GIF' },
               ].map(spec => (
                 <div key={spec.label} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 9, padding: '10px 12px' }}>
-                  <p style={{ fontSize: 10, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', margin: '0 0 4px' }}>{spec.label}</p>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', margin: 0 }}>{spec.value}</p>
+                  <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.04em', textTransform: 'uppercase', margin: '0 0 4px' }}>{spec.label}</p>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', margin: 0 }}>{spec.value}</p>
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: 11, color: '#475569', margin: '10px 0 0', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '10px 0 0', display: 'flex', alignItems: 'center', gap: 5 }}>
               <span>💡</span> Banner appears behind your avatar on your public donation page. Landscape banners work best.
             </p>
           </div>
@@ -303,7 +303,7 @@ if (!profile) return (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'stretch' }}>
             {/* Basic Info */}
             <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>Basic Information</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>Basic Information</p>
 
               <Field label="Channel Name">
                 <input value={profile.channelName ?? ''} onChange={e => setProfile((p: any) => ({ ...p, channelName: e.target.value }))} style={inputStyle} />
@@ -331,15 +331,15 @@ if (!profile) return (
                     <button onClick={() => { navigator.clipboard.writeText(`https://eztips.live/send-message/${profile.username}`); }} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa', flexShrink: 0 }}>Copy</button>
                   </div>
                 ) : (
-                  <p style={{ fontSize: 12, color: '#475569' }}>Set your username on the Dashboard to activate your link</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Set your username on the Dashboard to activate your link</p>
                 )}
               </div>
             </div>
 
             {/* Social Links */}
             <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>Social Links</p>
-              <p style={{ fontSize: 12, color: '#475569', marginTop: -8 }}>These appear on your public donation page</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>Social Links</p>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: -8 }}>These appear on your public donation page</p>
               {[
                 { key: 'socialTwitter',   label: 'X / Twitter',  ph: 'https://x.com/username',          icon: '𝕏' },
                 { key: 'socialInstagram', label: 'Instagram',    ph: 'https://instagram.com/username',   icon: '◎' },
@@ -351,7 +351,7 @@ if (!profile) return (
                 <div key={s.key}>
                   <label style={labelStyle}>{s.label}</label>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#475569', width: 20, textAlign: 'center', flexShrink: 0 }}>{s.icon}</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-3)', width: 20, textAlign: 'center', flexShrink: 0 }}>{s.icon}</span>
                     <input value={(profile as any)[s.key] ?? ''} onChange={e => setProfile((p: any) => ({ ...p, [s.key]: e.target.value }))} placeholder={s.ph} style={{ ...inputStyle, flex: 1 }} />
                   </div>
                 </div>
@@ -364,8 +364,8 @@ if (!profile) return (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(88,101,242,0.15)', border: '1px solid rgba(88,101,242,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⌘</div>
               <div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: 0 }}>Discord Notifications</p>
-                <p style={{ fontSize: 11, color: '#475569', margin: 0, marginTop: 2 }}>Get a Discord message every time you receive a tip</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Discord Notifications</p>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0, marginTop: 2 }}>Get a Discord message every time you receive a tip</p>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'flex-end' }}>
@@ -379,11 +379,11 @@ if (!profile) return (
                 />
               </div>
               <a href="https://support.discord.com/hc/en-us/articles/228383668" target="_blank" rel="noopener noreferrer"
-                style={{ padding: '10px 14px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: '#94a3b8', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', whiteSpace: 'nowrap', display: 'block' }}>
+                style={{ padding: '10px 14px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: 'var(--text-2)', background: 'var(--border)', border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', whiteSpace: 'nowrap', display: 'block' }}>
                 How to get webhook →
               </a>
             </div>
-            <p style={{ fontSize: 11, color: '#475569', marginTop: 8 }}>Create a webhook in your Discord server: Channel Settings → Integrations → Webhooks → New Webhook → Copy URL</p>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8 }}>Create a webhook in your Discord server: Channel Settings → Integrations → Webhooks → New Webhook → Copy URL</p>
           </div>
         </div>
       )}
@@ -391,7 +391,7 @@ if (!profile) return (
       {tab === 'bank' && bank !== null && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>Bank Account Details</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>Bank Account Details</p>
             <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.18)' }}>
               <p style={{ fontSize: 12, color: '#60a5fa' }}>Contact support after updating bank details</p>
             </div>
@@ -442,12 +442,12 @@ if (!profile) return (
             </Field>
             <div style={{ marginTop: 4, padding: '10px 14px', borderRadius: 10, background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.2)' }}>
               <p style={{ fontSize: 12, color: '#a78bfa', fontWeight: 600, marginBottom: 3 }}>5% Platform Fee</p>
-              <p style={{ fontSize: 11, color: '#475569' }}>Only charged at settlement, never on donations</p>
+              <p style={{ fontSize: 11, color: 'var(--text-3)' }}>Only charged at settlement, never on donations</p>
             </div>
           </div>
 
           <div style={{ ...C, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>GST Invoice Details</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>GST Invoice Details</p>
             <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.18)' }}>
               <p style={{ fontSize: 12, color: '#60a5fa' }}>Used to generate GST-compliant invoices for your settlements</p>
             </div>
@@ -479,17 +479,17 @@ if (!profile) return (
 }
 
 // ── Analytics Tab ─────────────────────────────────────────────────────────────
-const AC: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
+const AC: React.CSSProperties = { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
 
 function StatCard({ icon, label, value, sub, color }: { icon: string; label: string; value: string; sub?: string; color: string }) {
   return (
     <div style={{ ...AC, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ width: 32, height: 32, borderRadius: 8, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{icon}</div>
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{label}</span>
       </div>
       <p style={{ fontSize: 24, fontWeight: 800, color, margin: 0, letterSpacing: '-0.5px' }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{sub}</p>}
+      {sub && <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0 }}>{sub}</p>}
     </div>
   )
 }
@@ -508,14 +508,14 @@ function AnalyticsTab() {
   }, [range])
 
   if (loading) return (
-    <div style={{ padding: '60px', textAlign: 'center', color: '#475569', fontSize: 13 }}>
+    <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
       Loading analytics…
     </div>
   )
 
   if (!data) return (
     <div style={{ ...AC, padding: '60px', textAlign: 'center' }}>
-      <p style={{ color: '#475569', fontSize: 13 }}>Could not load analytics. Try refreshing.</p>
+      <p style={{ color: 'var(--text-3)', fontSize: 13 }}>Could not load analytics. Try refreshing.</p>
     </div>
   )
 
@@ -528,7 +528,7 @@ function AnalyticsTab() {
       {/* Range toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Earnings Analytics</h2>
-        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 9, padding: 3, border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ display: 'flex', gap: 4, background: 'var(--border)', borderRadius: 9, padding: 3, border: '1px solid rgba(255,255,255,0.07)' }}>
           {[['7d','7 Days'],['30d','30 Days'],['90d','90 Days']].map(([v,l]) => (
             <button key={v} onClick={() => setRange(v ?? '30d')} style={{
               padding: '5px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
@@ -551,7 +551,7 @@ function AnalyticsTab() {
         <div style={{ ...AC, padding: '60px', textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 14 }}>📭</div>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', margin: '0 0 8px' }}>No donations yet</p>
-          <p style={{ fontSize: 13, color: '#475569' }}>Share your donation link to start collecting tips</p>
+          <p style={{ fontSize: 13, color: 'var(--text-3)' }}>Share your donation link to start collecting tips</p>
         </div>
       ) : (
         <>
@@ -562,10 +562,10 @@ function AnalyticsTab() {
             </p>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={data.dailyEarnings.map((d: any) => ({ ...d, date: fmtDate(d.date) }))} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="date" tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
-                <Tooltip contentStyle={{ background: '#0c0d1a', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, fontSize: 12 }} formatter={(v: any) => [`₹${v}`, 'Earned']} labelStyle={{ color: '#94a3b8' }} itemStyle={{ color: '#a78bfa' }} />
+                <Tooltip contentStyle={{ background: '#0c0d1a', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, fontSize: 12 }} formatter={(v: any) => [`₹${v}`, 'Earned']} labelStyle={{ color: 'var(--text-2)' }} itemStyle={{ color: '#a78bfa' }} />
                 <Bar dataKey="amount" fill="url(#barGrad)" radius={[4,4,0,0]} />
                 <defs>
                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
@@ -582,7 +582,7 @@ function AnalyticsTab() {
             <div style={{ ...AC, padding: '18px 20px' }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 7 }}><span>🏆</span> Top Supporters</p>
               {data.topDonors.length === 0 ? (
-                <p style={{ fontSize: 12, color: '#475569' }}>No donations yet</p>
+                <p style={{ fontSize: 12, color: 'var(--text-3)' }}>No donations yet</p>
               ) : data.topDonors.map((d: any, i: number) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <div style={{ width: 26, height: 26, borderRadius: 8, background: ['rgba(255,215,0,0.15)','rgba(192,192,192,0.1)','rgba(205,127,50,0.1)','rgba(255,255,255,0.05)','rgba(255,255,255,0.05)'][i] ?? 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>
@@ -590,7 +590,7 @@ function AnalyticsTab() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</p>
-                    <p style={{ fontSize: 10, color: '#475569', margin: 0 }}>{d.count} donation{d.count !== 1 ? 's' : ''}</p>
+                    <p style={{ fontSize: 10, color: 'var(--text-3)', margin: 0 }}>{d.count} donation{d.count !== 1 ? 's' : ''}</p>
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa' }}>₹{d.total}</span>
                 </div>
@@ -604,12 +604,12 @@ function AnalyticsTab() {
                 <BarChart data={data.hourDistribution} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
                   <XAxis dataKey="hour" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={h => h % 6 === 0 ? `${h}h` : ''} />
                   <YAxis hide />
-                  <Tooltip contentStyle={{ background: '#0c0d1a', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, fontSize: 11 }} formatter={(v: any) => [`₹${v}`, 'Earned']} labelFormatter={h => `${h}:00`} labelStyle={{ color: '#94a3b8' }} itemStyle={{ color: '#34d399' }} />
+                  <Tooltip contentStyle={{ background: '#0c0d1a', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, fontSize: 11 }} formatter={(v: any) => [`₹${v}`, 'Earned']} labelFormatter={h => `${h}:00`} labelStyle={{ color: 'var(--text-2)' }} itemStyle={{ color: '#34d399' }} />
                   <Bar dataKey="amount" fill="#34d399" opacity={0.7} radius={[3,3,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
               {peaked && (
-                <p style={{ fontSize: 11, color: '#475569', margin: '8px 0 0', textAlign: 'center' }}>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '8px 0 0', textAlign: 'center' }}>
                   Peak at <span style={{ color: '#34d399', fontWeight: 600 }}>{peaked.hour}:00</span>
                 </p>
               )}
@@ -626,7 +626,7 @@ function AnalyticsTab() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9', margin: 0 }}>{d.name}</p>
-                  <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{d.paidAt ? new Date(d.paidAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0 }}>{d.paidAt ? new Date(d.paidAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}</p>
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 800, color: '#a78bfa' }}>₹{d.amount}</span>
               </div>

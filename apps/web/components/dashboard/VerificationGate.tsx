@@ -24,7 +24,7 @@ export default function VerificationGate({ isVerified, verificationRequestedAt }
       padding: 24,
     }}>
       <div style={{
-        background: 'rgba(255,255,255,0.03)',
+        background: 'var(--surface)',
         border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 20, padding: '40px 36px',
         maxWidth: 480, width: '100%', textAlign: 'center',
@@ -32,10 +32,10 @@ export default function VerificationGate({ isVerified, verificationRequestedAt }
         <div style={{ fontSize: 48, marginBottom: 16 }}>
           {isPending ? '⏳' : '🔐'}
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc', marginBottom: 8, letterSpacing: '-0.5px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', marginBottom: 8, letterSpacing: '-0.5px' }}>
           {isPending ? 'Verification Pending' : 'Account Not Verified'}
         </h2>
-        <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.7, marginBottom: 28 }}>
+        <p style={{ fontSize: 14, color: 'var(--text-3)', lineHeight: 1.7, marginBottom: 28 }}>
           {isPending
             ? 'Your verification request has been submitted. Our team will review your profile and approve your account shortly. You\'ll get full access once approved.'
             : 'To access all features, complete your profile and request verification. Once our team approves your account, you\'ll get full access to the dashboard.'}
@@ -51,7 +51,7 @@ export default function VerificationGate({ isVerified, verificationRequestedAt }
             ].map(item => (
               <div key={item} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
                 <span style={{ color: '#f59e0b', fontSize: 12 }}>○</span>
-                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>{item}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>{item}</p>
               </div>
             ))}
           </div>

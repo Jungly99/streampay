@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 interface FeeBreakdown { grossAmount: number; feePct: number; feeAmount: number; netAmount: number; canSettle: boolean; minSettlement: number }
 interface DonationRow { id: string; donorName: string; amount: number; feeAmount: number; netAmount: number; settled: boolean; createdAt: string; settlement?: { status: string } | null }
 
-const C: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
+const C: React.CSSProperties = { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
 
 export default function SettlementsPage() {
   const [breakdown, setBreakdown] = useState<FeeBreakdown | null>(null)
@@ -68,7 +68,7 @@ export default function SettlementsPage() {
     { label: 'Transactions',     value: stats.totalTx,                       color: '#f59e0b' },
     { label: 'Total Settled',    value: formatINR(stats.totalSettledGross),  color: '#db2777' },
     { label: 'Net Received',     value: formatINR(stats.totalNetReceived),   color: '#10b981' },
-    { label: 'Last Settled',     value: formatINR(Number(stats.lastSettled)), color: '#94a3b8' },
+    { label: 'Last Settled',     value: formatINR(Number(stats.lastSettled)), color: 'var(--text-2)' },
   ] : []
 
   return (
@@ -77,8 +77,8 @@ export default function SettlementsPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px' }}>Settlements</h1>
-          <p style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>Withdraw your earnings to your bank account</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.5px' }}>Settlements</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>Withdraw your earnings to your bank account</p>
         </div>
         <button onClick={settle} disabled={settling || !breakdown?.canSettle} style={{
           padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: breakdown?.canSettle ? 'pointer' : 'not-allowed',
@@ -97,7 +97,7 @@ export default function SettlementsPage() {
           {statItems.map(s => (
             <div key={s.label} style={{ ...C, padding: '14px 14px', textAlign: 'center' }}>
               <p style={{ fontSize: 16, fontWeight: 700, color: s.color, marginBottom: 4 }}>{s.value}</p>
-              <p style={{ fontSize: 10, color: '#334155', lineHeight: 1.4 }}>{s.label}</p>
+              <p style={{ fontSize: 10, color: 'var(--text-3)', lineHeight: 1.4 }}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -109,8 +109,8 @@ export default function SettlementsPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: '#f59e0b', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>Pending Balance</p>
-              <p style={{ fontSize: 28, fontWeight: 800, color: '#f8fafc', letterSpacing: '-1px' }}>{formatINR(breakdown.grossAmount)}</p>
-              <p style={{ fontSize: 13, color: '#475569', marginTop: 6 }}>
+              <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-1px' }}>{formatINR(breakdown.grossAmount)}</p>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
                 {breakdown.feePct}% fee ({formatINR(breakdown.feeAmount)}) → You receive{' '}
                 <span style={{ color: '#10b981', fontWeight: 700 }}>{formatINR(breakdown.netAmount)}</span>
               </p>
@@ -119,7 +119,7 @@ export default function SettlementsPage() {
               {!breakdown.canSettle && breakdown.grossAmount > 0 && (
                 <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', fontSize: 12, color: '#f59e0b', textAlign: 'right' }}>
                   Minimum ₹{breakdown.minSettlement} required to settle<br />
-                  <span style={{ color: '#64748b' }}>Need {formatINR(breakdown.minSettlement - breakdown.grossAmount)} more</span>
+                  <span style={{ color: 'var(--text-3)' }}>Need {formatINR(breakdown.minSettlement - breakdown.grossAmount)} more</span>
                 </div>
               )}
               {!breakdown.canSettle && breakdown.grossAmount === 0 && (
@@ -138,17 +138,17 @@ export default function SettlementsPage() {
       {/* Filters */}
       <div style={{ ...C, padding: '14px 18px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8,
-          padding: '7px 10px', fontSize: 12, color: '#94a3b8', outline: 'none',
+          background: 'var(--border)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8,
+          padding: '7px 10px', fontSize: 12, color: 'var(--text-2)', outline: 'none',
         }} />
         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8,
-          padding: '7px 10px', fontSize: 12, color: '#94a3b8', outline: 'none',
+          background: 'var(--border)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8,
+          padding: '7px 10px', fontSize: 12, color: 'var(--text-2)', outline: 'none',
         }} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search donor name…" style={{
-          flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#e2e8f0',
+          flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--text-1)',
         }} />
-        <button onClick={exportCsv} style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+        <button onClick={exportCsv} style={{ padding: '7px 14px', borderRadius: 8, background: 'var(--surface-input)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-3)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
           Export CSV
         </button>
       </div>
@@ -159,13 +159,13 @@ export default function SettlementsPage() {
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               {['Donor', 'Gross Amount', 'Fee (5%)', 'Fee Deducted', 'Net Amount', 'Status', 'Date'].map(h => (
-                <th key={h} style={{ padding: '13px 18px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#334155', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
+                <th key={h} style={{ padding: '13px 18px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {donations.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '60px', fontSize: 13, color: '#334155' }}>No transactions found</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '60px', fontSize: 13, color: 'var(--text-3)' }}>No transactions found</td></tr>
             ) : donations.map((d, i) => (
               <tr key={d.id} style={{ borderBottom: i < donations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
                 <td style={{ padding: '13px 18px' }}>
@@ -173,7 +173,7 @@ export default function SettlementsPage() {
                     <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(124,58,237,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#a78bfa', flexShrink: 0 }}>
                       {d.donorName[0]?.toUpperCase()}
                     </div>
-                    <span style={{ fontSize: 13, color: '#e2e8f0' }}>{d.donorName}</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-1)' }}>{d.donorName}</span>
                   </div>
                 </td>
                 <td style={{ padding: '13px 18px', fontSize: 13, fontWeight: 600, color: '#10b981' }}>{formatINR(d.amount)}</td>
@@ -190,7 +190,7 @@ export default function SettlementsPage() {
                         : <span style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', background: 'rgba(129,140,248,0.1)', padding: '3px 9px', borderRadius: 20 }}>🔄 Processing</span>
                   }
                 </td>
-                <td style={{ padding: '13px 18px', fontSize: 12, color: '#334155' }}>{formatDate(d.createdAt)}</td>
+                <td style={{ padding: '13px 18px', fontSize: 12, color: 'var(--text-3)' }}>{formatDate(d.createdAt)}</td>
               </tr>
             ))}
           </tbody>

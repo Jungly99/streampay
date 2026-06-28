@@ -64,19 +64,19 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
     ? 'linear-gradient(180deg,#0c0d1a 0%,#080910 100%)'
     : 'linear-gradient(180deg,#edeaff 0%,#f3f1ff 100%)'
   const borderColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(100,80,220,0.12)'
-  const channelCardBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.7)'
-  const channelCardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(100,80,220,0.1)'
+  const channelCardBg = isDark ? 'var(--surface)' : 'rgba(255,255,255,0.7)'
+  const channelCardBorder = isDark ? 'var(--surface-2)' : 'rgba(100,80,220,0.1)'
   const statBg1 = isDark ? 'rgba(124,58,237,0.08)' : 'rgba(124,58,237,0.07)'
-  const statBg2 = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.6)'
+  const statBg2 = isDark ? 'var(--surface)' : 'rgba(255,255,255,0.6)'
   const textPrimary = isDark ? '#f1f5f9' : '#1e1b4b'
   const textMuted = isDark ? '#475569' : '#7c78b8'
   const textFaint = isDark ? '#374151' : '#9b97cc'
-  const dividerBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(100,80,220,0.08)'
+  const dividerBg = isDark ? 'var(--border)' : 'rgba(100,80,220,0.08)'
   const platformCardBg = isDark ? 'rgba(124,58,237,0.06)' : 'rgba(124,58,237,0.04)'
   const platformCardBorder = isDark ? 'rgba(124,58,237,0.12)' : 'rgba(124,58,237,0.15)'
-  const statItemBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.7)'
-  const emailBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.6)'
-  const emailBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(100,80,220,0.1)'
+  const statItemBg = isDark ? 'var(--surface)' : 'rgba(255,255,255,0.7)'
+  const emailBg = isDark ? 'var(--surface)' : 'rgba(255,255,255,0.6)'
+  const emailBorder = isDark ? 'var(--surface-2)' : 'rgba(100,80,220,0.1)'
 
   return (
     <aside style={{
@@ -192,7 +192,7 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
                 <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6ee7b7' }}>Message Link</span>
                 <span style={{ display: 'block', fontSize: 10, color: textFaint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>/{username || 'not set'}</span>
               </div>
-              <button onClick={copyLink} title="Copy link" style={{ width: 24, height: 24, borderRadius: 6, background: copied ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', fontSize: 11, color: copied ? '#6ee7b7' : '#64748b', flexShrink: 0 }}>
+              <button onClick={copyLink} title="Copy link" style={{ width: 24, height: 24, borderRadius: 6, background: copied ? 'rgba(16,185,129,0.2)' : 'var(--surface-2)', border: 'none', cursor: 'pointer', fontSize: 11, color: copied ? '#6ee7b7' : '#64748b', flexShrink: 0 }}>
                 {copied ? '✓' : '⎘'}
               </button>
             </div>

@@ -37,8 +37,8 @@ export default async function CelebrityVoicePage() {
             <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#f59e0b' }} />
             <span style={{ fontSize: 11, fontWeight: 800, color: '#f59e0b', letterSpacing: '0.08em' }}>PREMIUM ONLY</span>
           </div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc', margin: '0 0 12px', letterSpacing: '-0.5px' }}>Celebrity Voice Alerts</h2>
-          <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.7, margin: '0 0 28px' }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', margin: '0 0 12px', letterSpacing: '-0.5px' }}>Celebrity Voice Alerts</h2>
+          <p style={{ fontSize: 14, color: 'var(--text-3)', lineHeight: 1.7, margin: '0 0 28px' }}>
             This feature is currently in <strong style={{ color: '#f59e0b' }}>Beta</strong> and available exclusively to
             <strong style={{ color: '#a78bfa' }}> Premium streamers</strong> selected by our team.
           </p>
@@ -49,7 +49,7 @@ export default async function CelebrityVoicePage() {
                 <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ fontSize: 9, color: '#f59e0b', fontWeight: 700 }}>✓</span>
                 </div>
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>{f}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{f}</span>
               </div>
             ))}
           </div>
@@ -61,7 +61,7 @@ export default async function CelebrityVoicePage() {
           }}>
             ✉ Request Premium Access
           </a>
-          <p style={{ fontSize: 11, color: '#334155', marginTop: 14 }}>Contact us at support@eztips.live</p>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 14 }}>Contact us at support@eztips.live</p>
         </div>
       </div>
     )

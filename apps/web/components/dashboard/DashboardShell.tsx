@@ -16,11 +16,11 @@ export default function DashboardShell({ channelName, email, username, overlayTo
   const { isDark } = useTheme()
 
   const topbarBg = isDark ? 'rgba(6,6,15,0.95)' : 'rgba(240,242,252,0.95)'
-  const topbarBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(100,80,220,0.1)'
+  const topbarBorder = isDark ? 'var(--surface-2)' : 'rgba(100,80,220,0.1)'
   const textPrimary = isDark ? '#f1f5f9' : '#1e1b4b'
   const rootBg = isDark ? '#06060f' : '#f0f2fc'
-  const hamBtnBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
-  const hamBtnBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(100,80,220,0.12)'
+  const hamBtnBg = isDark ? 'var(--surface-2)' : 'rgba(0,0,0,0.06)'
+  const hamBtnBorder = isDark ? 'var(--border)' : 'rgba(100,80,220,0.12)'
 
   return (
     <div className="dashboard-root" style={{ display: 'flex', height: '100svh', overflow: 'hidden', background: rootBg }}>

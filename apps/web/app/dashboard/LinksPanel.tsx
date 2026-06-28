@@ -14,11 +14,11 @@ function CopyField({ label, value, masked }: { label: string; value: string; mas
 
   return (
     <div>
-      <p style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</p>
+      <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</p>
       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
         <div style={{
-          flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 12, color: 'var(--text-2)', fontFamily: 'monospace',
+          background: 'var(--border)', border: '1px solid rgba(255,255,255,0.08)',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>{display}</div>
         {masked && (
@@ -32,8 +32,8 @@ function CopyField({ label, value, masked }: { label: string; value: string; mas
 
 const btnStyle: React.CSSProperties = {
   width: 34, height: 34, borderRadius: 8, flexShrink: 0, cursor: 'pointer', fontSize: 13,
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
-  color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
+  background: 'var(--surface-input)', border: '1px solid rgba(255,255,255,0.09)',
+  color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
 }
 
 function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: initUsername }: Omit<Props, 'inline'>) {
@@ -71,7 +71,7 @@ function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: i
         ? <CopyField label="Donation Link" value={currentLink} />
         : (
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Donation Link Username</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Donation Link Username</p>
             <div style={{ padding: '8px 12px', borderRadius: 9, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', marginBottom: 10 }}>
               <p style={{ fontSize: 11, color: '#f59e0b', margin: 0 }}>⚠ One-time only — cannot be changed after setting</p>
             </div>
@@ -81,7 +81,7 @@ function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: i
                 onChange={e => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                 placeholder="yourusername"
                 onKeyDown={e => e.key === 'Enter' && submitUsername()}
-                style={{ flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#f1f5f9', outline: 'none' }}
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 13, background: 'var(--border)', border: '1px solid rgba(255,255,255,0.09)', color: '#f1f5f9', outline: 'none' }}
               />
               <button onClick={submitUsername} disabled={settingUsername || !usernameInput} style={{ padding: '9px 16px', borderRadius: 9, background: 'linear-gradient(135deg,#7c3aed,#db2777)', border: 'none', color: 'white', fontSize: 13, fontWeight: 700, cursor: settingUsername ? 'not-allowed' : 'pointer', opacity: !usernameInput ? 0.5 : 1, flexShrink: 0 }}>
                 {settingUsername ? '…' : 'Set'}
@@ -96,7 +96,7 @@ function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: i
           <CopyField label="OBS Overlay URL" value={overlayUrl} masked />
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />
-            <p style={{ fontSize: 11, color: '#475569' }}>Only use in OBS Browser Source — never broadcast this URL</p>
+            <p style={{ fontSize: 11, color: 'var(--text-3)' }}>Only use in OBS Browser Source — never broadcast this URL</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
             {overlayUrl && (
@@ -122,7 +122,7 @@ function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: i
       {qrDataUrl && (
         <div style={{ paddingTop: 4, marginTop: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>QR Code</p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>QR Code</p>
             <button onClick={() => { const a = document.createElement('a'); a.href = qrDataUrl; a.download = 'streampay-qr.png'; a.click() }}
               style={{ fontSize: 11, fontWeight: 600, color: '#7c3aed', cursor: 'pointer', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 6, padding: '3px 10px' }}>
               Download
@@ -131,7 +131,7 @@ function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: i
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <img src={qrDataUrl} alt="Donation QR Code" width={160} height={160} style={{ borderRadius: 12, background: 'white', padding: 8, display: 'block' }} />
           </div>
-          <p style={{ fontSize: 12, color: '#64748b', textAlign: 'center', marginTop: 10, fontWeight: 500 }}>Viewers scan this to open your donation page</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', marginTop: 10, fontWeight: 500 }}>Viewers scan this to open your donation page</p>
         </div>
       )}
     </div>
@@ -142,7 +142,7 @@ export default function LinksPanel({ messageLink, overlayToken, overlayUrl, qrDa
   if (inline) return <Content messageLink={messageLink} overlayToken={overlayToken} overlayUrl={overlayUrl} qrDataUrl={qrDataUrl} />
   return (
     <div className="glass-card" style={{ padding: '22px 22px' }}>
-      <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 18 }}>Your Links</p>
+      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 18 }}>Your Links</p>
       <Content messageLink={messageLink} overlayToken={overlayToken} overlayUrl={overlayUrl} qrDataUrl={qrDataUrl} />
     </div>
   )

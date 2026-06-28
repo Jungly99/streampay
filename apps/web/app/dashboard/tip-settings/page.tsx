@@ -17,12 +17,12 @@ export default async function TipSettingsPage() {
   const data = await fetchTipSettings(token)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#f8fafc', fontFamily: 'system-ui,sans-serif', padding: '32px 32px' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0f', color: 'var(--text-1)', fontFamily: 'system-ui,sans-serif', padding: '32px 32px' }}>
 
       {/* Header */}
       <div style={{ maxWidth: 720, margin: '0 auto', marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-          <Link href="/dashboard" style={{ fontSize: 12, color: '#475569', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Link href="/dashboard" style={{ fontSize: 12, color: 'var(--text-3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
             ← Dashboard
           </Link>
         </div>
@@ -31,8 +31,8 @@ export default async function TipSettingsPage() {
             ₹
           </div>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc', margin: 0 }}>Tip Settings</h1>
-            <p style={{ fontSize: 13, color: '#475569', margin: 0, marginTop: 2 }}>Control minimum tip amount and per-tier message limits</p>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>Tip Settings</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0, marginTop: 2 }}>Control minimum tip amount and per-tier message limits</p>
           </div>
         </div>
       </div>

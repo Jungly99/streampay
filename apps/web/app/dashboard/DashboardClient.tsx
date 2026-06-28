@@ -15,8 +15,8 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '18px 20px' }}>
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 16 }}>{title}</p>
+    <div style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '18px 20px' }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 16 }}>{title}</p>
       {children}
     </div>
   )
@@ -26,8 +26,8 @@ function Row({ label, desc, right }: { label: string; desc?: string; right: Reac
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
       <div>
-        <p style={{ fontSize: 13, fontWeight: 500, color: '#e2e8f0' }}>{label}</p>
-        {desc && <p style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{desc}</p>}
+        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>{label}</p>
+        {desc && <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{desc}</p>}
       </div>
       {right}
     </div>
@@ -57,7 +57,7 @@ export default function DashboardClient({ token, initialSettings }: { token: str
         <Row label="Enable TTS" desc="Read donation alerts aloud" right={<Toggle on={s.ttsEnabled} onChange={v => setS(p => ({ ...p, ttsEnabled: v }))} />} />
         <div style={{ padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: '#e2e8f0' }}>Volume</p>
+            <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>Volume</p>
             <span style={{ fontSize: 12, fontWeight: 600, color: '#a78bfa' }}>{s.ttsVolume}%</span>
           </div>
           <input type="range" min={0} max={100} value={s.ttsVolume} onChange={e => setS(p => ({ ...p, ttsVolume: +e.target.value }))} />
@@ -74,7 +74,7 @@ export default function DashboardClient({ token, initialSettings }: { token: str
         <Row label="Enable Voice" desc="Let viewers record messages" right={<Toggle on={s.voiceMessagesEnabled} onChange={v => setS(p => ({ ...p, voiceMessagesEnabled: v }))} />} />
         <div style={{ padding: '12px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: '#e2e8f0' }}>Playback Volume</p>
+            <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>Playback Volume</p>
             <span style={{ fontSize: 12, fontWeight: 600, color: '#a78bfa' }}>{s.voiceVolume ?? 100}%</span>
           </div>
           <input type="range" min={0} max={100} value={s.voiceVolume ?? 100} onChange={e => setS(p => ({ ...p, voiceVolume: +e.target.value }))} />

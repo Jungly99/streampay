@@ -71,12 +71,12 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
   const selectedVoice = CELEBRITY_VOICES.find(v => v.value === s.celebrityVoiceId)
 
   const C: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16,
+    background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16,
   }
   const inp: React.CSSProperties = {
     width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 13, boxSizing: 'border-box',
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#f8fafc', outline: 'none',
+    background: 'var(--surface-input)', border: '1px solid rgba(255,255,255,0.1)',
+    color: 'var(--text-1)', outline: 'none',
   }
 
   return (
@@ -98,10 +98,10 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#7c3aed,#f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: '0 4px 16px rgba(124,58,237,0.4)' }}>🎤</div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <h1 style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.5px', margin: 0 }}>Celebrity Voice</h1>
+                  <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-0.5px', margin: 0 }}>Celebrity Voice</h1>
                   <span style={{ fontSize: 10, fontWeight: 800, color: '#f59e0b', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', padding: '3px 10px', borderRadius: 20, letterSpacing: '0.08em' }}>PREMIUM</span>
                 </div>
-                <p style={{ fontSize: 13, color: '#94a3b8', marginTop: 2 }}>AI-powered celebrity voices for donation alerts — earn more with premium tiers</p>
+                <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 2 }}>AI-powered celebrity voices for donation alerts — earn more with premium tiers</p>
               </div>
             </div>
           </div>
@@ -117,15 +117,15 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginTop: 20, position: 'relative', zIndex: 1 }}>
           {[
-            { label: 'Standard Fee', value: '5%', color: '#64748b', sub: 'regular donations' },
+            { label: 'Standard Fee', value: '5%', color: 'var(--text-3)', sub: 'regular donations' },
             { label: 'Celebrity Fee', value: '20%', color: '#f59e0b', sub: 'premium donations' },
             { label: 'Min Amount', value: `₹${minAmt}`, color: '#a78bfa', sub: 'for celebrity voice' },
             { label: 'Extra per Alert', value: `+₹${extraPerAlert}`, color: '#10b981', sub: 'vs standard' },
           ].map(stat => (
             <div key={stat.label} style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(10px)' }}>
-              <p style={{ fontSize: 11, color: '#475569', margin: '0 0 4px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{stat.label}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '0 0 4px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{stat.label}</p>
               <p style={{ fontSize: 20, fontWeight: 800, color: stat.color, margin: 0, letterSpacing: '-0.5px' }}>{stat.value}</p>
-              <p style={{ fontSize: 10, color: '#334155', margin: '2px 0 0' }}>{stat.sub}</p>
+              <p style={{ fontSize: 10, color: 'var(--text-3)', margin: '2px 0 0' }}>{stat.sub}</p>
             </div>
           ))}
         </div>
@@ -143,14 +143,14 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
               onClick={() => upd('celebrityVoiceEnabled', !s.celebrityVoiceEnabled)}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', margin: 0 }}>Enable Celebrity Voice Alerts</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Enable Celebrity Voice Alerts</p>
                   {s.celebrityVoiceEnabled && selectedVoice && (
                     <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)', padding: '2px 8px', borderRadius: 20 }}>
                       {selectedVoice.flag} {selectedVoice.label} active
                     </span>
                   )}
                 </div>
-                <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>
                   Donations of ₹{minAmt}+ are read by your chosen AI voice. Platform takes 20% on these (vs 5% standard).
                 </p>
               </div>
@@ -168,11 +168,11 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
           <div style={{ ...C, padding: '20px 22px', flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', margin: 0 }}>Choose a Celebrity Voice</p>
-                <p style={{ fontSize: 12, color: '#475569', marginTop: 3 }}>AI-generated entertainment voices — click a card to select, Preview to hear it</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Choose a Celebrity Voice</p>
+                <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3 }}>AI-generated entertainment voices — click a card to select, Preview to hear it</p>
               </div>
               {s.celebrityVoiceId && (
-                <button onClick={() => upd('celebrityVoiceId', null)} style={{ fontSize: 11, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+                <button onClick={() => upd('celebrityVoiceId', null)} style={{ fontSize: 11, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
                   Clear ✕
                 </button>
               )}
@@ -185,7 +185,7 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
                   <div key={v.value} onClick={() => upd('celebrityVoiceId', v.value)} style={{
                     padding: '16px', borderRadius: 14, cursor: 'pointer',
                     background: selected ? 'linear-gradient(135deg,rgba(124,58,237,0.15),rgba(245,158,11,0.08))' : 'rgba(255,255,255,0.02)',
-                    border: `1.5px solid ${selected ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.06)'}`,
+                    border: `1.5px solid ${selected ? 'rgba(124,58,237,0.5)' : 'var(--surface-2)'}`,
                     transition: 'all 0.15s', position: 'relative',
                     boxShadow: selected ? '0 4px 20px rgba(124,58,237,0.15)' : 'none',
                   }}>
@@ -199,13 +199,13 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
                         <span style={{ fontSize: 9, fontWeight: 700, color: selected ? '#f59e0b' : '#334155', background: selected ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.05)', padding: '1px 7px', borderRadius: 10, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{v.genre}</span>
                       </div>
                     </div>
-                    <p style={{ fontSize: 11, color: '#475569', margin: '0 0 12px' }}>{v.desc}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '0 0 12px' }}>{v.desc}</p>
                     <button
                       onClick={e => { e.stopPropagation(); previewVoice(v.value) }}
                       disabled={previewing === v.value}
                       style={{
                         padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', width: '100%',
-                        background: previewing === v.value ? 'rgba(255,255,255,0.04)' : 'rgba(124,58,237,0.12)',
+                        background: previewing === v.value ? 'var(--border)' : 'rgba(124,58,237,0.12)',
                         border: `1px solid ${selected ? 'rgba(124,58,237,0.35)' : 'rgba(124,58,237,0.2)'}`,
                         color: '#a78bfa', transition: 'all 0.15s',
                       }}>
@@ -217,14 +217,14 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
             </div>
 
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Custom ElevenLabs Voice ID</p>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Custom ElevenLabs Voice ID</p>
               <input
                 value={CELEBRITY_VOICES.find(v => v.value === s.celebrityVoiceId) ? '' : (s.celebrityVoiceId ?? '')}
                 onChange={e => upd('celebrityVoiceId', e.target.value || null)}
                 placeholder="Paste any voice ID from elevenlabs.io/voice-library"
                 style={inp}
               />
-              <p style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>
+              <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
                 Browse 1000s of voices — search "Modi", "Trump", "Amitabh", any character or personality
               </p>
             </div>
@@ -236,8 +236,8 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
 
           {/* Min amount */}
           <div style={{ ...C, padding: '20px 22px' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: '0 0 4px' }}>Minimum Amount</p>
-            <p style={{ fontSize: 11, color: '#475569', marginBottom: 16 }}>Below this → standard TTS (5%). At or above → celebrity voice (20%)</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: '0 0 4px' }}>Minimum Amount</p>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 16 }}>Below this → standard TTS (5%). At or above → celebrity voice (20%)</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <input type="range" min={500} max={5000} step={100} value={s.celebrityVoiceMinAmount}
                 onChange={e => upd('celebrityVoiceMinAmount', Number(e.target.value))}
@@ -250,8 +250,8 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
               {[500, 1000, 2000, 5000].map(v => (
                 <button key={v} onClick={() => upd('celebrityVoiceMinAmount', v)} style={{
                   flex: 1, padding: '7px 0', borderRadius: 9, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                  background: s.celebrityVoiceMinAmount === v ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${s.celebrityVoiceMinAmount === v ? 'rgba(124,58,237,0.45)' : 'rgba(255,255,255,0.07)'}`,
+                  background: s.celebrityVoiceMinAmount === v ? 'rgba(124,58,237,0.2)' : 'var(--surface)',
+                  border: `1px solid ${s.celebrityVoiceMinAmount === v ? 'rgba(124,58,237,0.45)' : 'var(--border)'}`,
                   color: s.celebrityVoiceMinAmount === v ? '#a78bfa' : '#475569',
                 }}>₹{v >= 1000 ? `${v/1000}k` : v}</button>
               ))}
@@ -260,21 +260,21 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
 
           {/* Revenue preview */}
           <div style={{ ...C, padding: '20px 22px' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: '0 0 14px' }}>Revenue at ₹{minAmt}</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: '0 0 14px' }}>Revenue at ₹{minAmt}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {/* Standard */}
-              <div style={{ padding: '14px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: '#475569', letterSpacing: '0.08em', margin: '0 0 10px', textTransform: 'uppercase' }}>Standard Donation</p>
+              <div style={{ padding: '14px', borderRadius: 12, background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', margin: '0 0 10px', textTransform: 'uppercase' }}>Standard Donation</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: '#64748b' }}>Donor pays</span>
-                    <span style={{ fontWeight: 700, color: '#e2e8f0' }}>₹{minAmt}</span>
+                    <span style={{ color: 'var(--text-3)' }}>Donor pays</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-1)' }}>₹{minAmt}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: '#64748b' }}>Platform fee (5%)</span>
+                    <span style={{ color: 'var(--text-3)' }}>Platform fee (5%)</span>
                     <span style={{ color: '#f87171' }}>−₹{standardFee}</span>
                   </div>
-                  <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '2px 0' }} />
+                  <div style={{ height: 1, background: 'var(--surface-2)', margin: '2px 0' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>You receive</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: '#10b981' }}>₹{standardNet}</span>
@@ -286,14 +286,14 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.08em', margin: '0 0 10px', textTransform: 'uppercase' }}>🎤 Celebrity Voice</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: '#64748b' }}>Donor pays</span>
-                    <span style={{ fontWeight: 700, color: '#e2e8f0' }}>₹{minAmt}</span>
+                    <span style={{ color: 'var(--text-3)' }}>Donor pays</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-1)' }}>₹{minAmt}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: '#64748b' }}>Platform fee (20%)</span>
+                    <span style={{ color: 'var(--text-3)' }}>Platform fee (20%)</span>
                     <span style={{ color: '#f87171' }}>−₹{celebrityFee}</span>
                   </div>
-                  <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '2px 0' }} />
+                  <div style={{ height: 1, background: 'var(--surface-2)', margin: '2px 0' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>You receive</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: '#10b981' }}>₹{celebrityNet}</span>
@@ -309,7 +309,7 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
 
           {/* How it works */}
           <div style={{ ...C, padding: '20px 22px', flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: '0 0 16px' }}>How It Works</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: '0 0 16px' }}>How It Works</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {[
                 { n: '1', color: '#7c3aed', icon: '₹', title: `Viewer donates ₹${minAmt}+`, desc: 'No extra steps for the viewer — same donation form' },
@@ -322,11 +322,11 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
                     <div style={{ width: 30, height: 30, borderRadius: '50%', background: `${item.color}20`, border: `1.5px solid ${item.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: item.color, zIndex: 1 }}>
                       {item.n}
                     </div>
-                    {i < arr.length - 1 && <div style={{ width: 1.5, flex: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />}
+                    {i < arr.length - 1 && <div style={{ width: 1.5, flex: 1, background: 'var(--surface-2)', margin: '4px 0' }} />}
                   </div>
                   <div style={{ paddingBottom: i < arr.length - 1 ? 14 : 0, paddingTop: 4 }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', margin: 0 }}>{item.title}</p>
-                    <p style={{ fontSize: 11, color: '#475569', margin: '2px 0 0', lineHeight: 1.5 }}>{item.desc}</p>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>{item.title}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '2px 0 0', lineHeight: 1.5 }}>{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -345,7 +345,7 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
 
       {/* Legal */}
       <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
-        <p style={{ fontSize: 11, color: '#334155', margin: 0 }}>
+        <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0 }}>
           ⚠️ AI-generated voices are for entertainment only. Community voices in ElevenLabs are not endorsed by or affiliated with any real person named.
         </p>
       </div>

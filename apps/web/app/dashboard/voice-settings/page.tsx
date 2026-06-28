@@ -10,13 +10,13 @@ const DEFAULT_TIERS = [
   { durationSeconds: 20, minAmount: 1000, isEnabled: false },
 ]
 
-const C: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
+const C: React.CSSProperties = { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
     <button onClick={() => onChange(!on)} style={{
       width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0,
-      background: on ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.12)',
+      background: on ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'var(--border-2)',
       transition: 'background 0.2s',
     }}>
       <span style={{
@@ -60,8 +60,8 @@ export default function VoiceSettingsPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '9px 12px', borderRadius: 9, fontSize: 13,
-    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
-    color: '#f8fafc', outline: 'none', boxSizing: 'border-box',
+    background: 'var(--border)', border: '1px solid rgba(255,255,255,0.09)',
+    color: 'var(--text-1)', outline: 'none', boxSizing: 'border-box',
   }
 
   return (
@@ -70,8 +70,8 @@ export default function VoiceSettingsPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px' }}>Voice Messages</h1>
-          <p style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>Let viewers record personal audio messages with their donations</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.5px' }}>Voice Messages</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>Let viewers record personal audio messages with their donations</p>
         </div>
         <button onClick={save} disabled={saving} style={{
           padding: '10px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
@@ -86,8 +86,8 @@ export default function VoiceSettingsPage() {
       <div style={{ ...C, padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#f8fafc', marginBottom: 4 }}>Enable Voice Messages</p>
-            <p style={{ fontSize: 13, color: '#475569' }}>When enabled, viewers can record audio up to the tier limit and it plays live on your overlay</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>Enable Voice Messages</p>
+            <p style={{ fontSize: 13, color: 'var(--text-3)' }}>When enabled, viewers can record audio up to the tier limit and it plays live on your overlay</p>
           </div>
           <Toggle on={settings.voiceMessagesEnabled} onChange={v => setSettings((s: any) => ({ ...s, voiceMessagesEnabled: v }))} />
         </div>
@@ -102,7 +102,7 @@ export default function VoiceSettingsPage() {
       {/* Tiers */}
       <div style={{ ...C, padding: '22px 24px' }}>
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>Voice Duration Tiers</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', marginBottom: 6 }}>Voice Duration Tiers</p>
           <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)' }}>
             <p style={{ fontSize: 12, color: '#f59e0b' }}>Set the minimum donation amount required to unlock each voice duration. Viewers will see these tiers on your donation page.</p>
           </div>
@@ -113,22 +113,22 @@ export default function VoiceSettingsPage() {
             <div key={tier.durationSeconds} style={{
               padding: '18px 20px', borderRadius: 12,
               background: tier.isEnabled ? 'rgba(124,58,237,0.06)' : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${tier.isEnabled ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)'}`,
+              border: `1px solid ${tier.isEnabled ? 'rgba(124,58,237,0.2)' : 'var(--surface-2)'}`,
               transition: 'all 0.2s',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#f8fafc' }}>{tier.durationSeconds}s</p>
-                  <p style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{tier.durationSeconds} second message</p>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>{tier.durationSeconds}s</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{tier.durationSeconds} second message</p>
                 </div>
                 <Toggle on={tier.isEnabled} onChange={v => updateTier(idx, 'isEnabled', v)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 7 }}>Min Donation (₹)</label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 7 }}>Min Donation (₹)</label>
                 <input type="number" value={tier.minAmount}
                   onChange={e => updateTier(idx, 'minAmount', Number(e.target.value))}
                   disabled={!tier.isEnabled} style={{ ...inputStyle, opacity: tier.isEnabled ? 1 : 0.4 }} />
-                <p style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
                   Donors of ₹{tier.minAmount}+ unlock {tier.durationSeconds}s audio
                 </p>
               </div>
@@ -140,7 +140,7 @@ export default function VoiceSettingsPage() {
       {/* How it works + OBS setup */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ ...C, padding: '22px 24px' }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginBottom: 18 }}>How Voice Messages Work</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', marginBottom: 18 }}>How Voice Messages Work</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {[
               { n: '1', color: '#7c3aed', title: 'Viewer donates', desc: 'Viewer meets the minimum donation for a voice tier on your page' },
@@ -151,11 +151,11 @@ export default function VoiceSettingsPage() {
               <div key={step.n} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${step.color}20`, border: `2px solid ${step.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: step.color }}>{step.n}</div>
-                  {i < arr.length - 1 && <div style={{ width: 2, flex: 1, background: 'rgba(255,255,255,0.06)', marginTop: 6 }} />}
+                  {i < arr.length - 1 && <div style={{ width: 2, flex: 1, background: 'var(--surface-2)', marginTop: 6 }} />}
                 </div>
                 <div style={{ paddingTop: 6, paddingBottom: i < arr.length - 1 ? 10 : 0 }}>
                   <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>{step.title}</p>
-                  <p style={{ fontSize: 12, color: '#475569', margin: '4px 0 0' }}>{step.desc}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -167,8 +167,8 @@ export default function VoiceSettingsPage() {
             <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>⚙</div>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', margin: 0 }}>OBS Setup Required</p>
-                <p style={{ fontSize: 12, color: '#475569', margin: '3px 0 0' }}>Voice won't play without this</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>OBS Setup Required</p>
+                <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '3px 0 0' }}>Voice won't play without this</p>
               </div>
             </div>
             {[
@@ -179,7 +179,7 @@ export default function VoiceSettingsPage() {
             ].map((step, i) => (
               <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: i < 3 ? 10 : 0 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', width: 20, height: 20, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>{step}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>{step}</p>
               </div>
             ))}
           </div>
@@ -194,7 +194,7 @@ export default function VoiceSettingsPage() {
             ].map((tip, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: i < 3 ? 8 : 0 }}>
                 <span style={{ color: '#7c3aed', fontSize: 12, flexShrink: 0, marginTop: 1 }}>◆</span>
-                <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5 }}>{tip}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0, lineHeight: 1.5 }}>{tip}</p>
               </div>
             ))}
           </div>
