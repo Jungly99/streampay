@@ -210,11 +210,9 @@ export default function OverlayPage() {
 
   async function save() {
     setSaving(true)
-    // Omit fields not yet in the deployed server Prisma client
-    const { alertSoundType: _a, customAlertSoundUrl: _c, ...serverSettings } = s as any
     try {
       await Promise.all([
-        api.patch('/api/streamer/alert-settings', serverSettings),
+        api.patch('/api/streamer/alert-settings', s),
         goal.title ? api.put('/api/streamer/goal', goal) : Promise.resolve(),
       ])
       toast.success('Settings saved!')
@@ -224,8 +222,8 @@ export default function OverlayPage() {
   async function sendTest() {
     setTesting(true)
     try {
-      // Save settings first (best-effort — omit fields not yet in deployed Prisma client)
-      try { const { alertSoundType: _a, customAlertSoundUrl: _c, ...safe } = s as any; await api.patch('/api/streamer/alert-settings', safe) } catch { /* ignore */ }
+      // Save settings first (best-effort — don't block the test if save fails)
+      try { await api.patch('/api/streamer/alert-settings', s) } catch { /* ignore */ }
       const r = await api.post<any>('/api/streamer/test-alert')
       toast.success(`Test sent — ₹${r.amount} from ${r.name}`)
     } catch (e: any) { toast.error(e.message ?? 'Failed to send test alert') } finally { setTesting(false) }
