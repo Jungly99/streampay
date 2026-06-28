@@ -1148,19 +1148,22 @@ export default function OverlayPage() {
                 {lbTab==='top' && (
                   lbLayout.top === 'ticker' ? (
                     /* Ticker preview */
-                    <div style={{ display:'flex', alignItems:'stretch', background:`${lbBg.top}dd`, borderRadius:50, overflow:'hidden', border:`1px solid ${lbColors.top}45`, boxShadow:`0 0 12px ${lbColors.top}22` }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px 8px 10px', background:`${lbColors.top}22`, borderRight:`1px solid ${lbColors.top}35`, flexShrink:0 }}>
-                        <span style={{ fontSize:12 }}>🏆</span>
-                        <span style={{ fontSize:10, fontWeight:800, color:lbColors.top, textTransform:'uppercase', letterSpacing:'0.07em', whiteSpace:'nowrap' }}>{lbTitles.top||'Top Donors'}</span>
+                    <div style={{ display:'flex', alignItems:'center', background:`${lbBg.top}${Math.round(lbOpacity.top*2.55).toString(16).padStart(2,'0')}`, borderRadius:50, overflow:'hidden', border:`1px solid ${lbColors.top}55`, boxShadow:`0 0 10px ${lbColors.top}22` }}>
+                      {/* Label */}
+                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px 7px 9px', background:`${lbColors.top}25`, borderRight:`1px solid ${lbColors.top}35`, flexShrink:0, maxWidth:'42%' }}>
+                        <span style={{ fontSize:11, flexShrink:0 }}>🏆</span>
+                        <span style={{ fontSize:9, fontWeight:800, color:lbColors.top, textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{lbTitles.top||'Top'}</span>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', flex:1, gap:8 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          <span style={{ fontSize:11 }}>🥇</span>
-                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', textShadow:`0 0 8px ${lbColors.top}80` }}>Arjun K.</span>
+                      {/* Donor */}
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 8px', flex:1, gap:6, minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:4, minWidth:0, overflow:'hidden' }}>
+                          <span style={{ fontSize:11, flexShrink:0 }}>🥇</span>
+                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textShadow:`0 0 8px ${lbColors.top}80` }}>Arjun K.</span>
                         </div>
-                        <span style={{ fontSize:11, fontWeight:800, color:lbColors.top }}>₹2,500</span>
+                        <span style={{ fontSize:11, fontWeight:800, color:lbColors.top, flexShrink:0, whiteSpace:'nowrap' }}>₹2,500</span>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:3, padding:'0 10px', flexShrink:0 }}>
+                      {/* Dots */}
+                      <div style={{ display:'flex', alignItems:'center', gap:3, padding:'0 8px', flexShrink:0 }}>
                         {[0,1,2].map(i=><div key={i} style={{ width:4, height:4, borderRadius:'50%', background:i===0?lbColors.top:`${lbColors.top}40` }}/>)}
                       </div>
                     </div>
@@ -1190,19 +1193,22 @@ export default function OverlayPage() {
                 {lbTab==='recent' && (
                   lbLayout.recent === 'ticker' ? (
                     /* Ticker preview */
-                    <div style={{ display:'flex', alignItems:'stretch', background:`${lbBg.recent}dd`, borderRadius:50, overflow:'hidden', border:`1px solid ${lbColors.recent}45`, boxShadow:`0 0 12px ${lbColors.recent}22` }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px 8px 10px', background:`${lbColors.recent}22`, borderRight:`1px solid ${lbColors.recent}35`, flexShrink:0 }}>
-                        <span style={{ fontSize:12 }}>💰</span>
-                        <span style={{ fontSize:10, fontWeight:800, color:lbColors.recent, textTransform:'uppercase', letterSpacing:'0.07em', whiteSpace:'nowrap' }}>{lbTitles.recent||'Recent Donors'}</span>
+                    <div style={{ display:'flex', alignItems:'center', background:`${lbBg.recent}${Math.round(lbOpacity.recent*2.55).toString(16).padStart(2,'0')}`, borderRadius:50, overflow:'hidden', border:`1px solid ${lbColors.recent}55`, boxShadow:`0 0 10px ${lbColors.recent}22` }}>
+                      {/* Label */}
+                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px 7px 9px', background:`${lbColors.recent}25`, borderRight:`1px solid ${lbColors.recent}35`, flexShrink:0, maxWidth:'42%' }}>
+                        <span style={{ fontSize:11, flexShrink:0 }}>💰</span>
+                        <span style={{ fontSize:9, fontWeight:800, color:lbColors.recent, textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{lbTitles.recent||'Recent'}</span>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', flex:1, gap:8 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          <span style={{ fontSize:11 }}>🕐</span>
-                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', textShadow:`0 0 8px ${lbColors.recent}80` }}>Arjun K.</span>
+                      {/* Donor */}
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 8px', flex:1, gap:6, minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:4, minWidth:0, overflow:'hidden' }}>
+                          <span style={{ fontSize:11, flexShrink:0 }}>🕐</span>
+                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textShadow:`0 0 8px ${lbColors.recent}80` }}>Arjun K.</span>
                         </div>
-                        <span style={{ fontSize:11, fontWeight:800, color:lbColors.recent }}>₹500</span>
+                        <span style={{ fontSize:11, fontWeight:800, color:lbColors.recent, flexShrink:0, whiteSpace:'nowrap' }}>₹500</span>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:3, padding:'0 10px', flexShrink:0 }}>
+                      {/* Dots */}
+                      <div style={{ display:'flex', alignItems:'center', gap:3, padding:'0 8px', flexShrink:0 }}>
                         {[0,1,2].map(i=><div key={i} style={{ width:4, height:4, borderRadius:'50%', background:i===0?lbColors.recent:`${lbColors.recent}40` }}/>)}
                       </div>
                     </div>
