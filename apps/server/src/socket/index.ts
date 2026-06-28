@@ -7,6 +7,7 @@ let io: SocketServer
 
 export function initSocket(httpServer: HttpServer): SocketServer {
   io = new SocketServer(httpServer, {
+    maxHttpBufferSize: 5e6, // 5 MB — needed for custom audio data URLs (~680 KB base64)
     cors: {
       origin: (origin, cb) => {
         const allowed = [

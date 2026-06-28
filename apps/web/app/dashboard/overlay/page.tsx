@@ -155,20 +155,25 @@ export default function OverlayPage() {
     ]).then(([settings, g, profile]) => {
       if (settings && Object.keys(settings).length) {
         const { id: _id, streamerId: _sid, createdAt: _ca, updatedAt: _ua, ...clean } = settings
-        setS((p: any) => ({ ...p, ...clean }))
-        // Restore UI state if DB already has data URL stored
         if (clean.customAlertSoundUrl?.startsWith('data:')) {
+          // DB already has the data URL — restore UI
           setCustomSoundBase64(clean.customAlertSoundUrl)
           setCustomSoundName('custom audio')
+        } else {
+          // DB doesn't have it — pull from localStorage so next Save persists it to DB
+          const localData = localStorage.getItem('eztips_custom_alert_sound')
+          const localName = localStorage.getItem('eztips_custom_alert_sound_name')
+          if (localData) {
+            clean.customAlertSoundUrl = localData
+            setCustomSoundBase64(localData)
+            setCustomSoundName(localName ?? 'custom.mp3')
+          }
         }
+        setS((p: any) => ({ ...p, ...clean }))
       }
       if (g) setGoal(g)
       if (profile?.overlayToken) setOverlayToken(profile.overlayToken)
     }).catch(() => {})
-    // Fallback: load from localStorage if DB doesn't have it yet
-    const saved = localStorage.getItem('eztips_custom_alert_sound')
-    const savedName = localStorage.getItem('eztips_custom_alert_sound_name')
-    if (saved) { setCustomSoundBase64(saved); setCustomSoundName(savedName ?? 'custom.mp3') }
   }, [])
 
   // Listen to real-time goal updates (e.g. when a donation arrives) to keep preview in sync
