@@ -93,7 +93,7 @@ export default function OverlayPage() {
     enableShadow:false, shadowBlur:20, shadowColor:'#ffffff', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
     enableGradientBg:false,
     ttsEnabled:true, ttsVolume:100, ttsVoice:'en-IN', ttsRate:1.0, ttsPitch:1.0,
-    enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1,
+    enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1, alertSoundType:'coin', customAlertSoundUrl:'',
     minAlertAmount:0, minTtsAmount:0,
     goalBarColor:'#7c3aed', goalBarOpacity:100, enableGoalCelebration:true,
     enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
@@ -101,6 +101,8 @@ export default function OverlayPage() {
   })
   const [goal, setGoal] = useState<any>({ title:'', targetAmount:1000, isActive:false, currentAmount:0 })
   const [manualAdd, setManualAdd] = useState('')
+  const [customSoundBase64, setCustomSoundBase64] = useState('')
+  const [customSoundName, setCustomSoundName] = useState('')
   const [overlayToken, setOverlayToken] = useState('')
   const [showToken, setShowToken] = useState(false)
   const [showGoalToken, setShowGoalToken] = useState(false)
@@ -158,6 +160,10 @@ export default function OverlayPage() {
       if (g) setGoal(g)
       if (profile?.overlayToken) setOverlayToken(profile.overlayToken)
     }).catch(() => {})
+    // Load custom sound from localStorage
+    const saved = localStorage.getItem('eztips_custom_alert_sound')
+    const savedName = localStorage.getItem('eztips_custom_alert_sound_name')
+    if (saved) { setCustomSoundBase64(saved); setCustomSoundName(savedName ?? 'custom.mp3') }
   }, [])
 
   // Listen to real-time goal updates (e.g. when a donation arrives) to keep preview in sync
@@ -424,11 +430,125 @@ export default function OverlayPage() {
 
             <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
               <p style={sH}><span>🔔</span> Alert Sound</p>
-              <Row label="Coin Sound" tip="A chime plays the moment a donation arrives"><Toggle on={s.enableCoinSound} onChange={v=>set('enableCoinSound',v)}/></Row>
+              <Row label="Enable Alert Sound" tip="Play a sound when a donation arrives"><Toggle on={s.enableCoinSound} onChange={v=>set('enableCoinSound',v)}/></Row>
+
               {s.enableCoinSound && <>
-                <Slider label="Chime Volume" value={s.coinSoundVolume} min={0} max={100} unit="%" onChange={v=>set('coinSoundVolume',v)}/>
+                {/* Sound preset grid */}
+                <div>
+                  <span style={lbl}>Choose Sound</span>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginTop:4 }}>
+                    {[
+                      { id:'coin',       emoji:'🪙', label:'Coin' },
+                      { id:'ding',       emoji:'🔔', label:'Ding' },
+                      { id:'bell',       emoji:'🎵', label:'Bell' },
+                      { id:'chime',      emoji:'✨', label:'Chime' },
+                      { id:'pop',        emoji:'💥', label:'Pop' },
+                      { id:'levelup',    emoji:'⬆️', label:'Level Up' },
+                      { id:'custom_url', emoji:'🔗', label:'URL' },
+                      { id:'custom',     emoji:'🎧', label:'Upload' },
+                    ].map(preset => {
+                      const active = (s.alertSoundType ?? 'coin') === preset.id
+                      return (
+                        <button key={preset.id} type="button" onClick={() => set('alertSoundType', preset.id)} style={{
+                          padding:'10px 4px', borderRadius:10, fontSize:12, fontWeight:600, cursor:'pointer',
+                          background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
+                          border: `1.5px solid ${active ? 'rgba(124,58,237,0.6)' : 'rgba(255,255,255,0.07)'}`,
+                          color: active ? '#a78bfa' : '#64748b',
+                          display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.15s',
+                        }}>
+                          <span style={{ fontSize:18 }}>{preset.emoji}</span>
+                          {preset.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Preview button */}
+                {(s.alertSoundType ?? 'coin') !== 'custom' && (s.alertSoundType ?? 'coin') !== 'custom_url' && (
+                  <button type="button" onClick={() => {
+                    try {
+                      const ctx = new AudioContext()
+                      const vol = (s.coinSoundVolume ?? 50) / 100 * 0.6
+                      const t = ctx.currentTime
+                      const playTone = (freq: number, start: number, dur: number, type: OscillatorType = 'sine') => {
+                        const osc = ctx.createOscillator(); const g = ctx.createGain()
+                        osc.connect(g); g.connect(ctx.destination)
+                        osc.type = type; osc.frequency.setValueAtTime(freq, t + start)
+                        g.gain.setValueAtTime(vol, t + start); g.gain.exponentialRampToValueAtTime(0.001, t + start + dur)
+                        osc.start(t + start); osc.stop(t + start + dur)
+                      }
+                      const type = s.alertSoundType ?? 'coin'
+                      if (type === 'coin') { const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(440,t+0.08); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25); o.start(t); o.stop(t+0.25) }
+                      else if (type === 'ding') { playTone(1200, 0, 0.6) }
+                      else if (type === 'bell') { [523,659,784].forEach((f,i) => playTone(f,i*0.01,1.2)) }
+                      else if (type === 'chime') { [523,659,784,1047].forEach((f,i) => playTone(f,i*0.12,0.5)) }
+                      else if (type === 'pop') { const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type='triangle'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(40,t+0.1); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); o.start(t); o.stop(t+0.12) }
+                      else if (type === 'levelup') { [440,554,659,880].forEach((f,i) => playTone(f,i*0.1,0.3)) }
+                    } catch { /* AudioContext not available in SSR */ }
+                  }} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>
+                    ▶ Preview Sound
+                  </button>
+                )}
+
+                {/* Custom URL */}
+                {s.alertSoundType === 'custom_url' && (
+                  <div>
+                    <span style={lbl}>Audio URL</span>
+                    <input value={s.customAlertSoundUrl ?? ''} onChange={e => set('customAlertSoundUrl', e.target.value)}
+                      placeholder="https://example.com/alert.mp3" style={inp} />
+                    <p style={{ fontSize:11, color:'#475569', marginTop:6 }}>Direct-access URL (no login required). Works in OBS overlay. Host on Google Drive, Dropbox, Discord CDN, or your own server.</p>
+                    {s.customAlertSoundUrl && (
+                      <button type="button" onClick={() => { try { const a = new Audio(s.customAlertSoundUrl); a.volume = (s.coinSoundVolume??50)/100; a.play() } catch{} }} style={{ marginTop:8, padding:'7px 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>▶ Preview URL</button>
+                    )}
+                  </div>
+                )}
+
+                {/* Custom file upload */}
+                {s.alertSoundType === 'custom' && (
+                  <div>
+                    <span style={lbl}>Upload Audio File</span>
+                    <div style={{ background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.12)', borderRadius:10, padding:'16px', textAlign:'center' }}>
+                      {customSoundBase64 ? (
+                        <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'center' }}>
+                          <span style={{ fontSize:12, color:'#10b981', fontWeight:600 }}>✓ {customSoundName}</span>
+                          <div style={{ display:'flex', gap:8 }}>
+                            <button type="button" onClick={() => { try { const a = new Audio(customSoundBase64); a.volume = (s.coinSoundVolume??50)/100; a.play() } catch{} }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>▶ Preview</button>
+                            <button type="button" onClick={() => { setCustomSoundBase64(''); setCustomSoundName(''); localStorage.removeItem('eztips_custom_alert_sound'); localStorage.removeItem('eztips_custom_alert_sound_name') }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', color:'#f87171' }}>Remove</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <label style={{ cursor:'pointer', display:'block' }}>
+                          <input type="file" accept=".mp3,.wav,.ogg,.m4a,audio/*" style={{ display:'none' }}
+                            onChange={e => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              if (file.size > 512 * 1024) { alert('File too large. Max 500 KB.'); return }
+                              const reader = new FileReader()
+                              reader.onload = ev => {
+                                const b64 = ev.target?.result as string
+                                setCustomSoundBase64(b64); setCustomSoundName(file.name)
+                                localStorage.setItem('eztips_custom_alert_sound', b64)
+                                localStorage.setItem('eztips_custom_alert_sound_name', file.name)
+                              }
+                              reader.readAsDataURL(file)
+                            }}
+                          />
+                          <span style={{ fontSize:22, display:'block', marginBottom:6 }}>🎵</span>
+                          <span style={{ fontSize:13, fontWeight:600, color:'#a78bfa' }}>Click to upload</span>
+                          <p style={{ fontSize:11, color:'#475569', marginTop:4, lineHeight:1.5 }}>MP3, WAV, OGG, M4A · Max 500 KB<br/>Stored in your browser — no server upload</p>
+                        </label>
+                      )}
+                    </div>
+                    <div style={{ marginTop:8, padding:'9px 12px', borderRadius:9, background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)' }}>
+                      <p style={{ fontSize:11, color:'#f59e0b', lineHeight:1.5 }}>⚠ Custom upload only plays in your browser preview. For OBS overlay use, choose <strong>URL</strong> instead and paste a hosted link.</p>
+                    </div>
+                  </div>
+                )}
+
+                <Slider label="Volume" value={s.coinSoundVolume} min={0} max={100} unit="%" onChange={v=>set('coinSoundVolume',v)}/>
                 <Slider label="Delay Before TTS" value={s.ttsSoundDelay} min={0} max={12} unit="s" onChange={v=>set('ttsSoundDelay',v)}/>
-                <p style={{ fontSize:11, color:'#475569' }}>How long after the chime to start TTS (0–12s, default 1s)</p>
+                <p style={{ fontSize:11, color:'#475569' }}>How long after the sound to start TTS (0–12s, default 1s)</p>
               </>}
             </div>
 

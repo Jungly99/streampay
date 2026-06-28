@@ -108,15 +108,31 @@ export default function OverlayClient({ token }: { token: string }) {
       const delay = (settings.ttsSoundDelay ?? 1) * 1000
       if (settings.enableCoinSound) {
         try {
-          const ctx = new AudioContext()
-          const osc = ctx.createOscillator()
-          const gain = ctx.createGain()
-          osc.connect(gain); gain.connect(ctx.destination)
-          osc.frequency.setValueAtTime(880, ctx.currentTime)
-          osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.08)
-          gain.gain.setValueAtTime((settings.coinSoundVolume ?? 50) / 100 * 0.5, ctx.currentTime)
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25)
-          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.25)
+          const vol = (settings.coinSoundVolume ?? 50) / 100 * 0.6
+          const soundType = settings.alertSoundType ?? 'coin'
+          if (soundType === 'custom_url' && settings.customAlertSoundUrl) {
+            const a = new Audio(settings.customAlertSoundUrl)
+            a.volume = vol; a.play().catch(() => {})
+          } else if (soundType === 'custom') {
+            const stored = localStorage.getItem('eztips_custom_alert_sound')
+            if (stored) { const a = new Audio(stored); a.volume = vol; a.play().catch(() => {}) }
+          } else {
+            const ctx = new AudioContext()
+            const t = ctx.currentTime
+            const playTone = (freq: number, start: number, dur: number, type: OscillatorType = 'sine') => {
+              const osc = ctx.createOscillator(); const g = ctx.createGain()
+              osc.connect(g); g.connect(ctx.destination)
+              osc.type = type; osc.frequency.setValueAtTime(freq, t + start)
+              g.gain.setValueAtTime(vol, t + start); g.gain.exponentialRampToValueAtTime(0.001, t + start + dur)
+              osc.start(t + start); osc.stop(t + start + dur)
+            }
+            if (soundType === 'coin') { const osc = ctx.createOscillator(); const g = ctx.createGain(); osc.connect(g); g.connect(ctx.destination); osc.frequency.setValueAtTime(880,t); osc.frequency.exponentialRampToValueAtTime(440,t+0.08); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25); osc.start(t); osc.stop(t+0.25) }
+            else if (soundType === 'ding') { playTone(1200, 0, 0.6) }
+            else if (soundType === 'bell') { [523,659,784].forEach((f,i) => playTone(f, i*0.01, 1.2)) }
+            else if (soundType === 'chime') { [523,659,784,1047].forEach((f,i) => playTone(f, i*0.12, 0.5)) }
+            else if (soundType === 'pop') { const osc = ctx.createOscillator(); const g = ctx.createGain(); osc.connect(g); g.connect(ctx.destination); osc.type='triangle'; osc.frequency.setValueAtTime(200,t); osc.frequency.exponentialRampToValueAtTime(40,t+0.1); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); osc.start(t); osc.stop(t+0.12) }
+            else if (soundType === 'levelup') { [440,554,659,880].forEach((f,i) => playTone(f, i*0.1, 0.3)) }
+          }
         } catch { /* audio not available */ }
       }
 

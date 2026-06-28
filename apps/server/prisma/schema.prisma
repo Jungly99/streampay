@@ -146,6 +146,8 @@ model AlertSettings {
   enableCoinSound      Boolean         @default(true) @map("enable_coin_sound")
   coinSoundVolume      Int             @default(50) @map("coin_sound_volume")
   ttsSoundDelay        Int             @default(1) @map("tts_sound_delay")
+  alertSoundType       String          @default("coin") @map("alert_sound_type")
+  customAlertSoundUrl  String?         @map("custom_alert_sound_url")
   ttsRate              Float           @default(1.0) @map("tts_rate")
   ttsPitch             Float           @default(1.0) @map("tts_pitch")
   minAlertAmount       Int             @default(0) @map("min_alert_amount")

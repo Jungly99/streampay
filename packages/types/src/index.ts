@@ -47,6 +47,8 @@ export interface AlertSettings {
   enableCoinSound: boolean
   coinSoundVolume: number
   ttsSoundDelay: number
+  alertSoundType: string
+  customAlertSoundUrl: string | null
   ttsRate: number
   ttsPitch: number
   minAlertAmount: number
