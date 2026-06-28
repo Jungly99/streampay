@@ -34,6 +34,22 @@ export default function StreakClient({ token }: { token: string }) {
     const socket = getSocket()
     socket.connect()
     socket.on('connect', () => socket.emit('join-overlay', { token }))
+    socket.on('lb-settings-updated', (data: any) => {
+      if (!data?.streak) return
+      const sk = data.streak
+      setParams(p => ({
+        ...p,
+        color:     sk.color     ?? p.color,
+        title:     sk.title     ?? p.title,
+        bg:        sk.bg        ?? p.bg,
+        opacity:   sk.opacity   ?? p.opacity,
+        textColor: sk.textColor ?? p.textColor,
+        fontSize:  sk.fontSize  ?? p.fontSize,
+        font:      sk.font      ?? p.font,
+        bold:      sk.bold      ?? p.bold,
+        resetMin:  sk.resetMin  ?? p.resetMin,
+      }))
+    })
     socket.on('new-donation', (data: NewDonationEvent) => {
       setStreak(s => s + 1)
       setLastDonor(data.donorName)

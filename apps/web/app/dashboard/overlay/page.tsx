@@ -202,6 +202,23 @@ export default function OverlayPage() {
     } catch {}
   }, [lbColors, lbTitles, lbCounts, lbResetMin])
 
+  // Push leaderboard settings live to OBS overlays via socket (debounced 150ms)
+  useEffect(() => {
+    if (!overlayToken) return
+    const socket = getSocket()
+    const t = setTimeout(() => {
+      socket.emit('push-lb-settings', {
+        token: overlayToken,
+        settings: {
+          top:    { color:lbColors.top,    count:lbCounts.top,    title:lbTitles.top,    bg:lbBg.top,    opacity:lbOpacity.top,    textColor:lbTextColor.top,    fontSize:lbFontSize.top,    font:lbFont.top,    bold:lbBold.top,    rotSpeed:lbRotSpeed.top,    layout:lbLayout.top },
+          recent: { color:lbColors.recent, count:lbCounts.recent, title:lbTitles.recent, bg:lbBg.recent, opacity:lbOpacity.recent, textColor:lbTextColor.recent, fontSize:lbFontSize.recent, font:lbFont.recent, bold:lbBold.recent, rotSpeed:lbRotSpeed.recent, layout:lbLayout.recent },
+          streak: { color:lbColors.streak,                        title:lbTitles.streak, bg:lbBg.streak, opacity:lbOpacity.streak, textColor:lbTextColor.streak, fontSize:lbFontSize.streak, font:lbFont.streak, bold:lbBold.streak, resetMin:lbResetMin },
+        },
+      })
+    }, 150)
+    return () => clearTimeout(t)
+  }, [overlayToken, lbColors, lbTitles, lbCounts, lbBg, lbOpacity, lbTextColor, lbFontSize, lbFont, lbBold, lbRotSpeed, lbLayout, lbResetMin])
+
   useEffect(() => {
     Promise.all([
       api.get<any>('/api/streamer/alert-settings'),
@@ -1232,7 +1249,7 @@ export default function OverlayPage() {
               </div>
             )}
 
-            <p style={{ fontSize:10, color:'#374151', textAlign:'center', margin:'8px 0 0', lineHeight:1.5 }}>Preview updates live<br/><span style={{ color:'#f59e0b', fontWeight:600 }}>Re-copy URL &amp; refresh OBS after saving</span></p>
+            <p style={{ fontSize:10, color:'#374151', textAlign:'center', margin:'8px 0 0' }}>Updates live in OBS as you edit</p>
           </div>
 
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>

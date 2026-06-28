@@ -56,6 +56,12 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         settings: overlay.alertSettings ?? defaultSettings,
       })
     })
+
+    // Dashboard pushes leaderboard appearance settings live to the overlay
+    socket.on('push-lb-settings', ({ token, settings }: { token: string; settings: unknown }) => {
+      if (!token) return
+      socket.to(`overlay:${token}`).emit('lb-settings-updated', settings)
+    })
   })
 
   return io

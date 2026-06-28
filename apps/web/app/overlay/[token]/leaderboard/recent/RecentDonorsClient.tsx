@@ -57,6 +57,24 @@ export default function RecentDonorsClient({ token }: { token: string }) {
     const socket = getSocket()
     socket.connect()
     socket.on('connect', () => socket.emit('join-overlay', { token }))
+    socket.on('lb-settings-updated', (data: any) => {
+      if (!data?.recent) return
+      const r = data.recent
+      setParams(p => ({
+        ...p,
+        color:     r.color     ?? p.color,
+        count:     r.count     ?? p.count,
+        title:     r.title     ?? p.title,
+        bg:        r.bg        ?? p.bg,
+        opacity:   r.opacity   ?? p.opacity,
+        textColor: r.textColor ?? p.textColor,
+        fontSize:  r.fontSize  ?? p.fontSize,
+        font:      r.font      ?? p.font,
+        bold:      r.bold      ?? p.bold,
+        rotSpeed:  r.rotSpeed  ?? p.rotSpeed,
+        layout:    r.layout    ?? p.layout,
+      }))
+    })
     socket.on('new-donation', (data: NewDonationEvent) => {
       setDonors(prev => [
         { name: data.donorName, amount: data.amount, id: `${Date.now()}` },

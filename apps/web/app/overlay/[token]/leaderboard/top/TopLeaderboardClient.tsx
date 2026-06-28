@@ -57,6 +57,24 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
     const socket = getSocket()
     socket.connect()
     socket.on('connect', () => socket.emit('join-overlay', { token }))
+    socket.on('lb-settings-updated', (data: any) => {
+      if (!data?.top) return
+      const t = data.top
+      setParams(p => ({
+        ...p,
+        color:     t.color     ?? p.color,
+        count:     t.count     ?? p.count,
+        title:     t.title     ?? p.title,
+        bg:        t.bg        ?? p.bg,
+        opacity:   t.opacity   ?? p.opacity,
+        textColor: t.textColor ?? p.textColor,
+        fontSize:  t.fontSize  ?? p.fontSize,
+        font:      t.font      ?? p.font,
+        bold:      t.bold      ?? p.bold,
+        rotSpeed:  t.rotSpeed  ?? p.rotSpeed,
+        layout:    t.layout    ?? p.layout,
+      }))
+    })
     socket.on('new-donation', (data: NewDonationEvent) => {
       setDonors(prev => {
         const updated = [...prev]
