@@ -156,11 +156,16 @@ export default function OverlayPage() {
       if (settings && Object.keys(settings).length) {
         const { id: _id, streamerId: _sid, createdAt: _ca, updatedAt: _ua, ...clean } = settings
         setS((p: any) => ({ ...p, ...clean }))
+        // Restore UI state if DB already has data URL stored
+        if (clean.customAlertSoundUrl?.startsWith('data:')) {
+          setCustomSoundBase64(clean.customAlertSoundUrl)
+          setCustomSoundName('custom audio')
+        }
       }
       if (g) setGoal(g)
       if (profile?.overlayToken) setOverlayToken(profile.overlayToken)
     }).catch(() => {})
-    // Load custom sound from localStorage
+    // Fallback: load from localStorage if DB doesn't have it yet
     const saved = localStorage.getItem('eztips_custom_alert_sound')
     const savedName = localStorage.getItem('eztips_custom_alert_sound_name')
     if (saved) { setCustomSoundBase64(saved); setCustomSoundName(savedName ?? 'custom.mp3') }
@@ -513,7 +518,7 @@ export default function OverlayPage() {
                           <span style={{ fontSize:12, color:'#10b981', fontWeight:600 }}>✓ {customSoundName}</span>
                           <div style={{ display:'flex', gap:8 }}>
                             <button type="button" onClick={() => { try { const a = new Audio(customSoundBase64); a.volume = (s.coinSoundVolume??50)/100; a.play() } catch{} }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>▶ Preview</button>
-                            <button type="button" onClick={() => { setCustomSoundBase64(''); setCustomSoundName(''); localStorage.removeItem('eztips_custom_alert_sound'); localStorage.removeItem('eztips_custom_alert_sound_name') }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', color:'#f87171' }}>Remove</button>
+                            <button type="button" onClick={() => { setCustomSoundBase64(''); setCustomSoundName(''); localStorage.removeItem('eztips_custom_alert_sound'); localStorage.removeItem('eztips_custom_alert_sound_name'); setS((p: any) => ({ ...p, customAlertSoundUrl: null })) }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', color:'#f87171' }}>Remove</button>
                           </div>
                         </div>
                       ) : (
@@ -529,6 +534,8 @@ export default function OverlayPage() {
                                 setCustomSoundBase64(b64); setCustomSoundName(file.name)
                                 localStorage.setItem('eztips_custom_alert_sound', b64)
                                 localStorage.setItem('eztips_custom_alert_sound_name', file.name)
+                                // Also store in settings so it's saved to DB and works in OBS
+                                setS((p: any) => ({ ...p, customAlertSoundUrl: b64 }))
                               }
                               reader.readAsDataURL(file)
                             }}
@@ -540,7 +547,7 @@ export default function OverlayPage() {
                       )}
                     </div>
                     <div style={{ marginTop:8, padding:'9px 12px', borderRadius:9, background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)' }}>
-                      <p style={{ fontSize:11, color:'#f59e0b', lineHeight:1.5 }}>⚠ Custom upload works when your overlay is open in the <strong>same browser</strong> as this dashboard. If you use OBS (different machine), the sound won't play there — host the file online and use the URL option instead.</p>
+                      <p style={{ fontSize:11, color:'#64748b', lineHeight:1.5 }}>MP3, WAV, OGG, M4A · Max 500 KB · Audio is saved to your account and works in OBS automatically after saving.</p>
                     </div>
                   </div>
                 )}
