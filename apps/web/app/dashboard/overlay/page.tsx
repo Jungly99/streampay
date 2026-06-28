@@ -932,30 +932,118 @@ export default function OverlayPage() {
               </div>
             )}
 
-            {/* Goal bar preview — updates live as goal settings change */}
-            {tab==='goal' && (
-              <div style={{ background:'#000', borderRadius:10, padding:18, opacity:(s.goalBarOpacity??100)/100 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10, alignItems:'center' }}>
-                  <span style={{ color:'white', fontWeight:700, fontSize:13 }}>{goal.title || 'Donation Goal'}</span>
-                  <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>₹{goal.currentAmount??0} / ₹{goal.targetAmount}</span>
+            {/* Goal bar preview — live, mirrors GoalOverlayClient layouts */}
+            {tab==='goal' && (() => {
+              const gPct = Math.min(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100, 100)
+              const gReached = gPct >= 100
+              const gLayout  = (s as any).goalLayout ?? 'standard'
+              const gColor   = s.goalBarColor ?? '#7c3aed'
+              const gColor2  = (s as any).goalSecondColor ?? '#ec4899'
+              const gText    = (s as any).goalTextColor ?? '#ffffff'
+              const gBtText  = (s as any).goalBarTextColor ?? '#ffffff'
+              const gFs      = ((s as any).goalFontSize ?? 16) * 0.72
+              const gBh      = Math.max(((s as any).goalBarHeight ?? 18) * 0.72, 6)
+              const gSh      = (s as any).goalEnableTextShadow ? '0 1px 4px rgba(0,0,0,0.9)' : 'none'
+              const gFf      = ((s as any).goalFontFamily ?? 'Arial') === 'Arial' ? 'Arial,sans-serif' : `'${(s as any).goalFontFamily}',sans-serif`
+              const gBg      = (s as any).goalEnableBg
+              const gBgC     = (s as any).goalBgColor ?? '#000000'
+              const gBgO     = (s as any).goalBgOpacity ?? 78
+              function h2r(h: string, pct: number) {
+                const rv=parseInt(h.slice(1,3),16),gv=parseInt(h.slice(3,5),16),bv=parseInt(h.slice(5,7),16)
+                return `rgba(${rv},${gv},${bv},${pct/100})`
+              }
+              const gCardBg = gBg ? h2r(gBgC, gBgO) : 'transparent'
+              const gCardSt: React.CSSProperties = gBg ? { background:gCardBg, backdropFilter:'blur(10px)', borderRadius:10, padding:'12px 14px', border:'1px solid rgba(255,255,255,0.08)' } : { padding:'4px 0' }
+              const gTitleSt: React.CSSProperties = { color:gText, fontWeight:700, fontSize:gFs, textShadow:gSh, fontFamily:gFf }
+              const gDimSt: React.CSSProperties   = { color:gText, opacity:0.55, fontSize:gFs*0.85, textShadow:gSh, fontFamily:gFf }
+              function GBar() {
+                return (
+                  <div style={{ height:gBh, background:'rgba(255,255,255,0.1)', borderRadius:gBh, overflow:'hidden' }}>
+                    <div style={{ height:'100%', width:`${gPct}%`, background:`linear-gradient(90deg,${gColor},${gColor2})`, borderRadius:gBh, transition:'width 0.5s', boxShadow:`0 0 8px ${gColor}66` }}/>
+                  </div>
+                )
+              }
+              const fmt = (n: number) => '₹'+n.toLocaleString('en-IN')
+              return (
+                <div style={{ background:'#000', borderRadius:10, padding:14, opacity:(s.goalBarOpacity??100)/100 }}>
+                  {gLayout==='standard' && (
+                    <div style={gCardSt}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8, gap:8 }}>
+                        <span style={gTitleSt}>{goal.title||'Donation Goal'}</span>
+                        <span style={gDimSt}>{fmt(goal.currentAmount??0)}/{fmt(goal.targetAmount)}</span>
+                      </div>
+                      <GBar/>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:6 }}>
+                        <span style={{ fontSize:gFs*0.78, color:gReached?'#fbbf24':gText, opacity:gReached?1:0.45, fontWeight:gReached?700:400, textShadow:gSh, fontFamily:gFf }}>
+                          {gReached?'🎊 Goal reached!':Math.round(gPct)+'% reached'}
+                        </span>
+                        {!gReached && <span style={{ fontSize:gFs*0.78, color:gText, opacity:0.3, fontFamily:gFf }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} to go</span>}
+                      </div>
+                    </div>
+                  )}
+                  {gLayout==='minimal' && (
+                    <div style={{ fontFamily:gFf }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+                        <span style={{ ...gTitleSt, fontSize:gFs*0.9 }}>{goal.title||'Donation Goal'}</span>
+                        <span style={gDimSt}>{fmt(goal.currentAmount??0)}/{fmt(goal.targetAmount)}</span>
+                      </div>
+                      <GBar/>
+                      <div style={{ textAlign:'center', marginTop:4 }}>
+                        <span style={{ fontSize:gFs*0.72, color:gColor, fontWeight:700, textShadow:gSh }}>{Math.round(gPct)}%</span>
+                      </div>
+                    </div>
+                  )}
+                  {gLayout==='bar-labels' && (
+                    <div style={gCardSt}>
+                      <div style={{ marginBottom:8 }}><span style={gTitleSt}>{goal.title||'Donation Goal'}</span></div>
+                      <div style={{ position:'relative', height:Math.max(gBh,20) }}>
+                        <div style={{ height:'100%', background:'rgba(255,255,255,0.1)', borderRadius:Math.max(gBh,20), overflow:'hidden' }}>
+                          <div style={{ height:'100%', width:`${gPct}%`, background:`linear-gradient(90deg,${gColor},${gColor2})`, borderRadius:Math.max(gBh,20), transition:'width 0.5s', boxShadow:`0 0 8px ${gColor}66` }}/>
+                        </div>
+                        <span style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', fontSize:gFs*0.72, color:gBtText, fontWeight:700, textShadow:gSh, fontFamily:gFf }}>{Math.round(gPct)}%</span>
+                        {!gReached && <span style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', fontSize:gFs*0.65, color:gText, opacity:0.55, fontFamily:gFf }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} to go</span>}
+                      </div>
+                    </div>
+                  )}
+                  {gLayout==='split' && (
+                    <div style={gCardSt}>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr auto', alignItems:'center', gap:10, marginBottom:8, fontFamily:gFf }}>
+                        <span style={{ ...gTitleSt, fontSize:gFs*1.1 }}>{goal.title||'Donation Goal'}</span>
+                        <div style={{ textAlign:'right' }}>
+                          <div style={{ color:gColor, fontSize:gFs*1.2, fontWeight:800, textShadow:`0 0 8px ${gColor}99`, lineHeight:1 }}>{fmt(goal.currentAmount??0)}</div>
+                          <div style={{ color:gText, opacity:0.4, fontSize:gFs*0.75, marginTop:1 }}>of {fmt(goal.targetAmount)}</div>
+                        </div>
+                      </div>
+                      <GBar/>
+                      {gReached && <div style={{ textAlign:'center', marginTop:6, color:'#fbbf24', fontWeight:700, fontSize:gFs*0.82, fontFamily:gFf }}>🎊 Goal reached!</div>}
+                    </div>
+                  )}
+                  {gLayout==='compact' && (
+                    <div style={{ display:'flex', alignItems:'center', gap:8, background:gCardBg, backdropFilter:'blur(10px)', borderRadius:50, padding:`5px 12px 5px 10px`, border:'1px solid rgba(255,255,255,0.08)', fontFamily:gFf }}>
+                      <span style={{ ...gTitleSt, fontSize:gFs*0.85, whiteSpace:'nowrap', flexShrink:0 }}>{goal.title||'Goal'}</span>
+                      <div style={{ flex:1, minWidth:50 }}><GBar/></div>
+                      <span style={{ color:gColor, fontWeight:800, fontSize:gFs*0.85, whiteSpace:'nowrap', textShadow:`0 0 6px ${gColor}88`, flexShrink:0 }}>{Math.round(gPct)}%</span>
+                      <span style={{ color:gText, opacity:0.45, fontSize:gFs*0.72, whiteSpace:'nowrap', flexShrink:0 }}>{fmt(goal.currentAmount??0)}/{fmt(goal.targetAmount)}</span>
+                    </div>
+                  )}
+                  {gLayout==='neon' && (
+                    <div style={{ ...gCardSt, background:gBg?h2r(gBgC,Math.min(gBgO,90)):'transparent', border:`1.5px solid ${gColor}55`, boxShadow:`0 0 18px ${gColor}22,0 0 36px ${gColor}0f,inset 0 0 18px ${gColor}06` }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, fontFamily:gFf }}>
+                        <span style={{ ...gTitleSt, color:gColor, textShadow:`0 0 8px ${gColor}cc,0 0 14px ${gColor}66` }}>{goal.title||'Donation Goal'}</span>
+                        <span style={{ color:gText, opacity:0.7, fontSize:gFs*0.82 }}>{fmt(goal.currentAmount??0)} / {fmt(goal.targetAmount)}</span>
+                      </div>
+                      <div style={{ height:gBh, background:'rgba(255,255,255,0.05)', borderRadius:gBh, overflow:'hidden', border:`1px solid ${gColor}33` }}>
+                        <div style={{ height:'100%', width:`${gPct}%`, background:`linear-gradient(90deg,${gColor},${gColor2})`, borderRadius:gBh, transition:'width 0.5s', boxShadow:`0 0 14px ${gColor},0 0 28px ${gColor}88` }}/>
+                      </div>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:6, fontFamily:gFf }}>
+                        <span style={{ fontSize:gFs*0.72, color:gColor, fontWeight:700, textShadow:`0 0 6px ${gColor}` }}>{gReached?'⚡ GOAL REACHED!':Math.round(gPct)+'% COMPLETE'}</span>
+                        {!gReached && <span style={{ fontSize:gFs*0.68, color:gText, opacity:0.3 }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} remaining</span>}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div style={{ height:14, background:'rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
-                  <div style={{
-                    height:'100%',
-                    width:`${Math.min(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100,100)}%`,
-                    background:`linear-gradient(90deg,${s.goalBarColor},#ec4899)`,
-                    borderRadius:8,
-                    transition:'width 0.5s ease',
-                  }}/>
-                </div>
-                <p style={{ color:'rgba(255,255,255,0.35)', fontSize:10, margin:'8px 0 0', textAlign:'right' }}>
-                  {Math.round(((goal.currentAmount??0)/Math.max(goal.targetAmount,1))*100)}% reached
-                </p>
-                {s.enableGoalCelebration && goal.currentAmount >= goal.targetAmount && goal.targetAmount > 0 && (
-                  <p style={{ color:'#fbbf24', fontSize:11, textAlign:'center', margin:'8px 0 0', fontWeight:700 }}>🎊 Goal reached!</p>
-                )}
-              </div>
-            )}
+              )
+            })()}
 
             {/* Leaderboard live preview — updates with settings */}
             {tab==='leaderboard' && (
