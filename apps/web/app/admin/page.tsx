@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import StyledSelect, { SelectOption } from '../../components/ui/StyledSelect'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donations:boolean; settlements:boolean; restore_accounts:boolean }
@@ -539,10 +540,10 @@ export default function AdminDashboard() {
           <div>
             <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
               <h2 style={{margin:0,fontSize:18,fontWeight:700}}>Donations</h2>
-              <select value={donationFilter} onChange={e=>setDonationFilter(e.target.value)} style={{...inp,width:'auto',padding:'7px 12px'}}>
-                <option value="">All</option>
-                {['SUCCESS','PENDING','FAILED','REFUNDED'].map(s=><option key={s} value={s}>{s}</option>)}
-              </select>
+              <StyledSelect value={donationFilter} onChange={e=>setDonationFilter(e.target.value)} style={{width:'auto',padding:'7px 32px 7px 10px'}}>
+                <SelectOption value="">All</SelectOption>
+                {['SUCCESS','PENDING','FAILED','REFUNDED'].map(s=><SelectOption key={s} value={s}>{s}</SelectOption>)}
+              </StyledSelect>
               <input placeholder="Search donor…" value={donationSearch} onChange={e=>setDonationSearch(e.target.value)}
                 onKeyDown={e=>e.key==='Enter'&&api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${donationSearch}`:''}`).then((d:any)=>setDonations(d.donations))}
                 style={{...inp,width:220}} />
@@ -564,10 +565,10 @@ export default function AdminDashboard() {
                       <td style={{padding:'11px 16px',color:d.settled?'#10b981':'#f59e0b'}}>{d.settled?'Yes':'No'}</td>
                       <td style={{padding:'11px 16px',color:'#666',fontSize:12}}>{new Date(d.createdAt).toLocaleDateString('en-IN')}</td>
                       <td style={{padding:'11px 16px'}}>
-                        <select defaultValue="" onChange={e=>e.target.value&&updateDonationStatus(d.id,e.target.value)} style={{...inp,width:'auto',padding:'5px 8px',fontSize:12}}>
-                          <option value="">—</option>
-                          {['SUCCESS','PENDING','FAILED','REFUNDED'].filter(s=>s!==d.status).map(s=><option key={s} value={s}>{s}</option>)}
-                        </select>
+                        <StyledSelect defaultValue="" onChange={e=>e.target.value&&updateDonationStatus(d.id,e.target.value)} style={{width:'auto',padding:'5px 28px 5px 8px',fontSize:12}}>
+                          <SelectOption value="">—</SelectOption>
+                          {['SUCCESS','PENDING','FAILED','REFUNDED'].filter(s=>s!==d.status).map(s=><SelectOption key={s} value={s}>{s}</SelectOption>)}
+                        </StyledSelect>
                       </td>
                     </tr>
                   ))}
@@ -582,12 +583,12 @@ export default function AdminDashboard() {
           <div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <h2 style={{margin:0,fontSize:18,fontWeight:700}}>Settlements</h2>
-              <select value={settlementFilter} onChange={e=>{setSettlementFilter(e.target.value);setSettlements([])}} style={{...inp,width:'auto',padding:'7px 12px'}}>
-                <option value="INITIATED">Pending payment</option>
-                <option value="SUCCESS">Paid</option>
-                <option value="FAILED">Failed</option>
-                <option value="">All</option>
-              </select>
+              <StyledSelect value={settlementFilter} onChange={e=>{setSettlementFilter(e.target.value);setSettlements([])}} style={{width:'auto',padding:'7px 32px 7px 10px'}}>
+                <SelectOption value="INITIATED">Pending payment</SelectOption>
+                <SelectOption value="SUCCESS">Paid</SelectOption>
+                <SelectOption value="FAILED">Failed</SelectOption>
+                <SelectOption value="">All</SelectOption>
+              </StyledSelect>
             </div>
             {settlements.length===0 ? (
               <div style={{...card,padding:60,textAlign:'center',color:'#555'}}>No settlements found</div>
@@ -727,10 +728,10 @@ export default function AdminDashboard() {
               <div style={{...card,padding:'20px 22px',marginBottom:16}}>
                 <p style={{color:'#888',fontSize:12,textTransform:'uppercase',letterSpacing:.5,margin:'0 0 12px'}}>Add Admin by Email</p>
                 <input placeholder="admin@example.com" value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)} style={{...inp,marginBottom:10}} />
-                <select value={newAdminRoleId} onChange={e=>setNewAdminRoleId(e.target.value)} style={{...inp,marginBottom:14}}>
-                  <option value="">No role (no access)</option>
-                  {roles.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
+                <StyledSelect value={newAdminRoleId} onChange={e=>setNewAdminRoleId(e.target.value)} style={{marginBottom:14}}>
+                  <SelectOption value="">No role (no access)</SelectOption>
+                  {roles.map(r=><SelectOption key={r.id} value={r.id}>{r.name}</SelectOption>)}
+                </StyledSelect>
                 <button onClick={addAdmin} style={{...btn(),width:'100%'}}>+ Add Admin</button>
                 <p style={{fontSize:11,color:'#555',margin:'10px 0 0'}}>They can only log in after visiting /admin/login with this Google account.</p>
               </div>
@@ -753,10 +754,10 @@ export default function AdminDashboard() {
                     )}
                   </div>
                   {!a.isSuperAdmin && (
-                    <select value={a.role?.id??''} onChange={e=>changeAdminRole(a.id,e.target.value||null)} style={{...inp,padding:'6px 10px',fontSize:12}}>
-                      <option value="">No role (no access)</option>
-                      {roles.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
+                    <StyledSelect value={a.role?.id??''} onChange={e=>changeAdminRole(a.id,e.target.value||null)} style={{padding:'6px 28px 6px 10px',fontSize:12}}>
+                      <SelectOption value="">No role (no access)</SelectOption>
+                      {roles.map(r=><SelectOption key={r.id} value={r.id}>{r.name}</SelectOption>)}
+                    </StyledSelect>
                   )}
                 </div>
               ))}

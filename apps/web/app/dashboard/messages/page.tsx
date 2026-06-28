@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../../../lib/api'
 import { formatINR, formatDate } from '../../../lib/utils'
+import StyledSelect, { SelectOption } from '../../../components/ui/StyledSelect'
 
 interface Donation {
   id: string; donorName: string; message: string | null
@@ -97,15 +98,12 @@ export default function MessagesPage() {
           placeholder="Search by name or message…"
           style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#e2e8f0' }}
         />
-        <select value={period} onChange={e => { setPeriod(e.target.value); setPage(1) }} style={{
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: 8, padding: '6px 10px', fontSize: 12, color: '#94a3b8', outline: 'none',
-        }}>
-          <option value="all">All Time</option>
-          <option value="today">Today</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-        </select>
+        <StyledSelect value={period} onChange={e => { setPeriod(e.target.value); setPage(1) }} style={{ width: 'auto', padding: '7px 32px 7px 10px', fontSize: 12, borderRadius: 8 }}>
+          <SelectOption value="all">All Time</SelectOption>
+          <SelectOption value="today">Today</SelectOption>
+          <SelectOption value="week">This Week</SelectOption>
+          <SelectOption value="month">This Month</SelectOption>
+        </StyledSelect>
       </div>
 
       {/* Table */}

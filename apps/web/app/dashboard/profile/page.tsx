@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
 import { api } from '../../../lib/api'
 import toast from 'react-hot-toast'
+import StyledSelect, { SelectOption } from '../../../components/ui/StyledSelect'
 
 type Tab = 'profile' | 'bank' | 'analytics'
 
@@ -425,12 +426,12 @@ if (!profile) return (
               </Field>
             ))}
             <Field label="State">
-              <select value={bank.state ?? ''} onChange={e => setBank((b: any) => ({ ...b, state: e.target.value }))} style={{ ...inputStyle }}>
-                <option value="">Select State</option>
-                {['Andhra Pradesh','Delhi','Gujarat','Karnataka','Kerala','Maharashtra','Rajasthan','Tamil Nadu','Telangana','Uttar Pradesh','West Bengal'].map(s => (
-                  <option key={s} value={s}>{s}</option>
+              <StyledSelect value={bank.state ?? ''} onChange={e => setBank((b: any) => ({ ...b, state: e.target.value }))}>
+                <SelectOption value="">Select State</SelectOption>
+                {['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Delhi','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal'].map(s => (
+                  <SelectOption key={s} value={s}>{s}</SelectOption>
                 ))}
-              </select>
+              </StyledSelect>
             </Field>
           </div>
         </div>
