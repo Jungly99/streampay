@@ -17,7 +17,7 @@ export default async function TipSettingsPage() {
   const data = await fetchTipSettings(token)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0f', color: 'var(--text-1)', fontFamily: 'system-ui,sans-serif', padding: '32px 32px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text-1)', fontFamily: 'system-ui,sans-serif', padding: '32px 32px' }}>
 
       {/* Header */}
       <div style={{ maxWidth: 720, margin: '0 auto', marginBottom: 28 }}>

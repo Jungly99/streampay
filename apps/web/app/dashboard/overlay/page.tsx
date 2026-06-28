@@ -33,10 +33,10 @@ const ANIMATIONS = [
 
 // ── Style constants ──────────────────────────────────────────────────
 const C: React.CSSProperties = { background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:14 }
-const lbl: React.CSSProperties = { display:'block', fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:7 }
-const inp: React.CSSProperties = { width:'100%', padding:'9px 12px', borderRadius:9, fontSize:13, boxSizing:'border-box', background:'var(--border)', border:'1px solid rgba(255,255,255,0.08)', color:'#f1f5f9', outline:'none' }
-const colorBox: React.CSSProperties = { width:'100%', height:38, borderRadius:9, border:'1px solid rgba(255,255,255,0.08)', background:'none', cursor:'pointer', padding:2 }
-const sH: React.CSSProperties = { fontSize:13, fontWeight:700, color:'#e2e8f0', marginBottom:14, display:'flex', alignItems:'center', gap:8 }
+const lbl: React.CSSProperties = { display:'block', fontSize:11, fontWeight:600, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:7 }
+const inp: React.CSSProperties = { width:'100%', padding:'9px 12px', borderRadius:9, fontSize:13, boxSizing:'border-box', background:'var(--surface-input)', border:'1px solid var(--border)', color:'var(--text-1)', outline:'none' }
+const colorBox: React.CSSProperties = { width:'100%', height:38, borderRadius:9, border:'1px solid var(--border)', background:'none', cursor:'pointer', padding:2 }
+const sH: React.CSSProperties = { fontSize:13, fontWeight:700, color:'var(--text-1)', marginBottom:14, display:'flex', alignItems:'center', gap:8 }
 const divider: React.CSSProperties = { height:1, background:'var(--surface-input)', margin:'14px 0' }
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -69,7 +69,7 @@ function Slider({ label: l, value, min, max, step=1, unit, onChange }: { label:s
   )
 }
 function InfoBox({ children }: { children: React.ReactNode }) {
-  return <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.15)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'#94a3b8', lineHeight:1.6 }}>{children}</div>
+  return <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.15)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'var(--text-2)', lineHeight:1.6 }}>{children}</div>
 }
 function Select({ value, onChange, options }: { value:string; onChange:(v:string)=>void; options:{value:string;label:string}[] }) {
   const [open, setOpen] = useState(false)
@@ -121,7 +121,7 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
             left: dropRect.left,
             width: dropRect.width,
             zIndex:9999,
-            background:'#1a1a2e',
+            background:'var(--surface-2)',
             border:'1px solid rgba(255,255,255,0.12)',
             borderRadius:10,
             overflowY:'auto',
@@ -402,7 +402,7 @@ export default function OverlayPage() {
                 padding:'7px 14px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap',
                 display:'flex', alignItems:'center', gap:5,
                 background: tab===t ? 'linear-gradient(135deg,#7c3aed,#ec4899)' : 'transparent',
-                border:'none', color: tab===t ? 'white' : '#64748b', transition:'all 0.15s',
+                border:'none', color: tab===t ? 'white' : 'var(--text-3)', transition:'all 0.15s',
                 boxShadow: tab===t ? '0 2px 10px rgba(124,58,237,0.3)' : 'none',
               }}>
                 <span style={{ fontSize:13 }}>{icon}</span>{name}
@@ -848,12 +848,12 @@ export default function OverlayPage() {
                   <p style={sH}><span>🥇</span> Top Donors Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows your top N donors all-time. Updates live as donations arrive.</p>
                   <div style={{ height:1, background:'var(--surface-input)' }}/>
-                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
+                  <p style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.top} onChange={e=>setLbTitles(p=>({...p,top:e.target.value}))} style={inp}/></div>
                   <Slider label="Entries to show" value={lbCounts.top} min={3} max={10} onChange={v=>setLbCounts(p=>({...p,top:v}))}/>
                   <Slider label="Rotation speed" value={lbRotSpeed.top} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,top:v}))}/>
                   <div style={{ height:1, background:'var(--surface-input)' }}/>
-                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <p style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
                   <div>
                     <span style={lbl}>Widget Style</span>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:4 }}>
@@ -888,12 +888,12 @@ export default function OverlayPage() {
                   <p style={sH}><span>👥</span> Recent Donors Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows the last N donors in real-time as they donate.</p>
                   <div style={{ height:1, background:'var(--surface-input)' }}/>
-                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
+                  <p style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.recent} onChange={e=>setLbTitles(p=>({...p,recent:e.target.value}))} style={inp}/></div>
                   <Slider label="Entries to show" value={lbCounts.recent} min={3} max={8} onChange={v=>setLbCounts(p=>({...p,recent:v}))}/>
                   <Slider label="Rotation speed" value={lbRotSpeed.recent} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,recent:v}))}/>
                   <div style={{ height:1, background:'var(--surface-input)' }}/>
-                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <p style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
                   <div>
                     <span style={lbl}>Widget Style</span>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:4 }}>
@@ -928,7 +928,7 @@ export default function OverlayPage() {
                   <p style={sH}><span>⚡</span> Donation Train Overlay</p>
                   <p style={{ fontSize:12, color:'#475569', margin:'-8px 0 2px' }}>Shows a live streak counter with total raised. Resets after inactivity.</p>
                   <div style={{ height:1, background:'var(--surface-input)' }}/>
-                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
+                  <p style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>Content</p>
                   <div><span style={lbl}>Title</span><input value={lbTitles.streak} onChange={e=>setLbTitles(p=>({...p,streak:e.target.value}))} style={inp}/></div>
                   <div>
                     <span style={lbl}>Reset Timer</span>
@@ -936,7 +936,7 @@ export default function OverlayPage() {
                     <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>Train resets if no donations arrive within this time</p>
                   </div>
                   <div style={{ height:1, background:'var(--surface-input)' }}/>
-                  <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <p style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
                   <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.streak} onChange={e=>setLbColors(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
                   <div><span style={lbl}>Background Color</span><input type="color" value={lbBg.streak} onChange={e=>setLbBg(p=>({...p,streak:e.target.value}))} style={colorBox}/></div>
                   <Slider label="Background Opacity" value={lbOpacity.streak} min={0} max={100} unit="%" onChange={v=>setLbOpacity(p=>({...p,streak:v}))}/>

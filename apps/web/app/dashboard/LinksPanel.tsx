@@ -81,7 +81,7 @@ function Content({ messageLink, overlayToken, overlayUrl, qrDataUrl, username: i
                 onChange={e => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                 placeholder="yourusername"
                 onKeyDown={e => e.key === 'Enter' && submitUsername()}
-                style={{ flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 13, background: 'var(--border)', border: '1px solid rgba(255,255,255,0.09)', color: '#f1f5f9', outline: 'none' }}
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 13, background: 'var(--surface-input)', border: '1px solid var(--border)', color: 'var(--text-1)', outline: 'none' }}
               />
               <button onClick={submitUsername} disabled={settingUsername || !usernameInput} style={{ padding: '9px 16px', borderRadius: 9, background: 'linear-gradient(135deg,#7c3aed,#db2777)', border: 'none', color: 'white', fontSize: 13, fontWeight: 700, cursor: settingUsername ? 'not-allowed' : 'pointer', opacity: !usernameInput ? 0.5 : 1, flexShrink: 0 }}>
                 {settingUsername ? '…' : 'Set'}

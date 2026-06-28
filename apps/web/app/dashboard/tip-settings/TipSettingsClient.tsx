@@ -6,13 +6,13 @@ import { api } from '../../../lib/api'
 interface Tier { minAmount: number; charLimit: number }
 
 const C: React.CSSProperties = {
-  background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)',
+  background: 'var(--surface)', border: '1px solid var(--border)',
   borderRadius: 14,
 }
 const inp: React.CSSProperties = {
   padding: '9px 12px', borderRadius: 9, fontSize: 13, width: '100%',
-  background: 'var(--border)', border: '1px solid rgba(255,255,255,0.09)',
-  color: '#f1f5f9', outline: 'none', boxSizing: 'border-box' as const,
+  background: 'var(--surface-input)', border: '1px solid var(--border)',
+  color: 'var(--text-1)', outline: 'none', boxSizing: 'border-box' as const,
 }
 const label: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.04em', textTransform: 'uppercase' as const, marginBottom: 6, display: 'block' }
 
