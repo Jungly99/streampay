@@ -303,7 +303,7 @@ export default function AdminDashboard() {
       {/* top bar */}
       <div style={{background:'#1a1a2e',borderBottom:'1px solid #2d2d4e',padding:'12px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <span style={{fontWeight:800,fontSize:18,color:'#7c3aed'}}>eztips</span>
+          <a href="/dashboard" style={{fontWeight:800,fontSize:18,color:'#7c3aed',textDecoration:'none'}}>eztips</a>
           <span style={{color:'#555',fontSize:12}}>{admin.isSuperAdmin ? '⭐ Super Admin' : '🔑 Admin'}</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
