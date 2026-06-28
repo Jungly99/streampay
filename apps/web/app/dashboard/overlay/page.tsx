@@ -96,6 +96,9 @@ export default function OverlayPage() {
     enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1, alertSoundType:'coin', customAlertSoundUrl:'',
     minAlertAmount:0, minTtsAmount:0,
     goalBarColor:'#7c3aed', goalBarOpacity:100, enableGoalCelebration:true,
+    goalLayout:'standard', goalFontSize:16, goalFontFamily:'Arial',
+    goalTextColor:'#ffffff', goalBarTextColor:'#ffffff', goalSecondColor:'#ec4899',
+    goalEnableTextShadow:true, goalEnableBg:true, goalBgColor:'#000000', goalBgOpacity:78, goalBarHeight:18,
     enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
     enableProfanityFilter:true, customBlocklist:'',
   })
@@ -206,6 +209,9 @@ export default function OverlayPage() {
 
   const GOAL_DEFAULTS = {
     goalBarColor:'#7c3aed', goalBarOpacity:100, enableGoalCelebration:true,
+    goalLayout:'standard', goalFontSize:16, goalFontFamily:'Arial',
+    goalTextColor:'#ffffff', goalBarTextColor:'#ffffff', goalSecondColor:'#ec4899',
+    goalEnableTextShadow:true, goalEnableBg:true, goalBgColor:'#000000', goalBgOpacity:78, goalBarHeight:18,
     enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
   }
 
@@ -613,25 +619,83 @@ export default function OverlayPage() {
               <Row label="Show on Overlay" tip="Displays progress bar on OBS Browser Source"><Toggle on={goal.isActive} onChange={v=>setGoal((g:any)=>({...g,isActive:v}))}/></Row>
             </div>
 
-            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
+            <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:18 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <p style={{ ...sH, marginBottom:0 }}><span>✨</span> Goal Customization</p>
-                <button onClick={resetGoalSettings} style={{ padding:'6px 12px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:600, background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', color:'#f87171', display:'flex', alignItems:'center', gap:5 }}>
-                  ↺ Reset to Defaults
-                </button>
+                <p style={{ ...sH, marginBottom:0 }}><span>🎨</span> Goal Overlay Customization</p>
+                <button onClick={resetGoalSettings} style={{ padding:'6px 12px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:600, background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', color:'#f87171', display:'flex', alignItems:'center', gap:5 }}>↺ Reset</button>
               </div>
-              <div><span style={lbl}>Progress Bar Color</span><input type="color" value={s.goalBarColor} onChange={e=>set('goalBarColor',e.target.value)} style={colorBox}/></div>
-              <Slider label="Goal Bar Opacity" value={s.goalBarOpacity??100} min={0} max={100} unit="%" onChange={v=>set('goalBarOpacity',v)}/>
-              <Row label="Goal Celebration" tip="Confetti burst and special alert when goal is reached"><Toggle on={s.enableGoalCelebration} onChange={v=>set('enableGoalCelebration',v)}/></Row>
-              <div style={{ display:'flex', gap:8 }}>
-                <button onClick={async ()=>{
-                  try {
-                    await api.put<any>('/api/streamer/goal', { ...goal, currentAmount: 0 })
-                    setGoal((g:any)=>({...g, currentAmount: 0}))
-                    toast.success('Goal reset to ₹0')
-                  } catch(e:any){ toast.error(e.message) }
-                }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171' }}>↺ Reset Progress to ₹0</button>
+
+              {/* Layout selector */}
+              <div>
+                <span style={lbl}>Layout Style</span>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginTop:4 }}>
+                  {[
+                    { id:'standard',   icon:'▤', name:'Standard',    desc:'Full featured' },
+                    { id:'minimal',    icon:'▬', name:'Minimal',     desc:'Clean & simple' },
+                    { id:'bar-labels', icon:'▣', name:'Bar Labels',  desc:'Text on bar' },
+                    { id:'split',      icon:'◫', name:'Split',       desc:'Title left, amount right' },
+                    { id:'compact',    icon:'▭', name:'Compact Pill',desc:'Single line' },
+                    { id:'neon',       icon:'⚡', name:'Neon Glow',  desc:'Gaming style' },
+                  ].map(l => {
+                    const active = (s.goalLayout ?? 'standard') === l.id
+                    return (
+                      <button key={l.id} type="button" onClick={() => set('goalLayout', l.id)} style={{
+                        padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center',
+                        background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
+                        border:`1.5px solid ${active ? 'rgba(124,58,237,0.6)' : 'rgba(255,255,255,0.07)'}`,
+                        color: active ? '#a78bfa' : '#64748b', transition:'all 0.15s',
+                      }}>
+                        <div style={{ fontSize:18, marginBottom:3 }}>{l.icon}</div>
+                        <div style={{ fontSize:11, fontWeight:700 }}>{l.name}</div>
+                        <div style={{ fontSize:10, opacity:0.6, marginTop:1 }}>{l.desc}</div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
+
+              {/* Colors */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
+                <div><span style={lbl}>Bar Color</span><input type="color" value={s.goalBarColor} onChange={e=>set('goalBarColor',e.target.value)} style={colorBox}/></div>
+                <div><span style={lbl}>Gradient End</span><input type="color" value={(s as any).goalSecondColor??'#ec4899'} onChange={e=>set('goalSecondColor',e.target.value)} style={colorBox}/></div>
+                <div><span style={lbl}>Text Color</span><input type="color" value={(s as any).goalTextColor??'#ffffff'} onChange={e=>set('goalTextColor',e.target.value)} style={colorBox}/></div>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div><span style={lbl}>Bar Text Color</span><input type="color" value={(s as any).goalBarTextColor??'#ffffff'} onChange={e=>set('goalBarTextColor',e.target.value)} style={colorBox}/></div>
+                <div>
+                  <span style={lbl}>Font Family</span>
+                  <select value={(s as any).goalFontFamily??'Arial'} onChange={e=>set('goalFontFamily',e.target.value)} style={{ ...inp, padding:'8px 10px' }}>
+                    {['Arial','Inter','Roboto','Oswald','Montserrat','Orbitron','Press Start 2P'].map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Sliders */}
+              <Slider label="Font Size (px)" value={(s as any).goalFontSize??16} min={10} max={32} unit="px" onChange={v=>set('goalFontSize',v)}/>
+              <Slider label="Bar Height (px)" value={(s as any).goalBarHeight??18} min={6} max={40} unit="px" onChange={v=>set('goalBarHeight',v)}/>
+              <Slider label="Widget Opacity" value={s.goalBarOpacity??100} min={0} max={100} unit="%" onChange={v=>set('goalBarOpacity',v)}/>
+
+              {/* Background */}
+              <Row label="Enable Background" tip="Semi-transparent card behind the goal bar"><Toggle on={(s as any).goalEnableBg??true} onChange={v=>set('goalEnableBg',v)}/></Row>
+              {(s as any).goalEnableBg && (
+                <div style={{ display:'grid', gridTemplateColumns:'auto 1fr', gap:12, alignItems:'start' }}>
+                  <div><span style={lbl}>Background Color</span><input type="color" value={(s as any).goalBgColor??'#000000'} onChange={e=>set('goalBgColor',e.target.value)} style={colorBox}/></div>
+                  <Slider label="Background Opacity" value={(s as any).goalBgOpacity??78} min={0} max={100} unit="%" onChange={v=>set('goalBgOpacity',v)}/>
+                </div>
+              )}
+
+              {/* Toggles */}
+              <Row label="Text Shadow" tip="Adds shadow to text for better readability on bright backgrounds"><Toggle on={(s as any).goalEnableTextShadow??true} onChange={v=>set('goalEnableTextShadow',v)}/></Row>
+              <Row label="Goal Celebration" tip="Pulse animation + colour burst when goal is reached"><Toggle on={s.enableGoalCelebration} onChange={v=>set('enableGoalCelebration',v)}/></Row>
+
+              {/* Reset progress */}
+              <button onClick={async ()=>{
+                try {
+                  await api.put<any>('/api/streamer/goal', { ...goal, currentAmount: 0 })
+                  setGoal((g:any)=>({...g, currentAmount: 0}))
+                  toast.success('Goal reset to ₹0')
+                } catch(e:any){ toast.error(e.message) }
+              }} style={{ padding:'9px 16px', borderRadius:9, cursor:'pointer', fontSize:12, fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', alignSelf:'start' }}>↺ Reset Progress to ₹0</button>
             </div>
 
             <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>

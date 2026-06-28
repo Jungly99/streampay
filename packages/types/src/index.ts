@@ -55,6 +55,17 @@ export interface AlertSettings {
   minTtsAmount: number
   goalBarColor: string
   enableGoalCelebration: boolean
+  goalLayout: string
+  goalFontSize: number
+  goalFontFamily: string
+  goalTextColor: string
+  goalBarTextColor: string
+  goalEnableTextShadow: boolean
+  goalEnableBg: boolean
+  goalBgColor: string
+  goalBgOpacity: number
+  goalBarHeight: number
+  goalSecondColor: string
   enableBirthday: boolean
   birthdayTemplate: string
   enableProfanityFilter: boolean
