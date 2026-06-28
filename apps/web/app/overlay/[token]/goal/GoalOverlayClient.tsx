@@ -41,7 +41,7 @@ function hex2rgba(hex: string, pct: number) {
   return `rgba(${r},${g},${b},${pct/100})`
 }
 
-const GFONTS = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap'
+const GFONTS = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Poppins:wght@400;600;700&family=Nunito:wght@400;700&family=Raleway:wght@400;700&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;700&family=Orbitron:wght@400;700&family=Rajdhani:wght@400;700&family=Play:wght@400;700&family=Share+Tech+Mono&family=Press+Start+2P&family=VT323&family=Bungee&display=swap'
 
 function Bar({ pct, s }: { pct: number; s: GS }) {
   return (

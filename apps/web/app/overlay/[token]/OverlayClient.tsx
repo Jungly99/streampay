@@ -212,7 +212,12 @@ export default function OverlayClient({ token }: { token: string }) {
   }, [token])
 
   // Always inject transparent background styles
-  const transparentStyle = <style>{`html,body{background:transparent!important;background-color:transparent!important;margin:0;padding:0}`}</style>
+  const transparentStyle = (
+    <>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Poppins:wght@400;600;700&family=Nunito:wght@400;700&family=Raleway:wght@400;700&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;700&family=Orbitron:wght@400;700&family=Rajdhani:wght@400;700&family=Play:wght@400;700&family=Share+Tech+Mono&family=Press+Start+2P&family=VT323&family=Bungee&display=swap" />
+      <style>{`html,body{background:transparent!important;background-color:transparent!important;margin:0;padding:0}`}</style>
+    </>
+  )
 
   if (!settings) {
     return <div style={{ position: 'fixed', inset: 0, background: 'transparent' }}>{transparentStyle}</div>

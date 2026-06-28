@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../../../lib/api'
 import { getSocket } from '../../../lib/socket'
 import toast from 'react-hot-toast'
@@ -11,7 +11,20 @@ const TEMPLATES = [
   { id: 'colorful',  emoji: '🌈', label: 'Vibrant',   desc: 'Bold layout, your colors' },
   { id: 'custom',    emoji: '✦',  label: 'Minimal',   desc: 'Clean, fully your own' },
 ]
-const FONTS = ['Arial','Verdana','Georgia','Courier New','Impact','Trebuchet MS','Poppins']
+// Unified font list — system fonts first, then Google Fonts (all loaded via <link> on mount)
+const FONTS = [
+  // System / Web-safe
+  'Arial','Verdana','Georgia','Trebuchet MS','Courier New','Impact','Comic Sans MS',
+  // Google — Clean / Modern
+  'Inter','Roboto','Open Sans','Lato','Poppins','Nunito','Raleway',
+  // Google — Bold / Display
+  'Oswald','Montserrat','Bebas Neue','Anton','Barlow Condensed',
+  // Google — Gaming / Techy
+  'Orbitron','Rajdhani','Play','Share Tech Mono',
+  // Google — Decorative / Retro
+  'Press Start 2P','VT323','Bungee',
+]
+const GFONTS_URL = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Poppins:wght@400;600;700&family=Nunito:wght@400;700&family=Raleway:wght@400;700&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;700&family=Orbitron:wght@400;700&family=Rajdhani:wght@400;700&family=Play:wght@400;700&family=Share+Tech+Mono&family=Press+Start+2P&family=VT323&family=Bungee&display=swap'
 const ANIMATIONS = [
   { id: 'slideDown', label: 'Slide Down' },{ id: 'slideUp', label: 'Slide Up' },
   { id: 'fadeIn', label: 'Fade In' },{ id: 'bounceIn', label: 'Bounce' },
@@ -60,19 +73,56 @@ function InfoBox({ children }: { children: React.ReactNode }) {
 }
 function Select({ value, onChange, options }: { value:string; onChange:(v:string)=>void; options:{value:string;label:string}[] }) {
   const [open, setOpen] = useState(false)
+  const [dropRect, setDropRect] = useState<DOMRect | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
   const label = options.find(o=>o.value===value)?.label ?? value
+
+  const handleOpen = () => {
+    if (btnRef.current) setDropRect(btnRef.current.getBoundingClientRect())
+    setOpen(o => !o)
+  }
+
+  // Close on scroll / resize so the dropdown doesn't float away
+  useEffect(() => {
+    if (!open) return
+    const close = () => setOpen(false)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close) }
+  }, [open])
+
   return (
     <div style={{ position:'relative' }}>
-      <button type="button" onClick={()=>setOpen(o=>!o)} style={{ ...inp, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', border:'1px solid rgba(255,255,255,0.08)', userSelect:'none' as any }}>
-        <span>{label}</span>
-        <span style={{ fontSize:10, color:'#64748b', marginLeft:8 }}>{open?'▲':'▼'}</span>
+      <button ref={btnRef} type="button" onClick={handleOpen}
+        style={{ ...inp, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', border:'1px solid rgba(255,255,255,0.08)', userSelect:'none' as any }}>
+        <span style={{ fontFamily: FONTS.includes(value) && !['Arial','Verdana','Georgia','Trebuchet MS','Courier New','Impact','Comic Sans MS'].includes(value) ? `'${value}',sans-serif` : undefined }}>{label}</span>
+        <span style={{ fontSize:10, color:'#64748b', marginLeft:8, flexShrink:0 }}>{open?'▲':'▼'}</span>
       </button>
-      {open && (
+      {open && dropRect && (
         <>
-          <div onClick={()=>setOpen(false)} style={{ position:'fixed', inset:0, zIndex:998 }} />
-          <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:999, background:'#1a1a2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, overflow:'hidden', boxShadow:'0 8px 32px rgba(0,0,0,0.6)' }}>
+          <div onClick={()=>setOpen(false)} style={{ position:'fixed', inset:0, zIndex:9998 }} />
+          <div style={{
+            position:'fixed',
+            top: dropRect.bottom + 4,
+            left: dropRect.left,
+            width: dropRect.width,
+            zIndex:9999,
+            background:'#1a1a2e',
+            border:'1px solid rgba(255,255,255,0.12)',
+            borderRadius:10,
+            overflow:'auto',
+            maxHeight: Math.min(320, window.innerHeight - dropRect.bottom - 8),
+            boxShadow:'0 12px 40px rgba(0,0,0,0.8)',
+          }}>
             {options.map(o=>(
-              <button key={o.value} type="button" onClick={()=>{ onChange(o.value); setOpen(false) }} style={{ display:'block', width:'100%', textAlign:'left', padding:'9px 13px', fontSize:13, background: o.value===value ? 'rgba(124,58,237,0.18)' : 'transparent', color: o.value===value ? '#a78bfa' : '#e2e8f0', border:'none', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.04)' }}
+              <button key={o.value} type="button" onClick={()=>{ onChange(o.value); setOpen(false) }}
+                style={{
+                  display:'block', width:'100%', textAlign:'left', padding:'9px 13px', fontSize:13,
+                  fontFamily: !['Arial','Verdana','Georgia','Trebuchet MS','Courier New','Impact','Comic Sans MS'].includes(o.value) ? `'${o.value}',sans-serif` : undefined,
+                  background: o.value===value ? 'rgba(124,58,237,0.18)' : 'transparent',
+                  color: o.value===value ? '#a78bfa' : '#e2e8f0',
+                  border:'none', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer',
+                }}
                 onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.06)')}
                 onMouseLeave={e=>(e.currentTarget.style.background=o.value===value?'rgba(124,58,237,0.18)':'transparent')}
               >{o.label}</button>
@@ -203,7 +253,7 @@ export default function OverlayPage() {
     if (!document.getElementById(id)) {
       const link = document.createElement('link')
       link.id = id; link.rel = 'stylesheet'
-      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap'
+      link.href = GFONTS_URL
       document.head.appendChild(link)
     }
   }, [])
@@ -675,9 +725,7 @@ export default function OverlayPage() {
                 <div><span style={lbl}>Bar Text Color</span><input type="color" value={(s as any).goalBarTextColor??'#ffffff'} onChange={e=>set('goalBarTextColor',e.target.value)} style={colorBox}/></div>
                 <div>
                   <span style={lbl}>Font Family</span>
-                  <select value={(s as any).goalFontFamily??'Arial'} onChange={e=>set('goalFontFamily',e.target.value)} style={{ ...inp, padding:'8px 10px' }}>
-                    {['Arial','Inter','Roboto','Oswald','Montserrat','Orbitron','Press Start 2P'].map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
+                  <Select value={(s as any).goalFontFamily??'Arial'} onChange={v=>set('goalFontFamily',v)} options={FONTS.map(f=>({value:f,label:f}))}/>
                 </div>
               </div>
 
