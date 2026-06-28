@@ -994,7 +994,7 @@ export default function OverlayPage() {
         </div>
 
         {/* ── RIGHT (preview + buttons) ────────────────── */}
-        <div style={{ width:264, flexShrink:0, position:'sticky', top:24, display:'flex', flexDirection:'column', gap:14 }}>
+        <div style={{ width:320, flexShrink:0, position:'sticky', top:24, display:'flex', flexDirection:'column', gap:14 }}>
           <div style={{ ...C, padding:16 }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
               <div style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 6px #22c55e' }}/>
@@ -1173,7 +1173,7 @@ export default function OverlayPage() {
                   const bgHex=`${bg}${Math.round(lbOpacity.top*2.55).toString(16).padStart(2,'0')}`
                   return lbLayout.top === 'ticker' ? (
                     <div style={{ display:'flex', alignItems:'center', background:bgHex, borderRadius:50, overflow:'hidden', border:`1px solid ${c}55`, boxShadow:`0 0 10px ${c}22`, fontFamily:ff }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px 7px 9px', background:`${c}25`, borderRight:`1px solid ${c}35`, flexShrink:0, maxWidth:'42%' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px 7px 9px', background:`${c}25`, borderRight:`1px solid ${c}35`, flexShrink:0 }}>
                         <span style={{ fontSize:fs+1, flexShrink:0 }}>🏆</span>
                         <span style={{ fontSize:Math.max(fs-1,8), fontWeight:800, color:c, textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{lbTitles.top||'Top'}</span>
                       </div>
@@ -1210,7 +1210,7 @@ export default function OverlayPage() {
                   const bgHex=`${bg}${Math.round(lbOpacity.recent*2.55).toString(16).padStart(2,'0')}`
                   return lbLayout.recent === 'ticker' ? (
                     <div style={{ display:'flex', alignItems:'center', background:bgHex, borderRadius:50, overflow:'hidden', border:`1px solid ${c}55`, boxShadow:`0 0 10px ${c}22`, fontFamily:ff }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px 7px 9px', background:`${c}25`, borderRight:`1px solid ${c}35`, flexShrink:0, maxWidth:'42%' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px 7px 9px', background:`${c}25`, borderRight:`1px solid ${c}35`, flexShrink:0 }}>
                         <span style={{ fontSize:fs+1, flexShrink:0 }}>💰</span>
                         <span style={{ fontSize:Math.max(fs-1,8), fontWeight:800, color:c, textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{lbTitles.recent||'Recent'}</span>
                       </div>
