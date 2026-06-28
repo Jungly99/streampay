@@ -197,6 +197,17 @@ export default function OverlayPage() {
     }
   }, [overlayToken])
 
+  // Load Google Fonts for the in-dashboard preview
+  useEffect(() => {
+    const id = 'eztips-goal-gfonts'
+    if (!document.getElementById(id)) {
+      const link = document.createElement('link')
+      link.id = id; link.rel = 'stylesheet'
+      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap'
+      document.head.appendChild(link)
+    }
+  }, [])
+
   const set = (k: string, v: any) => setS((p: any) => ({ ...p, [k]: v }))
 
   const APPEARANCE_DEFAULTS = {
