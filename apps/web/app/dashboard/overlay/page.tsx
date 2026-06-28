@@ -173,6 +173,7 @@ export default function OverlayPage() {
   const [lbFont, setLbFont] = useState({ top: 'Arial', recent: 'Arial', streak: 'Arial' })
   const [lbBold, setLbBold] = useState({ top: true, recent: true, streak: true })
   const [lbRotSpeed, setLbRotSpeed] = useState({ top: 2.5, recent: 2.5 })
+  const [lbLayout, setLbLayout] = useState({ top: 'card', recent: 'card' })
 
   useEffect(() => {
     try {
@@ -190,13 +191,14 @@ export default function OverlayPage() {
         if (p.font) setLbFont(p.font)
         if (p.bold) setLbBold(p.bold)
         if (p.rotSpeed) setLbRotSpeed(p.rotSpeed)
+        if (p.layout) setLbLayout(p.layout)
       }
     } catch {}
   }, [])
 
   useEffect(() => {
     try {
-      localStorage.setItem('eztips_lb_settings', JSON.stringify({ colors: lbColors, titles: lbTitles, counts: lbCounts, resetMin: lbResetMin, bg: lbBg, opacity: lbOpacity, textColor: lbTextColor, fontSize: lbFontSize, font: lbFont, bold: lbBold, rotSpeed: lbRotSpeed }))
+      localStorage.setItem('eztips_lb_settings', JSON.stringify({ colors: lbColors, titles: lbTitles, counts: lbCounts, resetMin: lbResetMin, bg: lbBg, opacity: lbOpacity, textColor: lbTextColor, fontSize: lbFontSize, font: lbFont, bold: lbBold, rotSpeed: lbRotSpeed, layout: lbLayout }))
     } catch {}
   }, [lbColors, lbTitles, lbCounts, lbResetMin])
 
@@ -328,8 +330,8 @@ export default function OverlayPage() {
     p.set('fs', String(lbFontSize[key]))
     p.set('ff', lbFont[key])
     p.set('fw', lbBold[key] ? '700' : '400')
-    if (key==='top')    { p.set('n', String(lbCounts.top));    p.set('rs', String(lbRotSpeed.top)) }
-    if (key==='recent') { p.set('n', String(lbCounts.recent)); p.set('rs', String(lbRotSpeed.recent)) }
+    if (key==='top')    { p.set('n', String(lbCounts.top));    p.set('rs', String(lbRotSpeed.top));    p.set('ly', lbLayout.top) }
+    if (key==='recent') { p.set('n', String(lbCounts.recent)); p.set('rs', String(lbRotSpeed.recent)); p.set('ly', lbLayout.recent) }
     if (key==='streak') p.set('r', String(lbResetMin))
     return `${SITE}/overlay/${overlayToken}/leaderboard/${key}?${p.toString()}`
   }
@@ -821,6 +823,24 @@ export default function OverlayPage() {
                   <Slider label="Rotation speed" value={lbRotSpeed.top} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,top:v}))}/>
                   <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <div>
+                    <span style={lbl}>Widget Style</span>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:4 }}>
+                      {[
+                        { id:'card',   icon:'▤', name:'Card List',    desc:'Vertical ranked list' },
+                        { id:'ticker', icon:'▬', name:'Ticker Bar',   desc:'Single-line cycling bar' },
+                      ].map(l => {
+                        const active = lbLayout.top === l.id
+                        return (
+                          <button key={l.id} type="button" onClick={()=>setLbLayout(p=>({...p,top:l.id}))} style={{ padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center', background:active?'rgba(124,58,237,0.18)':'rgba(255,255,255,0.03)', border:`1.5px solid ${active?'rgba(124,58,237,0.6)':'rgba(255,255,255,0.07)'}`, color:active?'#a78bfa':'#64748b', transition:'all 0.15s' }}>
+                            <div style={{ fontSize:18, marginBottom:3 }}>{l.icon}</div>
+                            <div style={{ fontSize:11, fontWeight:700 }}>{l.name}</div>
+                            <div style={{ fontSize:10, opacity:0.6, marginTop:1 }}>{l.desc}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                   <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.top} onChange={e=>setLbColors(p=>({...p,top:e.target.value}))} style={colorBox}/></div>
                   <div><span style={lbl}>Background Color</span><input type="color" value={lbBg.top} onChange={e=>setLbBg(p=>({...p,top:e.target.value}))} style={colorBox}/></div>
                   <Slider label="Background Opacity" value={lbOpacity.top} min={0} max={100} unit="%" onChange={v=>setLbOpacity(p=>({...p,top:v}))}/>
@@ -843,6 +863,24 @@ export default function OverlayPage() {
                   <Slider label="Rotation speed" value={lbRotSpeed.recent} min={1} max={10} step={0.5} unit="s" onChange={v=>setLbRotSpeed(p=>({...p,recent:v}))}/>
                   <div style={{ height:1, background:'rgba(255,255,255,0.05)' }}/>
                   <p style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>🎨 Appearance</p>
+                  <div>
+                    <span style={lbl}>Widget Style</span>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:4 }}>
+                      {[
+                        { id:'card',   icon:'▤', name:'Card List',    desc:'Vertical recent list' },
+                        { id:'ticker', icon:'▬', name:'Ticker Bar',   desc:'Single-line cycling bar' },
+                      ].map(l => {
+                        const active = lbLayout.recent === l.id
+                        return (
+                          <button key={l.id} type="button" onClick={()=>setLbLayout(p=>({...p,recent:l.id}))} style={{ padding:'10px 8px', borderRadius:10, cursor:'pointer', textAlign:'center', background:active?'rgba(16,185,129,0.15)':'rgba(255,255,255,0.03)', border:`1.5px solid ${active?'rgba(16,185,129,0.5)':'rgba(255,255,255,0.07)'}`, color:active?'#6ee7b7':'#64748b', transition:'all 0.15s' }}>
+                            <div style={{ fontSize:18, marginBottom:3 }}>{l.icon}</div>
+                            <div style={{ fontSize:11, fontWeight:700 }}>{l.name}</div>
+                            <div style={{ fontSize:10, opacity:0.6, marginTop:1 }}>{l.desc}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                   <div><span style={lbl}>Accent Color</span><input type="color" value={lbColors.recent} onChange={e=>setLbColors(p=>({...p,recent:e.target.value}))} style={colorBox}/></div>
                   <div><span style={lbl}>Background Color</span><input type="color" value={lbBg.recent} onChange={e=>setLbBg(p=>({...p,recent:e.target.value}))} style={colorBox}/></div>
                   <Slider label="Background Opacity" value={lbOpacity.recent} min={0} max={100} unit="%" onChange={v=>setLbOpacity(p=>({...p,recent:v}))}/>
@@ -1108,41 +1146,83 @@ export default function OverlayPage() {
             {tab==='leaderboard' && (
               <div style={{ background:'#0a0a1a', borderRadius:10, padding:14, border:`1px solid ${lbColors[lbTab]}25` }}>
                 {lbTab==='top' && (
-                  <>
-                    <p style={{ fontSize:10, fontWeight:800, color:lbColors.top, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 10px' }}>
-                      🏆 {lbTitles.top || 'Top Donors'}
-                    </p>
-                    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                      {[
-                        { n:'Arjun K.', a:'₹2,500', medal:'🥇' },
-                        { n:'Priya M.', a:'₹1,200', medal:'🥈' },
-                        { n:'Rohan S.', a:'₹800',   medal:'🥉' },
-                      ].slice(0, Math.min(lbCounts.top, 3)).map((row, i) => (
-                        <div key={i} style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 8px', borderRadius:8, background:i===0?`${lbColors.top}18`:'rgba(255,255,255,0.03)', border:`1px solid ${i===0?lbColors.top+'40':'rgba(255,255,255,0.06)'}` }}>
-                          <span style={{ fontSize:13 }}>{row.medal}</span>
-                          <span style={{ flex:1, fontSize:11, fontWeight:700, color:i===0?lbColors.top:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
-                          <span style={{ fontSize:11, fontWeight:800, color:i===0?lbColors.top:'#a78bfa' }}>{row.a}</span>
+                  lbLayout.top === 'ticker' ? (
+                    /* Ticker preview */
+                    <div style={{ display:'flex', alignItems:'stretch', background:`${lbBg.top}dd`, borderRadius:50, overflow:'hidden', border:`1px solid ${lbColors.top}45`, boxShadow:`0 0 12px ${lbColors.top}22` }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px 8px 10px', background:`${lbColors.top}22`, borderRight:`1px solid ${lbColors.top}35`, flexShrink:0 }}>
+                        <span style={{ fontSize:12 }}>🏆</span>
+                        <span style={{ fontSize:10, fontWeight:800, color:lbColors.top, textTransform:'uppercase', letterSpacing:'0.07em', whiteSpace:'nowrap' }}>{lbTitles.top||'Top Donors'}</span>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', flex:1, gap:8 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <span style={{ fontSize:11 }}>🥇</span>
+                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', textShadow:`0 0 8px ${lbColors.top}80` }}>Arjun K.</span>
                         </div>
-                      ))}
-                      {lbCounts.top > 3 && <p style={{ fontSize:9, color:'#334155', margin:'4px 0 0', textAlign:'center' }}>+{lbCounts.top-3} more entries on stream</p>}
+                        <span style={{ fontSize:11, fontWeight:800, color:lbColors.top }}>₹2,500</span>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:3, padding:'0 10px', flexShrink:0 }}>
+                        {[0,1,2].map(i=><div key={i} style={{ width:4, height:4, borderRadius:'50%', background:i===0?lbColors.top:`${lbColors.top}40` }}/>)}
+                      </div>
                     </div>
-                  </>
+                  ) : (
+                    /* Card list preview */
+                    <>
+                      <p style={{ fontSize:10, fontWeight:800, color:lbColors.top, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 10px' }}>
+                        🏆 {lbTitles.top || 'Top Donors'}
+                      </p>
+                      <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                        {[
+                          { n:'Arjun K.', a:'₹2,500', medal:'🥇' },
+                          { n:'Priya M.', a:'₹1,200', medal:'🥈' },
+                          { n:'Rohan S.', a:'₹800',   medal:'🥉' },
+                        ].slice(0, Math.min(lbCounts.top, 3)).map((row, i) => (
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 8px', borderRadius:8, background:i===0?`${lbColors.top}18`:'rgba(255,255,255,0.03)', border:`1px solid ${i===0?lbColors.top+'40':'rgba(255,255,255,0.06)'}` }}>
+                            <span style={{ fontSize:13 }}>{row.medal}</span>
+                            <span style={{ flex:1, fontSize:11, fontWeight:700, color:i===0?lbColors.top:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
+                            <span style={{ fontSize:11, fontWeight:800, color:i===0?lbColors.top:'#a78bfa' }}>{row.a}</span>
+                          </div>
+                        ))}
+                        {lbCounts.top > 3 && <p style={{ fontSize:9, color:'#334155', margin:'4px 0 0', textAlign:'center' }}>+{lbCounts.top-3} more entries on stream</p>}
+                      </div>
+                    </>
+                  )
                 )}
                 {lbTab==='recent' && (
-                  <>
-                    <p style={{ fontSize:10, fontWeight:800, color:lbColors.recent, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 10px' }}>
-                      👥 {lbTitles.recent || 'Recent Donors'}
-                    </p>
-                    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                      {[{n:'Arjun K.',a:'₹500'},{n:'Priya M.',a:'₹100'},{n:'Neha G.',a:'₹250'},{n:'Rohan S.',a:'₹50'}].slice(0, Math.min(lbCounts.recent,4)).map((row,i)=>(
-                        <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 8px', borderRadius:8, background:i===0?`${lbColors.recent}15`:'rgba(255,255,255,0.02)', border:`1px solid ${i===0?lbColors.recent+'40':'rgba(255,255,255,0.05)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
-                          <span style={{ fontSize:11, fontWeight:700, color:i===0?lbColors.recent:'#94a3b8' }}>{row.n}</span>
-                          <span style={{ fontSize:11, fontWeight:800, color:i===0?lbColors.recent:'#64748b' }}>{row.a}</span>
+                  lbLayout.recent === 'ticker' ? (
+                    /* Ticker preview */
+                    <div style={{ display:'flex', alignItems:'stretch', background:`${lbBg.recent}dd`, borderRadius:50, overflow:'hidden', border:`1px solid ${lbColors.recent}45`, boxShadow:`0 0 12px ${lbColors.recent}22` }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px 8px 10px', background:`${lbColors.recent}22`, borderRight:`1px solid ${lbColors.recent}35`, flexShrink:0 }}>
+                        <span style={{ fontSize:12 }}>💰</span>
+                        <span style={{ fontSize:10, fontWeight:800, color:lbColors.recent, textTransform:'uppercase', letterSpacing:'0.07em', whiteSpace:'nowrap' }}>{lbTitles.recent||'Recent Donors'}</span>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', flex:1, gap:8 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <span style={{ fontSize:11 }}>🕐</span>
+                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', textShadow:`0 0 8px ${lbColors.recent}80` }}>Arjun K.</span>
                         </div>
-                      ))}
-                      {lbCounts.recent > 4 && <p style={{ fontSize:9, color:'#334155', margin:'4px 0 0', textAlign:'center' }}>+{lbCounts.recent-4} more on stream</p>}
+                        <span style={{ fontSize:11, fontWeight:800, color:lbColors.recent }}>₹500</span>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:3, padding:'0 10px', flexShrink:0 }}>
+                        {[0,1,2].map(i=><div key={i} style={{ width:4, height:4, borderRadius:'50%', background:i===0?lbColors.recent:`${lbColors.recent}40` }}/>)}
+                      </div>
                     </div>
-                  </>
+                  ) : (
+                    /* Card list preview */
+                    <>
+                      <p style={{ fontSize:10, fontWeight:800, color:lbColors.recent, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 10px' }}>
+                        👥 {lbTitles.recent || 'Recent Donors'}
+                      </p>
+                      <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                        {[{n:'Arjun K.',a:'₹500'},{n:'Priya M.',a:'₹100'},{n:'Neha G.',a:'₹250'},{n:'Rohan S.',a:'₹50'}].slice(0, Math.min(lbCounts.recent,4)).map((row,i)=>(
+                          <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 8px', borderRadius:8, background:i===0?`${lbColors.recent}15`:'rgba(255,255,255,0.02)', border:`1px solid ${i===0?lbColors.recent+'40':'rgba(255,255,255,0.05)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
+                            <span style={{ fontSize:11, fontWeight:700, color:i===0?lbColors.recent:'#94a3b8' }}>{row.n}</span>
+                            <span style={{ fontSize:11, fontWeight:800, color:i===0?lbColors.recent:'#64748b' }}>{row.a}</span>
+                          </div>
+                        ))}
+                        {lbCounts.recent > 4 && <p style={{ fontSize:9, color:'#334155', margin:'4px 0 0', textAlign:'center' }}>+{lbCounts.recent-4} more on stream</p>}
+                      </div>
+                    </>
+                  )
                 )}
                 {lbTab==='streak' && (
                   <div style={{ textAlign:'center', padding:'8px 0' }}>

@@ -9,7 +9,7 @@ interface Donor { rank: number; name: string; total: number }
 const MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
 
 function readParams() {
-  if (typeof window === 'undefined') return { color: '#7c3aed', count: 5, title: 'Top Donors', bg: '#0a0a1a', opacity: 85, textColor: '#e2e8f0', fontSize: 13, font: 'Arial', bold: true, rotSpeed: 2.5 }
+  if (typeof window === 'undefined') return { color: '#7c3aed', count: 5, title: 'Top Donors', bg: '#0a0a1a', opacity: 85, textColor: '#e2e8f0', fontSize: 13, font: 'Arial', bold: true, rotSpeed: 2.5, layout: 'card' }
   const p = new URLSearchParams(window.location.search)
   return {
     color:     '#' + (p.get('c') ?? '7c3aed'),
@@ -18,10 +18,11 @@ function readParams() {
     bg:        '#' + (p.get('bg') ?? '0a0a1a'),
     opacity:   Math.max(0, Math.min(100, Number(p.get('op') ?? '85'))),
     textColor: '#' + (p.get('fc') ?? 'e2e8f0'),
-    fontSize:  Math.max(10, Math.min(20, Number(p.get('fs') ?? '13'))),
+    fontSize:  Math.max(10, Math.min(24, Number(p.get('fs') ?? '13'))),
     font:      p.get('ff') ?? 'Arial',
     bold:      (p.get('fw') ?? '700') === '700',
     rotSpeed:  Math.max(1, Math.min(10, Number(p.get('rs') ?? '2.5'))),
+    layout:    p.get('ly') ?? 'card',
   }
 }
 
@@ -34,7 +35,6 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
 
   useEffect(() => { setParams(readParams()); setMounted(true) }, [])
 
-  // Rotate spotlight through each rank
   useEffect(() => {
     if (donors.length <= 1) return
     const id = setInterval(() => {
@@ -46,7 +46,7 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
       })
     }, params.rotSpeed * 1000)
     return () => clearInterval(id)
-  }, [donors.length])
+  }, [donors.length, params.rotSpeed])
 
   useEffect(() => {
     fetch(`/backend/api/donations/overlay-leaderboard/${token}`)
@@ -75,6 +75,88 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
     return () => { socket.disconnect() }
   }, [token])
 
+  const opHex = Math.round(params.opacity * 2.55).toString(16).padStart(2, '0')
+  const current = donors[activeIdx]
+
+  // ── TICKER LAYOUT ────────────────────────────────────────────────────────────
+  if (params.layout === 'ticker') {
+    return (
+      <div style={{ background: 'transparent', padding: '6px 8px' }}>
+        <style>{`
+          html,body{background:transparent!important;margin:0;padding:0}*{box-sizing:border-box}
+          @keyframes tk-glow{0%,100%{box-shadow:0 0 10px ${params.color}40,0 3px 16px rgba(0,0,0,0.5)}50%{box-shadow:0 0 24px ${params.color}88,0 6px 28px rgba(0,0,0,0.6)}}
+          @keyframes tk-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.7)}}
+        `}</style>
+        {!donors.length ? (
+          <div style={{ display:'flex', alignItems:'center', gap:12, background:`${params.bg}${opHex}`, backdropFilter:'blur(14px)', borderRadius:50, padding:'10px 18px', border:`1px solid ${params.color}30` }}>
+            <span style={{ fontSize:params.fontSize, fontWeight:800, color:params.color }}>🏆 {params.title}</span>
+            <span style={{ fontSize:params.fontSize-1, color:'#64748b' }}>No donations yet</span>
+          </div>
+        ) : (
+          <div style={{
+            display:'flex', alignItems:'stretch',
+            background:`${params.bg}${opHex}`, backdropFilter:'blur(14px)',
+            borderRadius:50, overflow:'hidden',
+            border:`1px solid ${params.color}45`,
+            boxShadow:`0 4px 24px rgba(0,0,0,0.5), 0 0 20px ${params.color}18`,
+            animation:'tk-glow 2.5s ease-in-out infinite',
+            fontFamily: params.font,
+          }}>
+            {/* Label pill */}
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px 10px 16px', background:`${params.color}22`, borderRight:`1px solid ${params.color}35`, flexShrink:0 }}>
+              <span style={{ fontSize:params.fontSize+2 }}>🏆</span>
+              <span style={{ fontSize:params.fontSize, fontWeight:800, color:params.color, textTransform:'uppercase', letterSpacing:'0.07em', whiteSpace:'nowrap' }}>
+                {params.title}
+              </span>
+            </div>
+            {/* Animated donor */}
+            <div style={{ flex:1, position:'relative', overflow:'hidden', minWidth:0 }}>
+              <AnimatePresence mode="wait" initial={!mounted}>
+                {current && (
+                  <motion.div
+                    key={activeIdx}
+                    initial={{ opacity:0, y:10 }}
+                    animate={{ opacity:1, y:0 }}
+                    exit={{ opacity:0, y:-10 }}
+                    transition={{ duration:0.35, ease:'easeOut' }}
+                    style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 18px', gap:12 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, overflow:'hidden' }}>
+                      <span style={{ fontSize:params.fontSize+1, flexShrink:0 }}>{MEDALS[activeIdx] ?? '👤'}</span>
+                      <span style={{
+                        fontSize:params.fontSize+1, fontWeight:params.bold?800:600,
+                        color:'#ffffff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                        textShadow:`0 0 14px ${params.color}80`,
+                      }}>
+                        {current.name}
+                      </span>
+                    </div>
+                    <span style={{ fontSize:params.fontSize+1, fontWeight:800, flexShrink:0, color:params.color, textShadow:`0 0 12px ${params.color}cc` }}>
+                      ₹{current.total.toLocaleString('en-IN')}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            {/* Pagination dots */}
+            {donors.length > 1 && (
+              <div style={{ display:'flex', alignItems:'center', gap:4, padding:'0 14px', flexShrink:0 }}>
+                {donors.map((_, i) => (
+                  <div key={i} style={{
+                    width:5, height:5, borderRadius:'50%',
+                    background: i===activeIdx ? params.color : `${params.color}40`,
+                    animation: i===activeIdx ? 'tk-dot 1s ease-in-out infinite' : undefined,
+                    transition:'background 0.3s',
+                  }}/>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── CARD LAYOUT (original) ────────────────────────────────────────────────────
   if (!donors.length) return (
     <div style={{ background: 'transparent', padding: 8, minWidth: 260 }}>
       <style>{`html,body{background:transparent!important;margin:0;padding:0}*{box-sizing:border-box}`}</style>
@@ -95,7 +177,7 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
         @keyframes lb-shimmer{0%{opacity:0.7}50%{opacity:1}100%{opacity:0.7}}
       `}</style>
       <div style={{
-        background: `${params.bg}${Math.round(params.opacity * 2.55).toString(16).padStart(2,'0')}`,
+        background: `${params.bg}${opHex}`,
         backdropFilter: 'blur(12px)', fontFamily: params.font,
         borderRadius: 16, padding: '14px 16px', border: `1px solid ${params.color}40`,
         boxShadow: `0 4px 32px rgba(0,0,0,0.5), 0 0 20px ${params.color}10`,
