@@ -465,7 +465,19 @@ export default function OverlayPage() {
                 </div>
 
                 {/* Preview button */}
-                {(s.alertSoundType ?? 'coin') !== 'custom' && (
+                {(s.alertSoundType ?? 'coin') === 'custom' ? (
+                  customSoundBase64 ? (
+                    <button type="button" onClick={() => {
+                      try { const a = new Audio(customSoundBase64); a.volume = (s.coinSoundVolume ?? 50) / 100 * 0.6; a.play() } catch {}
+                    }} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>
+                      ▶ Preview Sound
+                    </button>
+                  ) : (
+                    <button type="button" disabled style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9, fontSize:12, fontWeight:600, cursor:'not-allowed', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', color:'#475569' }}>
+                      ▶ Preview Sound (upload a file first)
+                    </button>
+                  )
+                ) : (
                   <button type="button" onClick={() => {
                     try {
                       const ctx = new AudioContext()
@@ -528,7 +540,7 @@ export default function OverlayPage() {
                       )}
                     </div>
                     <div style={{ marginTop:8, padding:'9px 12px', borderRadius:9, background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)' }}>
-                      <p style={{ fontSize:11, color:'#f59e0b', lineHeight:1.5 }}>⚠ Custom upload only plays in your browser preview. For OBS overlay use, choose <strong>URL</strong> instead and paste a hosted link.</p>
+                      <p style={{ fontSize:11, color:'#f59e0b', lineHeight:1.5 }}>⚠ Custom upload works when your overlay is open in the <strong>same browser</strong> as this dashboard. If you use OBS (different machine), the sound won't play there — host the file online and use the URL option instead.</p>
                     </div>
                   </div>
                 )}
