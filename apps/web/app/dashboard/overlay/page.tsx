@@ -222,10 +222,11 @@ export default function OverlayPage() {
   async function sendTest() {
     setTesting(true)
     try {
-      await api.patch('/api/streamer/alert-settings', s)
+      // Save settings first (best-effort — don't block the test if save fails)
+      try { await api.patch('/api/streamer/alert-settings', s) } catch { /* ignore save errors */ }
       const r = await api.post<any>('/api/streamer/test-alert')
       toast.success(`Test sent — ₹${r.amount} from ${r.name}`)
-    } catch (e: any) { toast.error(e.message) } finally { setTesting(false) }
+    } catch (e: any) { toast.error(e.message ?? 'Failed to send test alert') } finally { setTesting(false) }
   }
 
   function previewVoice() {
