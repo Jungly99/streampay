@@ -83,17 +83,27 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
     setOpen(o => !o)
   }
 
-  // Close on outside scroll / resize, but NOT when scrolling inside the dropdown list
+  // Close on outside click or resize; ignore scroll inside the list itself
   useEffect(() => {
     if (!open) return
-    const close = (e: Event) => {
-      if (listRef.current && e.target instanceof Node && listRef.current.contains(e.target)) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (listRef.current?.contains(e.target as Node)) return
+      if (btnRef.current?.contains(e.target as Node)) return
       setOpen(false)
     }
-    const closeResize = () => setOpen(false)
-    window.addEventListener('scroll', close, true)
-    window.addEventListener('resize', closeResize)
-    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', closeResize) }
+    const onScroll = (e: Event) => {
+      if (listRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const onResize = () => setOpen(false)
+    document.addEventListener('mousedown', onMouseDown, true)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onResize)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown, true)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onResize)
+    }
   }, [open])
 
   return (
@@ -105,7 +115,6 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
       </button>
       {open && dropRect && (
         <>
-          <div onClick={()=>setOpen(false)} style={{ position:'fixed', inset:0, zIndex:9998 }} />
           <div ref={listRef} style={{
             position:'fixed',
             top: dropRect.bottom + 4,
@@ -1229,9 +1238,10 @@ export default function OverlayPage() {
                     <div style={{ background:bgHex, borderRadius:12, padding:'12px 13px', border:`1px solid ${c}30`, fontFamily:ff }}>
                       <p style={{ fontSize:fs, fontWeight:800, color:c, letterSpacing:'0.07em', textTransform:'uppercase', margin:'0 0 9px' }}>👥 {lbTitles.recent||'Recent Donors'}</p>
                       <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-                        {[{n:'Arjun K.',a:'₹500'},{n:'Priya M.',a:'₹100'},{n:'Neha G.',a:'₹250'},{n:'Rohan S.',a:'₹50'}].slice(0,Math.min(lbCounts.recent,4)).map((row,i)=>(
-                          <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 7px', borderRadius:8, background:i===0?`${c}15`:'rgba(255,255,255,0.02)', border:`1px solid ${i===0?c+'40':'rgba(255,255,255,0.05)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
-                            <span style={{ fontSize:fs, fontWeight:fw, color:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
+                        {([{n:'Arjun K.',a:'₹500',ic:'🕐'},{n:'Priya M.',a:'₹100',ic:'🕑'},{n:'Neha G.',a:'₹250',ic:'🕒'},{n:'Rohan S.',a:'₹50',ic:'🕓'}] as {n:string;a:string;ic:string}[]).slice(0,Math.min(lbCounts.recent,4)).map((row,i)=>(
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 7px', borderRadius:8, background:i===0?`${c}18`:'rgba(255,255,255,0.03)', border:`1px solid ${i===0?c+'40':'rgba(255,255,255,0.06)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
+                            <span style={{ fontSize:fs+1, flexShrink:0 }}>{row.ic}</span>
+                            <span style={{ flex:1, fontSize:fs, fontWeight:fw, color:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
                             <span style={{ fontSize:fs, fontWeight:800, color:i===0?c:'#64748b', flexShrink:0 }}>{row.a}</span>
                           </div>
                         ))}
