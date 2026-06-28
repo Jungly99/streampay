@@ -165,6 +165,7 @@ export default function OverlayPage() {
           const localName = localStorage.getItem('eztips_custom_alert_sound_name')
           if (localData) {
             clean.customAlertSoundUrl = localData
+            clean.alertSoundType = 'custom_url'
             setCustomSoundBase64(localData)
             setCustomSoundName(localName ?? 'custom.mp3')
           }
@@ -457,7 +458,9 @@ export default function OverlayPage() {
                       { id:'levelup', emoji:'⬆️', label:'Level Up' },
                       { id:'custom',  emoji:'🎧', label:'Upload' },
                     ].map(preset => {
-                      const active = (s.alertSoundType ?? 'coin') === preset.id
+                      // 'custom_url' is used internally when a file is uploaded (works with old OBS code)
+                      const activeType = (s.alertSoundType ?? 'coin') === 'custom_url' ? 'custom' : (s.alertSoundType ?? 'coin')
+                      const active = activeType === preset.id
                       return (
                         <button key={preset.id} type="button" onClick={() => set('alertSoundType', preset.id)} style={{
                           padding:'10px 4px', borderRadius:10, fontSize:12, fontWeight:600, cursor:'pointer',
@@ -514,7 +517,7 @@ export default function OverlayPage() {
                 )}
 
                 {/* Custom file upload */}
-                {s.alertSoundType === 'custom' && (
+                {(s.alertSoundType === 'custom' || s.alertSoundType === 'custom_url') && (
                   <div>
                     <span style={lbl}>Upload Audio File</span>
                     <div style={{ background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.12)', borderRadius:10, padding:'16px', textAlign:'center' }}>
@@ -523,7 +526,7 @@ export default function OverlayPage() {
                           <span style={{ fontSize:12, color:'#10b981', fontWeight:600 }}>✓ {customSoundName}</span>
                           <div style={{ display:'flex', gap:8 }}>
                             <button type="button" onClick={() => { try { const a = new Audio(customSoundBase64); a.volume = (s.coinSoundVolume??50)/100; a.play() } catch{} }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa' }}>▶ Preview</button>
-                            <button type="button" onClick={() => { setCustomSoundBase64(''); setCustomSoundName(''); localStorage.removeItem('eztips_custom_alert_sound'); localStorage.removeItem('eztips_custom_alert_sound_name'); setS((p: any) => ({ ...p, customAlertSoundUrl: null })) }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', color:'#f87171' }}>Remove</button>
+                            <button type="button" onClick={() => { setCustomSoundBase64(''); setCustomSoundName(''); localStorage.removeItem('eztips_custom_alert_sound'); localStorage.removeItem('eztips_custom_alert_sound_name'); setS((p: any) => ({ ...p, alertSoundType: 'custom', customAlertSoundUrl: null })) }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', color:'#f87171' }}>Remove</button>
                           </div>
                         </div>
                       ) : (
@@ -539,8 +542,8 @@ export default function OverlayPage() {
                                 setCustomSoundBase64(b64); setCustomSoundName(file.name)
                                 localStorage.setItem('eztips_custom_alert_sound', b64)
                                 localStorage.setItem('eztips_custom_alert_sound_name', file.name)
-                                // Also store in settings so it's saved to DB and works in OBS
-                                setS((p: any) => ({ ...p, customAlertSoundUrl: b64 }))
+                                // Use 'custom_url' type — old OBS code already plays from settings.customAlertSoundUrl for this type
+                                setS((p: any) => ({ ...p, alertSoundType: 'custom_url', customAlertSoundUrl: b64 }))
                               }
                               reader.readAsDataURL(file)
                             }}

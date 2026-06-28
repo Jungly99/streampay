@@ -110,7 +110,7 @@ export default function OverlayClient({ token }: { token: string }) {
         try {
           const vol = (settings.coinSoundVolume ?? 50) / 100 * 0.6
           const soundType = settings.alertSoundType ?? 'coin'
-          if (soundType === 'custom') {
+          if (soundType === 'custom' || soundType === 'custom_url') {
             // customAlertSoundUrl holds the data URL saved to DB — works in OBS too
             const src = settings.customAlertSoundUrl || localStorage.getItem('eztips_custom_alert_sound')
             if (src) { const a = new Audio(src); a.volume = vol; a.play().catch(() => {}) }
