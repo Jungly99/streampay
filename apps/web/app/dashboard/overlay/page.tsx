@@ -1195,7 +1195,7 @@ export default function OverlayPage() {
                         {[{n:'Arjun K.',a:'₹2,500',m:'🥇'},{n:'Priya M.',a:'₹1,200',m:'🥈'},{n:'Rohan S.',a:'₹800',m:'🥉'}].slice(0,Math.min(lbCounts.top,3)).map((row,i)=>(
                           <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 7px', borderRadius:8, background:i===0?`${c}18`:'rgba(255,255,255,0.03)', border:`1px solid ${i===0?c+'40':'rgba(255,255,255,0.06)'}` }}>
                             <span style={{ fontSize:fs+2 }}>{row.m}</span>
-                            <span style={{ flex:1, fontSize:fs, fontWeight:fw, color:i===0?c:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
+                            <span style={{ flex:1, fontSize:fs, fontWeight:fw, color:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
                             <span style={{ fontSize:fs, fontWeight:800, color:c, flexShrink:0 }}>{row.a}</span>
                           </div>
                         ))}
@@ -1231,7 +1231,7 @@ export default function OverlayPage() {
                       <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
                         {[{n:'Arjun K.',a:'₹500'},{n:'Priya M.',a:'₹100'},{n:'Neha G.',a:'₹250'},{n:'Rohan S.',a:'₹50'}].slice(0,Math.min(lbCounts.recent,4)).map((row,i)=>(
                           <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 7px', borderRadius:8, background:i===0?`${c}15`:'rgba(255,255,255,0.02)', border:`1px solid ${i===0?c+'40':'rgba(255,255,255,0.05)'}`, opacity:Math.max(1-i*0.12,0.5) }}>
-                            <span style={{ fontSize:fs, fontWeight:fw, color:i===0?c:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
+                            <span style={{ fontSize:fs, fontWeight:fw, color:tc, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.n}</span>
                             <span style={{ fontSize:fs, fontWeight:800, color:i===0?c:'#64748b', flexShrink:0 }}>{row.a}</span>
                           </div>
                         ))}

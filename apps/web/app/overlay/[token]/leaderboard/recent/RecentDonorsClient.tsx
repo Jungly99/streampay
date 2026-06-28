@@ -228,7 +228,7 @@ export default function RecentDonorsClient({ token }: { token: string }) {
                     </span>
                     <span style={{
                       fontSize: params.fontSize, fontWeight: isActive ? 800 : (params.bold ? 600 : 400),
-                      color: i === 0 ? params.color : params.textColor,
+                      color: params.textColor,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130,
                       textShadow: isActive ? `0 0 12px ${params.color}80` : undefined,
                       animation: isActive ? 'rc-shimmer 1.6s ease-in-out infinite' : undefined,
