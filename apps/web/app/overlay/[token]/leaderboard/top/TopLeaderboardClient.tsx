@@ -142,7 +142,7 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
                       <span style={{ fontSize:params.fontSize+1, flexShrink:0 }}>{MEDALS[activeIdx] ?? '👤'}</span>
                       <span style={{
                         fontSize:params.fontSize+1, fontWeight:params.bold?800:600,
-                        color:'#ffffff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                        color:params.textColor, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                         textShadow:`0 0 14px ${params.color}80`,
                       }}>
                         {current.name}
@@ -234,7 +234,7 @@ export default function TopLeaderboardClient({ token }: { token: string }) {
                   </span>
                   <span style={{
                     flex: 1, fontSize: params.fontSize + 1, fontWeight: isActive ? 800 : (params.bold ? 700 : 400),
-                    color: isActive ? '#ffffff' : params.textColor,
+                    color: params.textColor,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     textShadow: isActive ? `0 0 14px ${params.color}90` : undefined,
                     animation: isActive ? 'lb-shimmer 1.6s ease-in-out infinite' : undefined,

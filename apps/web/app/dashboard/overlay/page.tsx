@@ -75,6 +75,7 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
   const [open, setOpen] = useState(false)
   const [dropRect, setDropRect] = useState<DOMRect | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const label = options.find(o=>o.value===value)?.label ?? value
 
   const handleOpen = () => {
@@ -82,13 +83,17 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
     setOpen(o => !o)
   }
 
-  // Close on scroll / resize so the dropdown doesn't float away
+  // Close on outside scroll / resize, but NOT when scrolling inside the dropdown list
   useEffect(() => {
     if (!open) return
-    const close = () => setOpen(false)
+    const close = (e: Event) => {
+      if (listRef.current && e.target instanceof Node && listRef.current.contains(e.target)) return
+      setOpen(false)
+    }
+    const closeResize = () => setOpen(false)
     window.addEventListener('scroll', close, true)
-    window.addEventListener('resize', close)
-    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close) }
+    window.addEventListener('resize', closeResize)
+    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', closeResize) }
   }, [open])
 
   return (
@@ -101,7 +106,7 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
       {open && dropRect && (
         <>
           <div onClick={()=>setOpen(false)} style={{ position:'fixed', inset:0, zIndex:9998 }} />
-          <div style={{
+          <div ref={listRef} style={{
             position:'fixed',
             top: dropRect.bottom + 4,
             left: dropRect.left,
@@ -110,8 +115,8 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
             background:'#1a1a2e',
             border:'1px solid rgba(255,255,255,0.12)',
             borderRadius:10,
-            overflow:'auto',
-            maxHeight: Math.min(320, window.innerHeight - dropRect.bottom - 8),
+            overflowY:'auto',
+            maxHeight: Math.min(320, Math.max(120, window.innerHeight - dropRect.bottom - 8)),
             boxShadow:'0 12px 40px rgba(0,0,0,0.8)',
           }}>
             {options.map(o=>(
@@ -1175,7 +1180,7 @@ export default function OverlayPage() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 8px', flex:1, gap:6, minWidth:0 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:4, minWidth:0, overflow:'hidden' }}>
                           <span style={{ fontSize:fs+1, flexShrink:0 }}>🥇</span>
-                          <span style={{ fontSize:fs+1, fontWeight:fw, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textShadow:`0 0 8px ${c}80` }}>Arjun K.</span>
+                          <span style={{ fontSize:fs+1, fontWeight:fw, color:tc, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textShadow:`0 0 8px ${c}80` }}>Arjun K.</span>
                         </div>
                         <span style={{ fontSize:fs+1, fontWeight:800, color:c, flexShrink:0, whiteSpace:'nowrap' }}>₹2,500</span>
                       </div>
@@ -1212,7 +1217,7 @@ export default function OverlayPage() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 8px', flex:1, gap:6, minWidth:0 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:4, minWidth:0, overflow:'hidden' }}>
                           <span style={{ fontSize:fs+1, flexShrink:0 }}>🕐</span>
-                          <span style={{ fontSize:fs+1, fontWeight:fw, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textShadow:`0 0 8px ${c}80` }}>Arjun K.</span>
+                          <span style={{ fontSize:fs+1, fontWeight:fw, color:tc, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textShadow:`0 0 8px ${c}80` }}>Arjun K.</span>
                         </div>
                         <span style={{ fontSize:fs+1, fontWeight:800, color:c, flexShrink:0, whiteSpace:'nowrap' }}>₹500</span>
                       </div>
