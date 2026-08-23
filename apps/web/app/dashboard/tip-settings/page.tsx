@@ -7,7 +7,7 @@ async function fetchTipSettings(token: string) {
   const res = await fetch(`${base}/api/streamer/tip-settings`, {
     headers: { Cookie: `eztips_token=${token}` }, cache: 'no-store',
   })
-  if (!res.ok) return { minDonationAmount: 100, messageTiers: [] }
+  if (!res.ok) return { minDonationAmount: 100, messageTiers: [], customEmojis: [] }
   return res.json()
 }
 

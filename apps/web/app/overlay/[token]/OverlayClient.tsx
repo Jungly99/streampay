@@ -2,10 +2,36 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { getSocket } from '../../../lib/socket'
-import type { NewDonationEvent, AlertSettings, GoalUpdatedEvent } from '@streampay/types'
+import type { NewDonationEvent, AlertSettings, GoalUpdatedEvent } from '../../../lib/types'
 
 interface QueueItem extends NewDonationEvent {
   id: string
+}
+
+// Module-level audio player — completely outside React, never garbage collected,
+// never affected by effect cleanup or re-renders.
+if (typeof window !== 'undefined') (window as any).__eztips_ver = 'v7-ttsPlayer'
+
+const ttsPlayer = {
+  _audio: null as HTMLAudioElement | null,
+  _onDone: null as (() => void) | null,
+  play(url: string, volume: number, onDone: () => void) {
+    // Stop any previous audio before starting new one
+    if (this._audio) { this._audio.onended = null; this._audio.onerror = null; this._audio.pause(); this._audio = null }
+    this._onDone = null
+    this._onDone = onDone
+    const a = new Audio(url)
+    a.volume = volume
+    a.onended = () => { console.log('[eztips v7] tts ended'); try { URL.revokeObjectURL(url) } catch { /* */ }; this._onDone?.(); this._onDone = null }
+    a.onerror = (e) => { console.log('[eztips v7] tts error', e); this._onDone?.(); this._onDone = null }
+    this._audio = a
+    console.log('[eztips v7] tts play start, duration will be:', url.slice(0, 40))
+    a.play().catch((e) => { console.log('[eztips v7] tts play failed', e); this._onDone?.(); this._onDone = null })
+  },
+  stop() {
+    this._onDone = null
+    if (this._audio) { this._audio.pause(); this._audio.onended = null; this._audio = null }
+  },
 }
 
 function applyProfanityFilter(text: string, settings: AlertSettings): string {
@@ -79,7 +105,6 @@ export default function OverlayClient({ token }: { token: string }) {
   const [showConfetti, setShowConfetti] = useState(false)
   const [goal, setGoal]         = useState<GoalUpdatedEvent | null>(null)
   const isPlayingRef            = useRef(false)
-  const audioRef                = useRef<HTMLAudioElement | null>(null)
 
   const playNext = useCallback(() => {
     setQueue(q => {
@@ -99,11 +124,27 @@ export default function OverlayClient({ token }: { token: string }) {
 
   useEffect(() => {
     if (!current || !settings) return
+
+    // Card hides after alertDuration. TTS continues playing after card hides.
+    // playNext is only called once BOTH the timer has fired AND TTS has finished.
+    let ttsFinished = !settings.ttsEnabled || !current.message
+    let timerFired = false
+    let nextCalled = false
+
+    function onTtsDone() {
+      ttsFinished = true
+      if (timerFired && !nextCalled) {
+        nextCalled = true
+        setCurrent(null)
+        setShowConfetti(false)
+        // Keep isPlayingRef.current = true until inside the timeout so the
+        // queue effect cannot call playNext() in the gap before we do.
+        setTimeout(() => { isPlayingRef.current = false; playNext() }, 500)
+      }
+    }
+
     if (current.voiceMessageUrl) {
-      const audio = new Audio(current.voiceMessageUrl)
-      audio.volume = (settings.ttsVolume ?? 100) / 100
-      audioRef.current = audio
-      audio.play().catch(() => {})
+      ttsPlayer.play(current.voiceMessageUrl, (settings.ttsVolume ?? 100) / 100, onTtsDone)
     } else {
       const delay = (settings.ttsSoundDelay ?? 1) * 1000
       if (settings.enableCoinSound) {
@@ -142,9 +183,10 @@ export default function OverlayClient({ token }: { token: string }) {
         current.amount >= (settings.celebrityVoiceMinAmount ?? 1000)
       )
 
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+      const vol = (settings.ttsVolume ?? 100) / 100
+
       if (isCelebrityVoice && settings.ttsEnabled && current.message) {
-        // ElevenLabs celebrity voice
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
         setTimeout(async () => {
           try {
             const res = await fetch(`${backendUrl}/api/tts/celebrity`, {
@@ -154,35 +196,56 @@ export default function OverlayClient({ token }: { token: string }) {
             })
             if (res.ok) {
               const blob = await res.blob()
-              const url = URL.createObjectURL(blob)
-              const audio = new Audio(url)
-              audio.volume = (settings.ttsVolume ?? 100) / 100
-              audioRef.current = audio
-              audio.play().catch(() => {})
-            }
-          } catch { /* celebrity voice unavailable, skip */ }
+              ttsPlayer.play(URL.createObjectURL(blob), vol, onTtsDone)
+            } else onTtsDone()
+          } catch { onTtsDone() }
         }, delay)
-      } else if (settings.ttsEnabled && current.message && 'speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(ttsText)
-        const targetLang = settings.ttsVoice ?? 'en-IN'
-        u.lang = targetLang
-        u.volume = (settings.ttsVolume ?? 100) / 100
-        u.rate = settings.ttsRate ?? 1.0
-        u.pitch = settings.ttsPitch ?? 1.0
-        const voices = speechSynthesis.getVoices()
-        const exact = voices.find(v => v.lang === targetLang)
-        const prefix = voices.find(v => v.lang.startsWith(targetLang.split('-')[0] ?? ''))
-        if (exact) u.voice = exact
-        else if (prefix) u.voice = prefix
-        setTimeout(() => speechSynthesis.speak(u), delay)
+      } else if (settings.ttsEnabled && current.message) {
+        const voiceId = (settings as any).ttsVoiceId ?? 'hi-IN-Standard-A'
+        setTimeout(async () => {
+          try {
+            const res = await fetch(`${backendUrl}/api/tts/google`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: ttsText, voiceId, volume: settings.ttsVolume ?? 100 }),
+            })
+            if (res.ok) {
+              const blob = await res.blob()
+              ttsPlayer.play(URL.createObjectURL(blob), vol, onTtsDone)
+            } else if ('speechSynthesis' in window) {
+              const u = new SpeechSynthesisUtterance(ttsText)
+              u.lang = settings.ttsVoice ?? 'en-IN'
+              u.volume = vol
+              u.onend = () => onTtsDone()
+              u.onerror = () => onTtsDone()
+              window.speechSynthesis.speak(u)
+            } else onTtsDone()
+          } catch {
+            if ('speechSynthesis' in window) {
+              const u = new SpeechSynthesisUtterance(ttsText)
+              u.lang = settings.ttsVoice ?? 'en-IN'
+              u.volume = vol
+              u.onend = () => onTtsDone()
+              u.onerror = () => onTtsDone()
+              window.speechSynthesis.speak(u)
+            } else onTtsDone()
+          }
+        }, delay)
       }
     }
+
     const duration = (settings.alertDuration ?? 8) * 1000
     const timer = setTimeout(() => {
-      setCurrent(null); setShowConfetti(false); isPlayingRef.current = false
-      setTimeout(playNext, 500)
+      timerFired = true
+      if (ttsFinished && !nextCalled) {
+        nextCalled = true
+        setCurrent(null)
+        setShowConfetti(false)
+        setTimeout(() => { isPlayingRef.current = false; playNext() }, 500)
+      }
     }, duration)
-    return () => { clearTimeout(timer); speechSynthesis.cancel(); audioRef.current?.pause() }
+
+    return () => clearTimeout(timer)
   }, [current, settings, playNext])
 
   useEffect(() => {
@@ -269,23 +332,36 @@ export default function OverlayClient({ token }: { token: string }) {
         <Confetti active={showConfetti} />
         <AnimatePresence>
           {current && (
-            <motion.div key={current.id} {...anim} style={cardStyle}>
+            <motion.div key={current.id} {...anim} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              {/* Alert image / GIF */}
+              {(settings as any).alertImageEnabled && (settings as any).alertImageUrl && (
+                <img src={(settings as any).alertImageUrl} alt="" style={{ width: (settings as any).alertImageSize ?? 200, height: (settings as any).alertImageSize ?? 200, objectFit: 'contain', borderRadius: 12, pointerEvents: 'none' }} />
+              )}
+              {/* Viewer stickers */}
+              {(current as any).stickerUrls?.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {(current as any).stickerUrls.map((url: string, i: number) => (
+                    <img key={i} src={url} alt="" style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, pointerEvents: 'none' }} />
+                  ))}
+                </div>
+              )}
+              <div style={{ width: '100%', ...cardStyle }}>
 
               {settings.template === 'superchat' && (
-                <div style={{ borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, backgroundColor: `${tc}18` }}>
-                    <span style={{ fontSize: 28 }}>{emoji}</span>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontWeight: 700, color: tc, fontSize: settings.fontSize ?? 18, margin: 0 }}>{current.donorName}</p>
+                <div style={{ borderRadius: 16 }}>
+                  <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, backgroundColor: `${tc}18`, borderRadius: filteredMessage ? '16px 16px 0 0' : 16 }}>
+                    <span style={{ fontSize: 28, flexShrink: 0 }}>{emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, color: tc, fontSize: settings.fontSize ?? 18, margin: 0, wordBreak: 'break-word' }}>{current.donorName}</p>
                       <p style={{ color: tc, opacity: 0.7, fontSize: Math.max((settings.fontSize ?? 18) - 5, 11), margin: 0 }}>donated ₹{current.amount}</p>
                     </div>
-                    <div style={{ padding: '6px 14px', borderRadius: 20, fontSize: Math.max((settings.fontSize ?? 18) - 5, 11), fontWeight: 700, color: bg, backgroundColor: tc, flexShrink: 0 }}>
+                    <div style={{ padding: '6px 14px', borderRadius: 20, fontSize: Math.max((settings.fontSize ?? 18) - 5, 11), fontWeight: 700, color: bg === 'transparent' ? '#0a0a0f' : bg, backgroundColor: tc, flexShrink: 0 }}>
                       ₹{current.amount}
                     </div>
                   </div>
                   {filteredMessage && (
-                    <div style={{ padding: '12px 20px', backgroundColor: `${tc}0d` }}>
-                      <p style={{ color: tc, margin: 0, fontSize: Math.max((settings.fontSize ?? 18) - 3, 12) }}>&quot;{filteredMessage}&quot;</p>
+                    <div style={{ padding: '12px 20px', backgroundColor: `${tc}0d`, borderRadius: '0 0 16px 16px' }}>
+                      <p style={{ color: tc, margin: 0, fontSize: Math.max((settings.fontSize ?? 18) - 3, 12), wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>&quot;{filteredMessage}&quot;</p>
                     </div>
                   )}
                 </div>
@@ -294,23 +370,24 @@ export default function OverlayClient({ token }: { token: string }) {
               {settings.template === 'colorful' && (
                 <div style={{ borderRadius: 16, padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: filteredMessage ? 10 : 0 }}>
-                    <span style={{ fontSize: 36 }}>{emoji}</span>
-                    <div>
-                      <p style={{ fontWeight: 700, color: tc, fontSize: settings.fontSize ?? 20, margin: 0 }}>{current.donorName}</p>
+                    <span style={{ fontSize: 36, flexShrink: 0 }}>{emoji}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, color: tc, fontSize: settings.fontSize ?? 20, margin: 0, wordBreak: 'break-word' }}>{current.donorName}</p>
                       <p style={{ color: tc, opacity: 0.8, fontWeight: 700, fontSize: Math.max((settings.fontSize ?? 20) - 2, 13), margin: 0 }}>donated ₹{current.amount}!</p>
                     </div>
                   </div>
-                  {filteredMessage && <p style={{ color: tc, opacity: 0.85, fontStyle: 'italic', margin: 0, fontSize: Math.max((settings.fontSize ?? 20) - 4, 13) }}>&quot;{filteredMessage}&quot;</p>}
+                  {filteredMessage && <p style={{ color: tc, opacity: 0.85, fontStyle: 'italic', margin: 0, fontSize: Math.max((settings.fontSize ?? 20) - 4, 13), wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>&quot;{filteredMessage}&quot;</p>}
                 </div>
               )}
 
               {settings.template === 'custom' && (
                 <div style={{ borderRadius: 16, padding: 20 }}>
-                  <p style={{ fontWeight: 700, fontSize: settings.fontSize ?? 20, margin: 0, color: tc }}>{emoji} {current.donorName} donated ₹{current.amount}</p>
-                  {filteredMessage && <p style={{ marginTop: 8, opacity: 0.8, margin: '8px 0 0', color: tc }}>&quot;{filteredMessage}&quot;</p>}
+                  <p style={{ fontWeight: 700, fontSize: settings.fontSize ?? 20, margin: 0, color: tc, wordBreak: 'break-word' }}>{emoji} {current.donorName} donated ₹{current.amount}</p>
+                  {filteredMessage && <p style={{ marginTop: 8, opacity: 0.8, margin: '8px 0 0', color: tc, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>&quot;{filteredMessage}&quot;</p>}
                 </div>
               )}
 
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

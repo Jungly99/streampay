@@ -1,0 +1,4 @@
+ALTER TABLE "alert_settings"
+  ADD COLUMN IF NOT EXISTS "alert_image_enabled" BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "alert_image_url" TEXT,
+  ADD COLUMN IF NOT EXISTS "alert_image_size" INTEGER NOT NULL DEFAULT 200;

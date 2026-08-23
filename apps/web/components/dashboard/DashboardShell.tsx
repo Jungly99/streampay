@@ -2,16 +2,18 @@
 import { useState } from 'react'
 import Sidebar from './Sidebar'
 import VerificationGate from './VerificationGate'
+import SupportWidget from './SupportWidget'
 import { useTheme } from '../../lib/theme'
 
 interface Props {
   channelName: string; email: string; username: string
-  overlayToken: string; todayEarnings: number; followers: number
+  overlayToken: string; avatarUrl: string | null; todayEarnings: number; followers: number
   isPremium: boolean; isVerified: boolean; verificationRequestedAt: string | null
+  platformFeePct?: number
   children: React.ReactNode
 }
 
-export default function DashboardShell({ channelName, email, username, overlayToken, todayEarnings, followers, isPremium, isVerified, verificationRequestedAt, children }: Props) {
+export default function DashboardShell({ channelName, email, username, overlayToken, avatarUrl, todayEarnings, followers, isPremium, isVerified, verificationRequestedAt, platformFeePct, children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { isDark } = useTheme()
 
@@ -27,7 +29,7 @@ export default function DashboardShell({ channelName, email, username, overlayTo
 
       {/* Desktop sidebar */}
       <div className="desktop-sidebar" style={{ flexShrink: 0 }}>
-        <Sidebar channelName={channelName} email={email} username={username} overlayToken={overlayToken} todayEarnings={todayEarnings} followers={followers} isPremium={isPremium} />
+        <Sidebar channelName={channelName} email={email} username={username} overlayToken={overlayToken} avatarUrl={avatarUrl} todayEarnings={todayEarnings} followers={followers} isPremium={isPremium} platformFeePct={platformFeePct} />
       </div>
 
       {/* Mobile sidebar drawer */}
@@ -35,13 +37,30 @@ export default function DashboardShell({ channelName, email, username, overlayTo
         <div className="sidebar-drawer">
           <div className="sidebar-drawer-backdrop" onClick={() => setSidebarOpen(false)} />
           <div className="sidebar-drawer-panel">
-            <Sidebar channelName={channelName} email={email} username={username} overlayToken={overlayToken} todayEarnings={todayEarnings} followers={followers} isPremium={isPremium} onClose={() => setSidebarOpen(false)} />
+            <Sidebar channelName={channelName} email={email} username={username} overlayToken={overlayToken} avatarUrl={avatarUrl} todayEarnings={todayEarnings} followers={followers} isPremium={isPremium} platformFeePct={platformFeePct} onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Main */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+
+        {/* Desktop top bar — logo centered, always visible */}
+        <div className="desktop-topbar" style={{
+          flexShrink: 0, height: 96,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: topbarBg, backdropFilter: 'blur(16px)',
+          borderBottom: `1px solid ${topbarBorder}`,
+          position: 'relative',
+        }}>
+          <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="/logo.png" alt="EzTips" style={{
+              height: 80, width: 'auto', borderRadius: 16,
+              filter: 'drop-shadow(0 0 24px rgba(124,58,237,0.65)) drop-shadow(0 0 10px rgba(219,39,119,0.4))',
+              cursor: 'pointer',
+            }} />
+          </a>
+        </div>
 
         {/* Mobile top bar */}
         <div className="mobile-topbar" style={{ background: topbarBg, backdropFilter: 'blur(12px)', borderBottom: `1px solid ${topbarBorder}` }}>
@@ -50,9 +69,8 @@ export default function DashboardShell({ channelName, email, username, overlayTo
             style={{ width: 36, height: 36, borderRadius: 9, border: `1px solid ${hamBtnBorder}`, background: hamBtnBg, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: textPrimary }}>
             ☰
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: 'white' }}>ez</div>
-            <span style={{ fontWeight: 800, fontSize: 14, color: textPrimary, letterSpacing: '-0.3px' }}>eztips</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="EzTips" style={{ height: 36, width: 'auto', borderRadius: 8 }} />
           </div>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 13, color: isDark ? '#64748b' : '#7c78b8', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>{channelName}</span>
@@ -64,6 +82,8 @@ export default function DashboardShell({ channelName, email, username, overlayTo
           {children}
         </div>
       </main>
+
+      <SupportWidget />
     </div>
   )
 }

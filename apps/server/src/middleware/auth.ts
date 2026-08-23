@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { verifyToken, verifyAdminToken, JwtPayload, AdminJwtPayload, AdminPermissions } from '../utils/jwt'
+import { prisma } from '../db/prisma'
 
 export interface AuthRequest extends Request {
   user?: JwtPayload
@@ -43,14 +44,21 @@ export function requireViewer(req: AuthRequest, res: Response, next: NextFunctio
   })
 }
 
-export function requireAdmin(req: AdminRequest, res: Response, next: NextFunction): void {
+export async function requireAdmin(req: AdminRequest, res: Response, next: NextFunction): Promise<void> {
   const token = req.cookies?.eztips_admin_token
-  if (!token) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
+  if (!token) { res.status(401).json({ error: 'Unauthorized' }); return }
   try {
-    req.admin = verifyAdminToken(token)
+    const decoded = verifyAdminToken(token)
+    // Always re-fetch permissions from DB so role changes take effect immediately
+    if (!decoded.isSuperAdmin) {
+      const row = await prisma.adminUser.findUnique({
+        where: { id: decoded.adminId! },
+        include: { role: true },
+      })
+      if (!row) { res.status(401).json({ error: 'Admin not found' }); return }
+      decoded.permissions = (row.role?.permissions ?? {}) as unknown as AdminPermissions
+    }
+    req.admin = decoded
     next()
   } catch {
     res.status(401).json({ error: 'Invalid admin token' })

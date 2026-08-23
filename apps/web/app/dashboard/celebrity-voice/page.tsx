@@ -44,7 +44,7 @@ export default async function CelebrityVoicePage() {
           </p>
           <div style={{ padding: '16px 20px', borderRadius: 14, background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', marginBottom: 24, textAlign: 'left' }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa', margin: '0 0 10px' }}>What you get with Premium</p>
-            {['AI celebrity voices for donation alerts','20% platform fee tier (vs 5% standard)','Modi, Trump, Morgan Freeman & more','Custom ElevenLabs voice support'].map(f => (
+            {['AI celebrity voices for donation alerts','20% platform fee tier (vs 7% standard)','Modi, Trump, Morgan Freeman & more','Custom ElevenLabs voice support'].map(f => (
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ fontSize: 9, color: '#f59e0b', fontWeight: 700 }}>✓</span>

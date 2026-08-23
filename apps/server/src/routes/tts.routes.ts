@@ -58,4 +58,55 @@ router.post('/celebrity', async (req: Request, res: Response): Promise<void> => 
   pump().catch(() => res.end())
 })
 
+// Google Cloud TTS — 48 Indian voices
+router.post('/google', async (req: Request, res: Response): Promise<void> => {
+  const schema = z.object({
+    text: z.string().min(1).max(500),
+    voiceId: z.string().min(1).max(50),
+    volume: z.number().min(0).max(100).default(100),
+  })
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) { res.status(400).json({ error: 'Invalid input' }); return }
+
+  if (!env.GOOGLE_TTS_API_KEY) {
+    res.status(503).json({ error: 'Google TTS not configured' })
+    return
+  }
+
+  const { text, voiceId, volume } = parsed.data
+  // Extract language code: hi-IN-Standard-A → hi-IN
+  const parts = voiceId.split('-')
+  const languageCode = `${parts[0]}-${parts[1]}`
+
+  const upstream = await fetch(
+    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${env.GOOGLE_TTS_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: { text },
+        voice: { languageCode, name: voiceId },
+        audioConfig: {
+          audioEncoding: 'MP3',
+          volumeGainDb: volume < 40 ? -6 : volume > 85 ? 3 : 0,
+        },
+      }),
+    }
+  )
+
+  if (!upstream.ok) {
+    const err = await upstream.text().catch(() => 'Unknown error')
+    console.error('Google TTS error:', upstream.status, err)
+    res.status(502).json({ error: 'TTS generation failed' })
+    return
+  }
+
+  const data = await upstream.json() as { audioContent: string }
+  const audio = Buffer.from(data.audioContent, 'base64')
+  res.set('Content-Type', 'audio/mpeg')
+  res.set('Content-Length', String(audio.length))
+  res.set('Cache-Control', 'public, max-age=300')
+  res.send(audio)
+})
+
 export default router

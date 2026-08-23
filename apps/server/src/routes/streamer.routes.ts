@@ -25,7 +25,7 @@ router.get('/profile', async (req: AuthRequest, res: Response): Promise<void> =>
 
 router.patch('/profile', async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
-    channelName: z.string().min(1).max(100).optional(),
+    channelName: z.string().min(1).max(100).refine(v => !/https?:\/\/|www\.|\.com|\.in|\.net|\.org/i.test(v), { message: 'Channel name cannot contain a link' }).optional(),
     channelLink: z.string().url().optional().or(z.literal('')),
     bio: z.string().max(500).optional(),
     avatarUrl: z.string().optional().or(z.literal('')),
@@ -39,6 +39,7 @@ router.patch('/profile', async (req: AuthRequest, res: Response): Promise<void> 
     discordWebhookUrl: z.string().url().optional().or(z.literal('')),
     minDonationAmount: z.number().int().min(1).max(10000).optional(),
     messageMaxLength: z.number().int().min(10).max(500).optional(),
+    streamEmbedEnabled: z.boolean().optional(),
   })
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) {
@@ -88,6 +89,29 @@ router.post('/request-verification', async (req: AuthRequest, res: Response): Pr
     where: { userId: req.user!.userId },
     data: { verificationRequestedAt: new Date() },
   })
+
+  // Fire Discord webhook for verification request (fire-and-forget)
+  prisma.platformConfig.findUnique({ where: { key: 'verification_discord_webhook' } }).then(cfg => {
+    if (!cfg?.value) return
+    fetch(cfg.value, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: '✅ New Verification Request',
+          description: `**Channel:** ${profile.channelName ?? 'Unknown'}\n**Username:** ${profile.username ?? 'not set'}\n**Bank:** ${bank?.bankName ?? 'N/A'} — ${bank?.accountHolderName ?? 'N/A'}`,
+          color: 0x10b981,
+          fields: [
+            { name: 'Streamer', value: profile.channelName ?? profile.id, inline: true },
+            { name: 'Profile ID', value: profile.id.slice(0, 8), inline: true },
+          ],
+          footer: { text: 'EzTips Admin · eztips.live/admin' },
+          timestamp: new Date().toISOString(),
+        }],
+      }),
+    }).catch(() => {})
+  }).catch(() => {})
+
   res.json({ verificationRequestedAt: updated.verificationRequestedAt })
 })
 
@@ -96,16 +120,21 @@ router.post('/profile/username', async (req: AuthRequest, res: Response): Promis
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) { res.status(400).json({ error: 'Username must be 3-30 alphanumeric characters' }); return }
 
+  const username = parsed.data.username.toLowerCase()
+
   const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
   if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
   if (profile.username) { res.status(409).json({ error: 'Username already set — it cannot be changed' }); return }
 
-  const taken = await prisma.streamerProfile.findUnique({ where: { username: parsed.data.username } })
-  if (taken) { res.status(409).json({ error: 'Username already taken' }); return }
+  // Case-insensitive uniqueness check
+  const taken = await prisma.streamerProfile.findFirst({
+    where: { username: { equals: username, mode: 'insensitive' } },
+  })
+  if (taken) { res.status(409).json({ error: `Username "${username}" is already taken — please choose a different one` }); return }
 
   const updated = await prisma.streamerProfile.update({
     where: { userId: req.user!.userId },
-    data: { username: parsed.data.username },
+    data: { username },
   })
   res.json(updated)
 })
@@ -124,6 +153,7 @@ router.patch('/bank', async (req: AuthRequest, res: Response): Promise<void> => 
     accountNumber: z.string().optional(),
     ifscCode: z.string().optional(),
     bankName: z.string().optional(),
+    upiId: z.string().optional(),
     invoiceName: z.string().optional(),
     streetAddress: z.string().optional(),
     city: z.string().optional(),
@@ -391,25 +421,31 @@ router.post('/test-alert', async (req: AuthRequest, res: Response): Promise<void
   const testMessages = ['Keep streaming! 🔥', 'Love the content!', 'GGs only!', 'POG! 👑', 'Amazing stream!']
   const idx = Math.floor(Math.random() * testAmounts.length)
 
+  const customMessage = typeof req.body?.message === 'string' ? req.body.message : testMessages[idx]
+  const customName = typeof req.body?.donorName === 'string' ? req.body.donorName : testNames[idx]
+  const customAmount = typeof req.body?.amount === 'number' ? req.body.amount : testAmounts[idx]
+
   emitToDonationOverlay(profile.overlayToken, 'new-donation', {
     donationId: `test_${Date.now()}`,
-    donorName: testNames[idx],
-    message: testMessages[idx],
-    amount: testAmounts[idx],
+    donorName: customName,
+    message: customMessage,
+    amount: customAmount,
     voiceMessageUrl: null,
     streamerUsername: profile.username,
   })
 
-  res.json({ success: true, amount: testAmounts[idx], name: testNames[idx] })
+  res.json({ success: true, amount: customAmount, name: customName, message: customMessage })
 })
 
 // ── TIP SETTINGS ───────────────────────────────────────────────────────────
 router.get('/tip-settings', async (req: AuthRequest, res: Response): Promise<void> => {
   const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
   if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
+  const raw = (profile as any).customEmojis ?? ''
   res.json({
     minDonationAmount: profile.minDonationAmount,
     messageTiers: (profile as any).messageTiers ?? [],
+    customEmojis: raw ? raw.split('|||').filter(Boolean) : [],
   })
 })
 
@@ -418,18 +454,19 @@ router.patch('/tip-settings', async (req: AuthRequest, res: Response): Promise<v
   const schema = z.object({
     minDonationAmount: z.number().int().min(1).max(10000),
     messageTiers: z.array(tierSchema).max(20),
+    // each item is either a data URL (uploaded image) — no length cap here, validated by total size
+    customEmojis: z.array(z.string().max(300000)).max(5).optional(),
   })
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) {
     const first = Object.values(parsed.error.flatten().fieldErrors).flat()[0] ?? 'Validation failed'
     res.status(400).json({ error: first }); return
   }
-  const { minDonationAmount, messageTiers } = parsed.data
-  await prisma.streamerProfile.update({
-    where: { userId: req.user!.userId },
-    data: { minDonationAmount, messageTiers: messageTiers as any },
-  })
-  res.json({ minDonationAmount, messageTiers })
+  const { minDonationAmount, messageTiers, customEmojis } = parsed.data
+  const data: any = { minDonationAmount, messageTiers: messageTiers as any }
+  if (customEmojis !== undefined) data.customEmojis = customEmojis.join('|||')
+  await prisma.streamerProfile.update({ where: { userId: req.user!.userId }, data })
+  res.json({ minDonationAmount, messageTiers, customEmojis: customEmojis ?? [] })
 })
 
 // ── ANALYTICS ──────────────────────────────────────────────────────────────
@@ -498,6 +535,36 @@ router.get('/analytics', async (req: AuthRequest, res: Response): Promise<void> 
     },
     recentDonations: donations.slice(-10).reverse().map(d => ({ amount: d.amount, name: d.donorName, paidAt: d.paidAt })),
   })
+})
+
+router.post('/test-discord', requireStreamer, async (req: AuthRequest, res: Response): Promise<void> => {
+  const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
+  if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
+  if (!profile.discordWebhookUrl) { res.status(400).json({ error: 'No Discord webhook URL saved' }); return }
+
+  try {
+    const resp = await fetch(profile.discordWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: '🧪 Test — EzTips Discord Alert',
+          description: `**TestUser** donated **₹500**\n"This is a test donation alert from EzTips!"`,
+          color: 0x8b5cf6,
+          footer: { text: 'EzTips · eztips.live' },
+          timestamp: new Date().toISOString(),
+        }],
+      }),
+    })
+    if (resp.ok || resp.status === 204) {
+      res.json({ ok: true })
+    } else {
+      const text = await resp.text()
+      res.status(400).json({ error: `Discord returned ${resp.status}: ${text}` })
+    }
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Failed to reach Discord' })
+  }
 })
 
 export default router

@@ -7,14 +7,18 @@ const C: React.CSSProperties = { background: 'var(--surface)', border: '1px soli
 
 export default function LifetimeSettlementsPage() {
   const [data, setData] = useState<any>(null)
+  const [feePct, setFeePct] = useState(7)
 
   useEffect(() => {
     api.get('/api/settlements/lifetime').then(setData).catch(() => {})
+    api.get<{ platformFeePct?: number }>('/api/streamer/profile').then(p => {
+      if (p?.platformFeePct != null) setFeePct(Number(p.platformFeePct))
+    }).catch(() => {})
   }, [])
 
   const statItems = [
     { label: 'Total Settled',    value: formatINR(data?.totalSettledGross ?? 0),  color: '#10b981', sub: 'gross earnings' },
-    { label: 'Net Received',     value: formatINR(data?.totalNetReceived ?? 0),    color: '#60a5fa', sub: 'after 5% fee' },
+    { label: 'Net Received',     value: formatINR(data?.totalNetReceived ?? 0),    color: '#60a5fa', sub: 'after platform fee' },
     { label: 'Fees Paid',        value: formatINR(data?.totalFees ?? 0),           color: '#f87171', sub: 'platform fee total' },
     { label: 'Settlements',      value: data?.numberOfSettlements ?? 0,            color: '#a78bfa', sub: 'total withdrawals' },
   ]
@@ -82,8 +86,8 @@ export default function LifetimeSettlementsPage() {
         <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 14 }}>How Settlements Work</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
-            ['Net Received', 'Amount credited to your bank after deducting the 5% platform fee'],
-            ['Fees Paid', 'eztips charges 5% only at settlement — never per donation'],
+            ['Net Received', `Amount credited to your bank after deducting the ${feePct}% platform fee`],
+            ['Fees Paid', `eztips charges ${feePct}% only at settlement — never per donation`],
             ['No Minimum', 'You can settle any amount, any time. No ₹500 minimums.'],
           ].map(([title, desc]) => (
             <div key={title as string} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>

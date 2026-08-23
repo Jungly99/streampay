@@ -13,6 +13,8 @@ export interface AdminPermissions {
   donations: boolean
   settlements: boolean
   restore_accounts: boolean
+  tickets: boolean
+  support: boolean
 }
 
 export interface AdminJwtPayload {

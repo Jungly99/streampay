@@ -41,8 +41,8 @@ const divider: React.CSSProperties = { height:1, background:'var(--surface-input
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button onClick={() => onChange(!on)} style={{ width:42, height:23, borderRadius:12, border:'none', cursor:'pointer', position:'relative', flexShrink:0, background: on ? 'linear-gradient(90deg,#7c3aed,#ec4899)' : 'rgba(255,255,255,0.1)', transition:'background 0.2s' }}>
-      <span style={{ position:'absolute', top:2, left:2, width:19, height:19, borderRadius:'50%', background:'white', transition:'transform 0.2s', transform: on ? 'translateX(19px)' : 'none', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }} />
+    <button onClick={() => onChange(!on)} style={{ width:42, height:23, borderRadius:12, border:'1px solid var(--border)', cursor:'pointer', position:'relative', flexShrink:0, background: on ? 'linear-gradient(90deg,#7c3aed,#ec4899)' : 'var(--surface-input)', transition:'background 0.2s' }}>
+      <span style={{ position:'absolute', top:2, left:2, width:17, height:17, borderRadius:'50%', background: on ? 'white' : 'var(--text-3)', transition:'transform 0.2s', transform: on ? 'translateX(19px)' : 'none', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }} />
     </button>
   )
 }
@@ -50,19 +50,20 @@ function Row({ label: l, tip, children }: { label: string; tip?: string; childre
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
       <div style={{ flex:1, minWidth:0 }}>
-        <p style={{ fontSize:13, fontWeight:500, color:'#cbd5e1', margin:0 }}>{l}</p>
-        {tip && <p style={{ fontSize:11, color:'#475569', margin:'2px 0 0' }}>{tip}</p>}
+        <p style={{ fontSize:13, fontWeight:500, color:'var(--text-1)', margin:0 }}>{l}</p>
+        {tip && <p style={{ fontSize:11, color:'var(--text-3)', margin:'2px 0 0' }}>{tip}</p>}
       </div>
       {children}
     </div>
   )
 }
-function Slider({ label: l, value, min, max, step=1, unit, onChange }: { label:string; value:number; min:number; max:number; step?:number; unit?:string; onChange:(v:number)=>void }) {
+function Slider({ label: l, value, min, max, step=1, unit, format, onChange }: { label:string; value:number; min:number; max:number; step?:number; unit?:string; format?:(v:number)=>string; onChange:(v:number)=>void }) {
+  const display = format ? format(value) : `${value}${unit ?? ''}`
   return (
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
         <span style={lbl}>{l}</span>
-        <span style={{ fontSize:12, color:'#7c3aed', fontWeight:700 }}>{value}{unit}</span>
+        <span style={{ fontSize:12, color:'#7c3aed', fontWeight:700 }}>{display}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} style={{ width:'100%', accentColor:'#7c3aed' }} />
     </div>
@@ -71,6 +72,134 @@ function Slider({ label: l, value, min, max, step=1, unit, onChange }: { label:s
 function InfoBox({ children }: { children: React.ReactNode }) {
   return <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.15)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'var(--text-2)', lineHeight:1.6 }}>{children}</div>
 }
+const TTS_VOICE_GROUPS = [
+  { group:'🇮🇳 Hindi', voices:[
+    ['hi-IN-Wavenet-A','Hindi – Female A ✨'],['hi-IN-Wavenet-B','Hindi – Male B ✨'],
+    ['hi-IN-Wavenet-C','Hindi – Male C ✨'],['hi-IN-Wavenet-D','Hindi – Female D ✨'],
+    ['hi-IN-Standard-A','Hindi – Female A'],['hi-IN-Standard-B','Hindi – Male B'],
+    ['hi-IN-Standard-C','Hindi – Male C'],['hi-IN-Standard-D','Hindi – Female D'],
+  ]},
+  { group:'🇮🇳 English (India)', voices:[
+    ['en-IN-Wavenet-A','English – Female A ✨'],['en-IN-Wavenet-B','English – Male B ✨'],
+    ['en-IN-Wavenet-C','English – Male C ✨'],['en-IN-Wavenet-D','English – Female D ✨'],
+    ['en-IN-Standard-A','English – Female A'],['en-IN-Standard-B','English – Male B'],
+    ['en-IN-Standard-C','English – Male C'],['en-IN-Standard-D','English – Female D'],
+  ]},
+  { group:'🎵 Bengali', voices:[
+    ['bn-IN-Wavenet-A','Bengali – Female ✨'],['bn-IN-Wavenet-B','Bengali – Male ✨'],
+    ['bn-IN-Standard-A','Bengali – Female'],['bn-IN-Standard-B','Bengali – Male'],
+  ]},
+  { group:'🎵 Gujarati', voices:[
+    ['gu-IN-Wavenet-A','Gujarati – Female ✨'],['gu-IN-Wavenet-B','Gujarati – Male ✨'],
+    ['gu-IN-Standard-A','Gujarati – Female'],['gu-IN-Standard-B','Gujarati – Male'],
+  ]},
+  { group:'🎵 Kannada', voices:[
+    ['kn-IN-Wavenet-A','Kannada – Female ✨'],['kn-IN-Wavenet-B','Kannada – Male ✨'],
+    ['kn-IN-Standard-A','Kannada – Female'],['kn-IN-Standard-B','Kannada – Male'],
+  ]},
+  { group:'🎵 Malayalam', voices:[
+    ['ml-IN-Wavenet-A','Malayalam – Female ✨'],['ml-IN-Wavenet-B','Malayalam – Male ✨'],
+    ['ml-IN-Standard-A','Malayalam – Female'],['ml-IN-Standard-B','Malayalam – Male'],
+  ]},
+  { group:'🎵 Marathi', voices:[
+    ['mr-IN-Wavenet-A','Marathi – Female ✨'],['mr-IN-Wavenet-B','Marathi – Male ✨'],
+    ['mr-IN-Standard-A','Marathi – Female'],['mr-IN-Standard-B','Marathi – Male'],
+  ]},
+  { group:'🎵 Punjabi', voices:[
+    ['pa-IN-Wavenet-A','Punjabi – Female ✨'],['pa-IN-Wavenet-B','Punjabi – Male ✨'],
+    ['pa-IN-Standard-A','Punjabi – Female'],['pa-IN-Standard-B','Punjabi – Male'],
+  ]},
+  { group:'🎵 Tamil', voices:[
+    ['ta-IN-Wavenet-A','Tamil – Female ✨'],['ta-IN-Wavenet-B','Tamil – Male ✨'],
+    ['ta-IN-Standard-A','Tamil – Female'],['ta-IN-Standard-B','Tamil – Male'],
+  ]},
+  { group:'🎵 Telugu', voices:[
+    ['te-IN-Wavenet-A','Telugu – Female ✨'],['te-IN-Wavenet-B','Telugu – Male ✨'],
+    ['te-IN-Standard-A','Telugu – Female'],['te-IN-Standard-B','Telugu – Male'],
+  ]},
+]
+
+function VoiceSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [dropRect, setDropRect] = useState<DOMRect | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  const label = TTS_VOICE_GROUPS.flatMap(g => g.voices).find(([id]) => id === value)?.[1] ?? value
+
+  const handleOpen = () => {
+    if (btnRef.current) setDropRect(btnRef.current.getBoundingClientRect())
+    setOpen(o => !o)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (listRef.current?.contains(e.target as Node)) return
+      if (btnRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const onScroll = (e: Event) => {
+      if (listRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown, true)
+    window.addEventListener('scroll', onScroll, true)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown, true)
+      window.removeEventListener('scroll', onScroll, true)
+    }
+  }, [open])
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button ref={btnRef} type="button" onClick={handleOpen}
+        style={{ ...inp, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', border:'1px solid var(--border)', userSelect:'none' as any }}>
+        <span style={{ color:'var(--text-1)', fontSize:13 }}>{label}</span>
+        <span style={{ fontSize:10, color:'var(--text-3)', marginLeft:8, flexShrink:0 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && dropRect && (
+        <div ref={listRef} style={{
+          position:'fixed', top: dropRect.bottom + 4, left: dropRect.left, width: dropRect.width,
+          zIndex:9999, background:'var(--dropdown-bg)', border:'1px solid var(--border-2)',
+          borderRadius:10, overflowY:'auto',
+          maxHeight: Math.min(340, Math.max(150, window.innerHeight - dropRect.bottom - 8)),
+          boxShadow:'0 16px 48px rgba(0,0,0,0.6)',
+        }}>
+          {TTS_VOICE_GROUPS.map(g => (
+            <div key={g.group}>
+              <div style={{ padding:'7px 12px 4px', fontSize:10, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'0.08em', borderBottom:'1px solid var(--border)', background:'var(--surface-2)' }}>{g.group}</div>
+              {g.voices.map(([id, lbl]) => {
+                if (!id) return null
+                const isWave = id.toLowerCase().includes('wavenet')
+                const active = id === value
+                return (
+                  <button key={id} type="button" onClick={() => { onChange(id); setOpen(false) }}
+                    style={{
+                      display:'flex', alignItems:'center', justifyContent:'space-between',
+                      width:'100%', textAlign:'left', padding:'8px 12px', fontSize:12,
+                      background: active ? 'rgba(124,58,237,0.2)' : 'var(--dropdown-bg)',
+                      color: active ? '#a78bfa' : 'var(--text-1)',
+                      border:'none', borderBottom:'1px solid var(--border)', cursor:'pointer', gap:8,
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = active ? 'rgba(124,58,237,0.28)' : 'var(--dropdown-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = active ? 'rgba(124,58,237,0.2)' : 'var(--dropdown-bg)')}>
+                    <span>{lbl}</span>
+                    <span style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+                      {isWave && <span style={{ fontSize:9, fontWeight:700, color:'#10b981', background:'rgba(16,185,129,0.12)', padding:'1px 5px', borderRadius:4 }}>WaveNet</span>}
+                      {active && <span style={{ color:'#a78bfa', fontSize:12 }}>✓</span>}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Select({ value, onChange, options }: { value:string; onChange:(v:string)=>void; options:{value:string;label:string}[] }) {
   const [open, setOpen] = useState(false)
   const [dropRect, setDropRect] = useState<DOMRect | null>(null)
@@ -121,24 +250,24 @@ function Select({ value, onChange, options }: { value:string; onChange:(v:string
             left: dropRect.left,
             width: dropRect.width,
             zIndex:9999,
-            background:'var(--surface-2)',
-            border:'1px solid rgba(255,255,255,0.12)',
+            background:'var(--dropdown-bg)',
+            border:'1px solid var(--border-2)',
             borderRadius:10,
             overflowY:'auto',
             maxHeight: Math.min(320, Math.max(120, window.innerHeight - dropRect.bottom - 8)),
-            boxShadow:'0 12px 40px rgba(0,0,0,0.8)',
+            boxShadow:'0 16px 48px rgba(0,0,0,0.5)',
           }}>
             {options.map(o=>(
               <button key={o.value} type="button" onClick={()=>{ onChange(o.value); setOpen(false) }}
                 style={{
                   display:'block', width:'100%', textAlign:'left', padding:'9px 13px', fontSize:13,
                   fontFamily: !['Arial','Verdana','Georgia','Trebuchet MS','Courier New','Impact','Comic Sans MS'].includes(o.value) ? `'${o.value}',sans-serif` : undefined,
-                  background: o.value===value ? 'rgba(124,58,237,0.18)' : 'transparent',
-                  color: o.value===value ? '#a78bfa' : '#e2e8f0',
-                  border:'none', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer',
+                  background: o.value===value ? 'rgba(124,58,237,0.18)' : 'var(--dropdown-bg)',
+                  color: o.value===value ? '#a78bfa' : 'var(--text-1)',
+                  border:'none', borderBottom:'1px solid var(--border)', cursor:'pointer',
                 }}
-                onMouseEnter={e=>(e.currentTarget.style.background='var(--surface-2)')}
-                onMouseLeave={e=>(e.currentTarget.style.background=o.value===value?'rgba(124,58,237,0.18)':'transparent')}
+                onMouseEnter={e=>(e.currentTarget.style.background=o.value===value?'rgba(124,58,237,0.25)':'var(--dropdown-hover)')}
+                onMouseLeave={e=>(e.currentTarget.style.background=o.value===value?'rgba(124,58,237,0.18)':'var(--dropdown-bg)')}
               >{o.label}</button>
             ))}
           </div>
@@ -156,16 +285,19 @@ export default function OverlayPage() {
     animationStyle:'slideDown', enableBorder:false, alertDuration:8,
     enableShadow:false, shadowBlur:20, shadowColor:'#ffffff', shadowOpacity:30, shadowOffsetX:0, shadowOffsetY:8,
     enableGradientBg:false,
-    ttsEnabled:true, ttsVolume:100, ttsVoice:'en-IN', ttsRate:1.0, ttsPitch:1.0,
-    enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1, alertSoundType:'coin', customAlertSoundUrl:'',
+    ttsEnabled:true, ttsVolume:100, ttsVoice:'en-IN', ttsVoiceId:'hi-IN-Standard-A', ttsRate:1.0, ttsPitch:1.0,
+    enableCoinSound:true, coinSoundVolume:50, ttsSoundDelay:1, alertSoundType:'coin', customAlertSoundUrl:'', alertImageEnabled:false, alertImageUrl:null, alertImageSize:200,
     minAlertAmount:0, minTtsAmount:0,
     goalBarColor:'#7c3aed', goalBarOpacity:100, enableGoalCelebration:true,
     goalLayout:'standard', goalFontSize:16, goalFontFamily:'Arial',
     goalTextColor:'#ffffff', goalBarTextColor:'#ffffff', goalSecondColor:'#ec4899',
-    goalEnableTextShadow:true, goalEnableBg:true, goalBgColor:'#000000', goalBgOpacity:78, goalBarHeight:18,
+    goalEnableTextShadow:true, goalEnableBg:true, goalBgColor:'#000000', goalBgOpacity:78, goalBarHeight:18, goalWidth:500, goalHeight:0,
+    goalShowPercent:true,
     enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
     enableProfanityFilter:true, customBlocklist:'',
   })
+  const [bgTransparent, setBgTransparent] = useState(false)
+  const [ttsVoiceId, setTtsVoiceId] = useState('hi-IN-Standard-A')
   const [goal, setGoal] = useState<any>({ title:'', targetAmount:1000, isActive:false, currentAmount:0 })
   const [manualAdd, setManualAdd] = useState('')
   const [customSoundBase64, setCustomSoundBase64] = useState('')
@@ -188,6 +320,8 @@ export default function OverlayPage() {
   const [lbBold, setLbBold] = useState({ top: true, recent: true, streak: true })
   const [lbRotSpeed, setLbRotSpeed] = useState({ top: 2.5, recent: 2.5 })
   const [lbLayout, setLbLayout] = useState({ top: 'card', recent: 'card' })
+  const [lbWidth, setLbWidth] = useState({ top: 500, recent: 500, streak: 400 })
+  const [lbHeight, setLbHeight] = useState({ top: 0, recent: 0, streak: 0 })
 
   useEffect(() => {
     try {
@@ -206,15 +340,17 @@ export default function OverlayPage() {
         if (p.bold) setLbBold(p.bold)
         if (p.rotSpeed) setLbRotSpeed(p.rotSpeed)
         if (p.layout) setLbLayout(p.layout)
+        if (p.width) setLbWidth(p.width)
+        if (p.height) setLbHeight(p.height)
       }
     } catch {}
   }, [])
 
   useEffect(() => {
     try {
-      localStorage.setItem('eztips_lb_settings', JSON.stringify({ colors: lbColors, titles: lbTitles, counts: lbCounts, resetMin: lbResetMin, bg: lbBg, opacity: lbOpacity, textColor: lbTextColor, fontSize: lbFontSize, font: lbFont, bold: lbBold, rotSpeed: lbRotSpeed, layout: lbLayout }))
+      localStorage.setItem('eztips_lb_settings', JSON.stringify({ colors: lbColors, titles: lbTitles, counts: lbCounts, resetMin: lbResetMin, bg: lbBg, opacity: lbOpacity, textColor: lbTextColor, fontSize: lbFontSize, font: lbFont, bold: lbBold, rotSpeed: lbRotSpeed, layout: lbLayout, width: lbWidth, height: lbHeight }))
     } catch {}
-  }, [lbColors, lbTitles, lbCounts, lbResetMin])
+  }, [lbColors, lbTitles, lbCounts, lbResetMin, lbBg, lbOpacity, lbTextColor, lbFontSize, lbFont, lbBold, lbRotSpeed, lbLayout, lbWidth, lbHeight])
 
   // Push leaderboard settings live to OBS overlays via socket (debounced 150ms)
   useEffect(() => {
@@ -224,14 +360,14 @@ export default function OverlayPage() {
       socket.emit('push-lb-settings', {
         token: overlayToken,
         settings: {
-          top:    { color:lbColors.top,    count:lbCounts.top,    title:lbTitles.top,    bg:lbBg.top,    opacity:lbOpacity.top,    textColor:lbTextColor.top,    fontSize:lbFontSize.top,    font:lbFont.top,    bold:lbBold.top,    rotSpeed:lbRotSpeed.top,    layout:lbLayout.top },
-          recent: { color:lbColors.recent, count:lbCounts.recent, title:lbTitles.recent, bg:lbBg.recent, opacity:lbOpacity.recent, textColor:lbTextColor.recent, fontSize:lbFontSize.recent, font:lbFont.recent, bold:lbBold.recent, rotSpeed:lbRotSpeed.recent, layout:lbLayout.recent },
-          streak: { color:lbColors.streak,                        title:lbTitles.streak, bg:lbBg.streak, opacity:lbOpacity.streak, textColor:lbTextColor.streak, fontSize:lbFontSize.streak, font:lbFont.streak, bold:lbBold.streak, resetMin:lbResetMin },
+          top:    { color:lbColors.top,    count:lbCounts.top,    title:lbTitles.top,    bg:lbBg.top,    opacity:lbOpacity.top,    textColor:lbTextColor.top,    fontSize:lbFontSize.top,    font:lbFont.top,    bold:lbBold.top,    rotSpeed:lbRotSpeed.top,    layout:lbLayout.top,    width:lbWidth.top },
+          recent: { color:lbColors.recent, count:lbCounts.recent, title:lbTitles.recent, bg:lbBg.recent, opacity:lbOpacity.recent, textColor:lbTextColor.recent, fontSize:lbFontSize.recent, font:lbFont.recent, bold:lbBold.recent, rotSpeed:lbRotSpeed.recent, layout:lbLayout.recent, width:lbWidth.recent },
+          streak: { color:lbColors.streak,                        title:lbTitles.streak, bg:lbBg.streak, opacity:lbOpacity.streak, textColor:lbTextColor.streak, fontSize:lbFontSize.streak, font:lbFont.streak, bold:lbBold.streak, resetMin:lbResetMin, width:lbWidth.streak },
         },
       })
     }, 150)
     return () => clearTimeout(t)
-  }, [overlayToken, lbColors, lbTitles, lbCounts, lbBg, lbOpacity, lbTextColor, lbFontSize, lbFont, lbBold, lbRotSpeed, lbLayout, lbResetMin])
+  }, [overlayToken, lbColors, lbTitles, lbCounts, lbBg, lbOpacity, lbTextColor, lbFontSize, lbFont, lbBold, lbRotSpeed, lbLayout, lbResetMin, lbWidth, lbHeight])
 
   useEffect(() => {
     Promise.all([
@@ -257,6 +393,8 @@ export default function OverlayPage() {
           }
         }
         setS((p: any) => ({ ...p, ...clean }))
+        if (clean.bgOpacity === 0) setBgTransparent(true)
+        if (clean.ttsVoiceId) setTtsVoiceId(clean.ttsVoiceId)
       }
       if (g) setGoal(g)
       if (profile?.overlayToken) setOverlayToken(profile.overlayToken)
@@ -305,7 +443,7 @@ export default function OverlayPage() {
     goalBarColor:'#7c3aed', goalBarOpacity:100, enableGoalCelebration:true,
     goalLayout:'standard', goalFontSize:16, goalFontFamily:'Arial',
     goalTextColor:'#ffffff', goalBarTextColor:'#ffffff', goalSecondColor:'#ec4899',
-    goalEnableTextShadow:true, goalEnableBg:true, goalBgColor:'#000000', goalBgOpacity:78, goalBarHeight:18,
+    goalEnableTextShadow:true, goalEnableBg:true, goalBgColor:'#000000', goalBgOpacity:78, goalBarHeight:18, goalWidth:500, goalHeight:0,
     enableBirthday:false, birthdayTemplate:'Happy Birthday {name}! 🎂',
   }
 
@@ -323,7 +461,7 @@ export default function OverlayPage() {
     setSaving(true)
     try {
       await Promise.all([
-        api.patch('/api/streamer/alert-settings', s),
+        api.patch('/api/streamer/alert-settings', { ...s, ttsVoiceId }),
         goal.title ? api.put('/api/streamer/goal', goal) : Promise.resolve(),
       ])
       toast.success('Settings saved!')
@@ -334,18 +472,39 @@ export default function OverlayPage() {
     setTesting(true)
     try {
       // Save settings first (best-effort — don't block the test if save fails)
-      try { await api.patch('/api/streamer/alert-settings', s) } catch { /* ignore */ }
+      try { await api.patch('/api/streamer/alert-settings', { ...s, ttsVoiceId }) } catch { /* ignore */ }
       const r = await api.post<any>('/api/streamer/test-alert')
       toast.success(`Test sent — ₹${r.amount} from ${r.name}`)
     } catch (e: any) { toast.error(e.message ?? 'Failed to send test alert') } finally { setTesting(false) }
   }
 
-  function previewVoice() {
-    if (!('speechSynthesis' in window)) { toast.error('TTS not supported in this browser'); return }
-    const u = new SpeechSynthesisUtterance('Sample Support donated ₹100. Keep it up!')
-    u.lang = s.ttsVoice; u.volume = s.ttsVolume / 100; u.rate = s.ttsRate; u.pitch = s.ttsPitch
-    speechSynthesis.cancel(); speechSynthesis.speak(u)
-    toast.success('Playing voice preview…')
+  const [previewing, setPreviewing] = useState(false)
+  async function previewVoice() {
+    if (previewing) return
+    setPreviewing(true)
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+      const res = await fetch(`${backendUrl}/api/tts/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Sample supporter donated ₹100. Keep it up!', voiceId: ttsVoiceId, volume: s.ttsVolume ?? 100 }),
+      })
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audio.volume = (s.ttsVolume ?? 100) / 100
+        audio.play().catch(() => {})
+        audio.onended = () => { URL.revokeObjectURL(url); setPreviewing(false) }
+        return
+      }
+    } catch { /* fall through to browser TTS */ }
+    setPreviewing(false)
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance('Sample supporter donated ₹100. Keep it up!')
+      u.lang = s.ttsVoice; u.volume = s.ttsVolume / 100
+      speechSynthesis.cancel(); speechSynthesis.speak(u)
+    }
   }
 
   const SITE = typeof window !== 'undefined' ? window.location.origin : 'https://eztips.live'
@@ -361,9 +520,9 @@ export default function OverlayPage() {
     p.set('fs', String(lbFontSize[key]))
     p.set('ff', lbFont[key])
     p.set('fw', lbBold[key] ? '700' : '400')
-    if (key==='top')    { p.set('n', String(lbCounts.top));    p.set('rs', String(lbRotSpeed.top));    p.set('ly', lbLayout.top) }
-    if (key==='recent') { p.set('n', String(lbCounts.recent)); p.set('rs', String(lbRotSpeed.recent)); p.set('ly', lbLayout.recent) }
-    if (key==='streak') p.set('r', String(lbResetMin))
+    if (key==='top')    { p.set('n', String(lbCounts.top));    p.set('rs', String(lbRotSpeed.top));    p.set('ly', lbLayout.top);    p.set('w', String(lbWidth.top)) }
+    if (key==='recent') { p.set('n', String(lbCounts.recent)); p.set('rs', String(lbRotSpeed.recent)); p.set('ly', lbLayout.recent); p.set('w', String(lbWidth.recent)) }
+    if (key==='streak') { p.set('r', String(lbResetMin)); p.set('w', String(lbWidth.streak)) }
     return `${SITE}/overlay/${overlayToken}/leaderboard/${key}?${p.toString()}`
   }
   const overlayUrl     = overlayToken ? `${SITE}/overlay/${overlayToken}` : ''
@@ -381,7 +540,7 @@ export default function OverlayPage() {
   ]
 
   // Live preview render — uses streamer colors only, no tier overrides
-  const previewBg = s.enableGradientBg ? `linear-gradient(135deg,${s.bgColor},${s.bgColor}aa)` : (s.bgOpacity===0 ? 'transparent' : s.bgColor)
+  const previewBg = s.enableGradientBg ? `linear-gradient(135deg,${s.bgColor},${s.bgColor}aa)` : (bgTransparent ? 'transparent' : s.bgColor)
 
   return (
     <div style={{ padding:'24px 28px', minHeight:'100%', fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif' }}>
@@ -428,8 +587,8 @@ export default function OverlayPage() {
                     transition:'all 0.15s',
                   }}>
                     <span style={{ fontSize:24, display:'block', marginBottom:6 }}>{t.emoji}</span>
-                    <p style={{ fontSize:12, fontWeight:700, color: s.template===t.id ? '#f1f5f9' : '#64748b', margin:0 }}>{t.label}</p>
-                    <p style={{ fontSize:10, color:'#374151', margin:'3px 0 0' }}>{t.desc}</p>
+                    <p style={{ fontSize:12, fontWeight:700, color: s.template===t.id ? '#7c3aed' : 'var(--text-2)', margin:0 }}>{t.label}</p>
+                    <p style={{ fontSize:10, color:'var(--text-3)', margin:'3px 0 0' }}>{t.desc}</p>
                   </button>
                 ))}
               </div>
@@ -439,9 +598,14 @@ export default function OverlayPage() {
               <p style={sH}><span>🎨</span> Appearance</p>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                  <Row label="Transparent Background" tip="No background — alert floats directly on OBS canvas">
+                    <Toggle on={bgTransparent} onChange={v=>{ setBgTransparent(v); if(v) set('bgOpacity',0) }}/>
+                  </Row>
+                  <div style={{ opacity: bgTransparent ? 0.35 : 1, pointerEvents: bgTransparent ? 'none' : 'auto', display:'flex', flexDirection:'column', gap:14 }}>
                   <div><span style={lbl}>Background Color</span><input type="color" value={s.bgColor} onChange={e=>set('bgColor',e.target.value)} style={colorBox}/></div>
-                  <Slider label="Opacity" value={s.bgOpacity} min={0} max={100} unit="%" onChange={v=>set('bgOpacity',v)}/>
+                  <Slider label="Opacity" value={s.bgOpacity} min={0} max={100} unit="%" onChange={v=>{ setBgTransparent(false); set('bgOpacity',v) }}/>
                   <div><span style={lbl}>Text Color</span><input type="color" value={s.textColor} onChange={e=>set('textColor',e.target.value)} style={colorBox}/></div>
+                  </div>
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                   <div>
@@ -510,33 +674,30 @@ export default function OverlayPage() {
               <Row label="Enable TTS" tip="Reads donation messages aloud during stream"><Toggle on={s.ttsEnabled} onChange={v=>set('ttsEnabled',v)}/></Row>
               {s.ttsEnabled && <>
                 <div>
-                  <span style={lbl}>Voice Language</span>
-                  <Select value={s.ttsVoice} onChange={v=>set('ttsVoice',v)} options={[
-                    ['en-IN','English – India'],['hi-IN','Hindi – India'],
-                    ['kn-IN','Kannada – India'],['ml-IN','Malayalam – India'],
-                    ['mr-IN','Marathi – India'],['bn-IN','Bengali – India'],
-                    ['gu-IN','Gujarati – India'],['pa-IN','Punjabi – India'],
-                    ['ur-IN','Urdu – India'],
-                    ['ta-IN','Tamil – India'],['te-IN','Telugu – India'],
-                    ['en-US','English – US'],['en-GB','English – UK'],
-                  ].map(([v,n])=>({value:v!,label:n!}))} />
-                  <div style={{ marginTop:6, padding:'8px 10px', borderRadius:8, background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.18)' }}>
-                    <p style={{ fontSize:11, color:'#f59e0b', margin:0, lineHeight:1.5 }}>
-                      <strong>Voice availability depends on your OS.</strong> English – India and Hindi – India work on most devices. Other languages require the matching language pack installed on your computer. If a language isn&apos;t available, TTS falls back to English.
-                    </p>
+                  <span style={lbl}>TTS Voice <span style={{ fontSize:10, color:'#10b981', fontWeight:600, background:'rgba(16,185,129,0.1)', padding:'2px 7px', borderRadius:99, marginLeft:6 }}>Google Cloud · Free tier</span></span>
+                  <div style={{ marginTop:6 }}>
+                    <VoiceSelect value={ttsVoiceId} onChange={setTtsVoiceId} />
+                  </div>
+                  <div style={{ display:'flex', gap:8, marginTop:8, alignItems:'stretch' }}>
+                    <div style={{ flex:1, padding:'8px 10px', borderRadius:8, background:'rgba(16,185,129,0.05)', border:'1px solid rgba(16,185,129,0.15)' }}>
+                      <p style={{ fontSize:11, color:'#10b981', margin:0, lineHeight:1.5 }}>
+                        Server-side TTS via Google Cloud — consistent quality across all devices. WaveNet sounds more natural. Requires <strong>GOOGLE_TTS_API_KEY</strong> in server env.
+                      </p>
+                    </div>
+                    <button
+                      onClick={previewVoice}
+                      disabled={previewing}
+                      style={{ padding:'8px 14px', borderRadius:8, border:'1px solid rgba(124,58,237,0.4)', background:'rgba(124,58,237,0.12)', color:'#a78bfa', fontSize:12, fontWeight:600, cursor:previewing?'not-allowed':'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:6, opacity:previewing?0.7:1, flexShrink:0 }}>
+                      {previewing ? '▶ Playing…' : '▶ Preview'}
+                    </button>
                   </div>
                 </div>
                 <Slider label="Volume" value={s.ttsVolume} min={0} max={100} unit="%" onChange={v=>set('ttsVolume',v)}/>
-                <Slider label="Speed" value={s.ttsRate} min={0.5} max={2} step={0.1} unit="×" onChange={v=>set('ttsRate',v)}/>
-                <Slider label="Pitch" value={s.ttsPitch} min={0} max={2} step={0.1} unit="" onChange={v=>set('ttsPitch',v)}/>
                 <div>
                   <span style={lbl}>Min Donation for TTS (₹)</span>
                   <input type="number" value={s.minTtsAmount} min={0} onChange={e=>set('minTtsAmount',Number(e.target.value))} style={inp}/>
                   <p style={{ fontSize:11, color:'#475569', marginTop:5 }}>TTS only plays for donations at or above this amount</p>
                 </div>
-                <button onClick={previewVoice} style={{ padding:'9px 18px', borderRadius:9, cursor:'pointer', fontSize:13, fontWeight:600, background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)', color:'#a78bfa', display:'flex', alignItems:'center', gap:7, width:'fit-content' }}>
-                  <span>▶</span> Preview Voice
-                </button>
               </>}
             </div>
 
@@ -671,6 +832,53 @@ export default function OverlayPage() {
             </InfoBox>
           </>}
 
+          {/* ── ALERT IMAGE ─────────────────────────── */}
+          {tab==='appearance' && (
+            <div style={{ ...C, padding:'18px 20px' }}>
+              <p style={sH}><span>🖼️</span> Alert Image / GIF</p>
+              <Row label="Enable Alert Image" tip="Show an image or GIF above the alert card when a donation arrives">
+                <Toggle on={s.alertImageEnabled??false} onChange={v=>set('alertImageEnabled',v)}/>
+              </Row>
+              {(s.alertImageEnabled) && (
+                <div style={{ display:'flex', flexDirection:'column', gap:14, marginTop:14 }}>
+                  {/* Upload area */}
+                  <div>
+                    <span style={lbl}>Image / GIF</span>
+                    <div style={{ border:'2px dashed rgba(124,58,237,0.3)', borderRadius:12, overflow:'hidden', minHeight:120, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(124,58,237,0.04)', position:'relative' }}>
+                      {s.alertImageUrl ? (
+                        <div style={{ textAlign:'center', padding:12 }}>
+                          <img src={s.alertImageUrl} alt="Alert" style={{ maxHeight:120, maxWidth:'100%', borderRadius:8, objectFit:'contain' }} />
+                          <div style={{ marginTop:8, display:'flex', gap:8, justifyContent:'center' }}>
+                            <button type="button" onClick={() => set('alertImageUrl', null)} style={{ padding:'5px 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', color:'#f87171' }}>Remove</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <label style={{ cursor:'pointer', textAlign:'center', padding:20, display:'block', width:'100%' }}>
+                          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style={{ display:'none' }}
+                            onChange={e => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              if (file.size > 2 * 1024 * 1024) { alert('File too large. Max 2 MB.'); return }
+                              const reader = new FileReader()
+                              reader.onload = ev => set('alertImageUrl', ev.target?.result as string)
+                              reader.readAsDataURL(file)
+                            }}
+                          />
+                          <span style={{ fontSize:28, display:'block', marginBottom:8 }}>🖼️</span>
+                          <span style={{ fontSize:13, fontWeight:600, color:'#a78bfa' }}>Click to upload image or GIF</span>
+                          <p style={{ fontSize:11, color:'#475569', marginTop:4 }}>PNG, JPG, GIF, WebP · Max 2 MB</p>
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                  {/* Size slider */}
+                  <Slider label="Image Size (px)" value={s.alertImageSize??200} min={60} max={400} step={10} unit="px" onChange={v=>set('alertImageSize',v)}/>
+                  <p style={{ fontSize:11, color:'#475569' }}>Image appears above the alert card. GIFs animate automatically in OBS.</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── GOAL ────────────────────────────────── */}
           {tab==='goal' && <>
             <div style={{ ...C, padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
@@ -765,6 +973,9 @@ export default function OverlayPage() {
               {/* Sliders */}
               <Slider label="Font Size (px)" value={(s as any).goalFontSize??16} min={10} max={32} unit="px" onChange={v=>set('goalFontSize',v)}/>
               <Slider label="Bar Height (px)" value={(s as any).goalBarHeight??18} min={6} max={40} unit="px" onChange={v=>set('goalBarHeight',v)}/>
+              <Slider label="Widget Width (px)" value={(s as any).goalWidth??500} min={200} max={900} step={10} unit="px" onChange={v=>set('goalWidth',v)}/>
+              <Slider label="Widget Height (px)" value={(s as any).goalHeight??0} min={0} max={200} step={4} format={v=>v===0?'Auto':`${v}px`} onChange={v=>set('goalHeight',v)}/>
+              <p style={{ fontSize:11, color:'#475569', marginTop:-10 }}>Height 0 = auto-fit to content</p>
               <Slider label="Widget Opacity" value={s.goalBarOpacity??100} min={0} max={100} unit="%" onChange={v=>set('goalBarOpacity',v)}/>
 
               {/* Background */}
@@ -778,6 +989,7 @@ export default function OverlayPage() {
 
               {/* Toggles */}
               <Row label="Text Shadow" tip="Adds shadow to text for better readability on bright backgrounds"><Toggle on={(s as any).goalEnableTextShadow??true} onChange={v=>set('goalEnableTextShadow',v)}/></Row>
+              <Row label="Show % Complete" tip="Show or hide the percentage and remaining amount below the bar"><Toggle on={(s as any).goalShowPercent??true} onChange={v=>set('goalShowPercent',v)}/></Row>
               <Row label="Goal Celebration" tip="Pulse animation + colour burst when goal is reached"><Toggle on={s.enableGoalCelebration} onChange={v=>set('enableGoalCelebration',v)}/></Row>
 
               {/* Reset progress */}
@@ -879,6 +1091,8 @@ export default function OverlayPage() {
                   <Slider label="Font Size (px)" value={lbFontSize.top} min={10} max={20} unit="px" onChange={v=>setLbFontSize(p=>({...p,top:v}))}/>
                   <div><span style={lbl}>Font</span><Select value={lbFont.top} onChange={v=>setLbFont(p=>({...p,top:v}))} options={FONTS.map(f=>({value:f,label:f}))}/></div>
                   <Row label="Bold text"><Toggle on={lbBold.top} onChange={v=>setLbBold(p=>({...p,top:v}))}/></Row>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
+                  <Slider label="Widget Width (px)" value={lbWidth.top} min={200} max={800} step={10} unit="px" onChange={v=>setLbWidth(p=>({...p,top:v}))}/>
                 </div>
               )}
 
@@ -919,6 +1133,8 @@ export default function OverlayPage() {
                   <Slider label="Font Size (px)" value={lbFontSize.recent} min={10} max={20} unit="px" onChange={v=>setLbFontSize(p=>({...p,recent:v}))}/>
                   <div><span style={lbl}>Font</span><Select value={lbFont.recent} onChange={v=>setLbFont(p=>({...p,recent:v}))} options={FONTS.map(f=>({value:f,label:f}))}/></div>
                   <Row label="Bold text"><Toggle on={lbBold.recent} onChange={v=>setLbBold(p=>({...p,recent:v}))}/></Row>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
+                  <Slider label="Widget Width (px)" value={lbWidth.recent} min={200} max={800} step={10} unit="px" onChange={v=>setLbWidth(p=>({...p,recent:v}))}/>
                 </div>
               )}
 
@@ -944,6 +1160,9 @@ export default function OverlayPage() {
                   <Slider label="Font Size (px)" value={lbFontSize.streak} min={10} max={20} unit="px" onChange={v=>setLbFontSize(p=>({...p,streak:v}))}/>
                   <div><span style={lbl}>Font</span><Select value={lbFont.streak} onChange={v=>setLbFont(p=>({...p,streak:v}))} options={FONTS.map(f=>({value:f,label:f}))}/></div>
                   <Row label="Bold text"><Toggle on={lbBold.streak} onChange={v=>setLbBold(p=>({...p,streak:v}))}/></Row>
+                  <div style={{ height:1, background:'var(--surface-input)' }}/>
+                  <p style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', letterSpacing:'0.05em', textTransform:'uppercase', margin:0 }}>📐 Size</p>
+                  <Slider label="Widget Width (px)" value={lbWidth.streak} min={200} max={800} step={10} unit="px" onChange={v=>setLbWidth(p=>({...p,streak:v}))}/>
                 </div>
               )}
 
@@ -1023,7 +1242,7 @@ export default function OverlayPage() {
                         <p style={{ fontSize:12, fontWeight:s.textBold?'bold':'normal', color:s.textColor, margin:0 }}>Arjun</p>
                         <p style={{ fontSize:10, color:s.textColor, opacity:0.7, margin:0 }}>🎉 donated</p>
                       </div>
-                      <div style={{ padding:'4px 10px', borderRadius:20, fontSize:12, fontWeight:700, color:previewBg, background:s.textColor }}>₹500</div>
+                      <div style={{ padding:'4px 10px', borderRadius:20, fontSize:12, fontWeight:700, color:bgTransparent?'#06060f':previewBg, background:s.textColor }}>₹500</div>
                     </div>
                     <div style={{ padding:'10px 14px', background:`${s.textColor}0d` }}>
                       <p style={{ fontSize:11, color:s.textColor, margin:0, fontStyle:s.textItalic?'italic':'normal', textDecoration:s.textUnderline?'underline':'none' }}>&ldquo;You&apos;re the best streamer!&rdquo;</p>
@@ -1073,6 +1292,7 @@ export default function OverlayPage() {
               const gBh      = Math.max(((s as any).goalBarHeight ?? 18) * 0.72, 6)
               const gSh      = (s as any).goalEnableTextShadow ? '0 1px 4px rgba(0,0,0,0.9)' : 'none'
               const gFf      = ((s as any).goalFontFamily ?? 'Arial') === 'Arial' ? 'Arial,sans-serif' : `'${(s as any).goalFontFamily}',sans-serif`
+              const gShowPct = (s as any).goalShowPercent ?? true
               const gBg      = (s as any).goalEnableBg
               const gBgC     = (s as any).goalBgColor ?? '#000000'
               const gBgO     = (s as any).goalBgOpacity ?? 78
@@ -1092,8 +1312,10 @@ export default function OverlayPage() {
                 )
               }
               const fmt = (n: number) => '₹'+n.toLocaleString('en-IN')
+              const gW = (s as any).goalWidth ?? 500
+              const gH = (s as any).goalHeight ?? 0
               return (
-                <div style={{ background:'#000', borderRadius:10, padding:14, opacity:(s.goalBarOpacity??100)/100 }}>
+                <div style={{ background:'#000', borderRadius:10, padding:14, opacity:(s.goalBarOpacity??100)/100, width: gW * 0.5, ...(gH > 0 ? { height: gH * 0.5, overflow:'hidden', display:'flex', flexDirection:'column', justifyContent:'center' } : {}) }}>
                   {gLayout==='standard' && (
                     <div style={gCardSt}>
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8, gap:8 }}>
@@ -1101,12 +1323,14 @@ export default function OverlayPage() {
                         <span style={gDimSt}>{fmt(goal.currentAmount??0)}/{fmt(goal.targetAmount)}</span>
                       </div>
                       <GBar/>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:6 }}>
-                        <span style={{ fontSize:gFs*0.78, color:gReached?'#fbbf24':gText, opacity:gReached?1:0.45, fontWeight:gReached?700:400, textShadow:gSh, fontFamily:gFf }}>
-                          {gReached?'🎊 Goal reached!':Math.round(gPct)+'% reached'}
-                        </span>
-                        {!gReached && <span style={{ fontSize:gFs*0.78, color:gText, opacity:0.3, fontFamily:gFf }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} to go</span>}
-                      </div>
+                      {gShowPct && (
+                        <div style={{ display:'flex', justifyContent:'space-between', marginTop:6 }}>
+                          <span style={{ fontSize:gFs*0.78, color:gReached?'#fbbf24':gText, opacity:gReached?1:0.45, fontWeight:gReached?700:400, textShadow:gSh, fontFamily:gFf }}>
+                            {gReached?'🎊 Goal reached!':Math.round(gPct)+'% reached'}
+                          </span>
+                          {!gReached && <span style={{ fontSize:gFs*0.78, color:gText, opacity:0.3, fontFamily:gFf }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} to go</span>}
+                        </div>
+                      )}
                     </div>
                   )}
                   {gLayout==='minimal' && (
@@ -1116,9 +1340,11 @@ export default function OverlayPage() {
                         <span style={gDimSt}>{fmt(goal.currentAmount??0)}/{fmt(goal.targetAmount)}</span>
                       </div>
                       <GBar/>
-                      <div style={{ textAlign:'center', marginTop:4 }}>
-                        <span style={{ fontSize:gFs*0.72, color:gColor, fontWeight:700, textShadow:gSh }}>{Math.round(gPct)}%</span>
-                      </div>
+                      {gShowPct && (
+                        <div style={{ textAlign:'center', marginTop:4 }}>
+                          <span style={{ fontSize:gFs*0.72, color:gColor, fontWeight:700, textShadow:gSh }}>{Math.round(gPct)}%</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   {gLayout==='bar-labels' && (
@@ -1128,8 +1354,8 @@ export default function OverlayPage() {
                         <div style={{ height:'100%', background:'rgba(255,255,255,0.1)', borderRadius:Math.max(gBh,20), overflow:'hidden' }}>
                           <div style={{ height:'100%', width:`${gPct}%`, background:`linear-gradient(90deg,${gColor},${gColor2})`, borderRadius:Math.max(gBh,20), transition:'width 0.5s', boxShadow:`0 0 8px ${gColor}66` }}/>
                         </div>
-                        <span style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', fontSize:gFs*0.72, color:gBtText, fontWeight:700, textShadow:gSh, fontFamily:gFf }}>{Math.round(gPct)}%</span>
-                        {!gReached && <span style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', fontSize:gFs*0.65, color:gText, opacity:0.55, fontFamily:gFf }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} to go</span>}
+                        {gShowPct && <span style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', fontSize:gFs*0.72, color:gBtText, fontWeight:700, textShadow:gSh, fontFamily:gFf }}>{Math.round(gPct)}%</span>}
+                        {gShowPct && !gReached && <span style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', fontSize:gFs*0.65, color:gText, opacity:0.55, fontFamily:gFf }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} to go</span>}
                       </div>
                     </div>
                   )}
@@ -1150,7 +1376,7 @@ export default function OverlayPage() {
                     <div style={{ display:'flex', alignItems:'center', gap:8, background:gCardBg, backdropFilter:'blur(10px)', borderRadius:50, padding:`5px 12px 5px 10px`, border:'1px solid rgba(255,255,255,0.08)', fontFamily:gFf }}>
                       <span style={{ ...gTitleSt, fontSize:gFs*0.85, whiteSpace:'nowrap', flexShrink:0 }}>{goal.title||'Goal'}</span>
                       <div style={{ flex:1, minWidth:50 }}><GBar/></div>
-                      <span style={{ color:gColor, fontWeight:800, fontSize:gFs*0.85, whiteSpace:'nowrap', textShadow:`0 0 6px ${gColor}88`, flexShrink:0 }}>{Math.round(gPct)}%</span>
+                      {gShowPct && <span style={{ color:gColor, fontWeight:800, fontSize:gFs*0.85, whiteSpace:'nowrap', textShadow:`0 0 6px ${gColor}88`, flexShrink:0 }}>{Math.round(gPct)}%</span>}
                       <span style={{ color:gText, opacity:0.45, fontSize:gFs*0.72, whiteSpace:'nowrap', flexShrink:0 }}>{fmt(goal.currentAmount??0)}/{fmt(goal.targetAmount)}</span>
                     </div>
                   )}
@@ -1163,10 +1389,12 @@ export default function OverlayPage() {
                       <div style={{ height:gBh, background:'var(--surface-input)', borderRadius:gBh, overflow:'hidden', border:`1px solid ${gColor}33` }}>
                         <div style={{ height:'100%', width:`${gPct}%`, background:`linear-gradient(90deg,${gColor},${gColor2})`, borderRadius:gBh, transition:'width 0.5s', boxShadow:`0 0 14px ${gColor},0 0 28px ${gColor}88` }}/>
                       </div>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:6, fontFamily:gFf }}>
-                        <span style={{ fontSize:gFs*0.72, color:gColor, fontWeight:700, textShadow:`0 0 6px ${gColor}` }}>{gReached?'⚡ GOAL REACHED!':Math.round(gPct)+'% COMPLETE'}</span>
-                        {!gReached && <span style={{ fontSize:gFs*0.68, color:gText, opacity:0.3 }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} remaining</span>}
-                      </div>
+                      {gShowPct && (
+                        <div style={{ display:'flex', justifyContent:'space-between', marginTop:6, fontFamily:gFf }}>
+                          <span style={{ fontSize:gFs*0.72, color:gColor, fontWeight:700, textShadow:`0 0 6px ${gColor}` }}>{gReached?'⚡ GOAL REACHED!':Math.round(gPct)+'% COMPLETE'}</span>
+                          {!gReached && <span style={{ fontSize:gFs*0.68, color:gText, opacity:0.3 }}>{fmt(Math.max(0,goal.targetAmount-(goal.currentAmount??0)))} remaining</span>}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1174,8 +1402,11 @@ export default function OverlayPage() {
             })()}
 
             {/* Leaderboard live preview — updates with settings */}
-            {tab==='leaderboard' && (
-              <div style={{ background:'#0a0a1a', borderRadius:10, padding:14, border:`1px solid ${lbColors[lbTab]}25` }}>
+            {tab==='leaderboard' && (() => {
+              const pvW = lbTab==='streak' ? lbWidth.streak * 0.55 : undefined
+              const pvH = lbTab==='streak' && lbHeight.streak > 0 ? lbHeight.streak * 0.55 : undefined
+              return (
+              <div style={{ background:'#0a0a1a', borderRadius:10, padding:10, border:`1px solid ${lbColors[lbTab]}25`, ...(pvW ? { width: pvW } : {}), ...(pvH ? { height: pvH, overflow:'hidden' } : {}) }}>
                 {lbTab==='top' && (() => {
                   const c=lbColors.top, bg=lbBg.top, ff=lbFont.top==='Arial'?'Arial,sans-serif':`'${lbFont.top}',sans-serif`
                   const fs=Math.round(lbFontSize.top*0.82), tc=lbTextColor.top, fw=lbBold.top?700:400
@@ -1262,7 +1493,8 @@ export default function OverlayPage() {
                   </div>
                 )}
               </div>
-            )}
+              )
+            })()}
 
             <p style={{ fontSize:10, color:'#374151', textAlign:'center', margin:'8px 0 0' }}>Updates live in OBS as you edit</p>
           </div>

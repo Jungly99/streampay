@@ -117,7 +117,7 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginTop: 20, position: 'relative', zIndex: 1 }}>
           {[
-            { label: 'Standard Fee', value: '5%', color: 'var(--text-3)', sub: 'regular donations' },
+            { label: 'Standard Fee', value: '7%', color: 'var(--text-3)', sub: 'regular donations' },
             { label: 'Celebrity Fee', value: '20%', color: '#f59e0b', sub: 'premium donations' },
             { label: 'Min Amount', value: `₹${minAmt}`, color: '#a78bfa', sub: 'for celebrity voice' },
             { label: 'Extra per Alert', value: `+₹${extraPerAlert}`, color: '#10b981', sub: 'vs standard' },
@@ -151,7 +151,7 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
                   )}
                 </div>
                 <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>
-                  Donations of ₹{minAmt}+ are read by your chosen AI voice. Platform takes 20% on these (vs 5% standard).
+                  Donations of ₹{minAmt}+ are read by your chosen AI voice. Platform takes 20% on these (vs 7% standard).
                 </p>
               </div>
               <div style={{
@@ -237,7 +237,7 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
           {/* Min amount */}
           <div style={{ ...C, padding: '20px 22px' }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: '0 0 4px' }}>Minimum Amount</p>
-            <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 16 }}>Below this → standard TTS (5%). At or above → celebrity voice (20%)</p>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 16 }}>Below this → standard TTS (7%). At or above → celebrity voice (20%)</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <input type="range" min={500} max={5000} step={100} value={s.celebrityVoiceMinAmount}
                 onChange={e => upd('celebrityVoiceMinAmount', Number(e.target.value))}
@@ -271,7 +271,7 @@ export default function CelebrityVoiceClient({ initialSettings }: { initialSetti
                     <span style={{ fontWeight: 700, color: 'var(--text-1)' }}>₹{minAmt}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--text-3)' }}>Platform fee (5%)</span>
+                    <span style={{ color: 'var(--text-3)' }}>Platform fee (7%)</span>
                     <span style={{ color: '#f87171' }}>−₹{standardFee}</span>
                   </div>
                   <div style={{ height: 1, background: 'var(--surface-2)', margin: '2px 0' }} />

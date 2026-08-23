@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [showAccNum, setShowAccNum] = useState(false)
   const [saving, setSaving] = useState(false)
   const [requesting, setRequesting] = useState(false)
+  const [testingDiscord, setTestingDiscord] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
@@ -244,7 +245,7 @@ if (!profile) return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Channel Banner</p>
-                <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>Shown as the hero background on your donation page</p>
+                <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>Recommended: 1920 × 480 px · Max 3MB</p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {profile.bannerUrl && (
@@ -271,12 +272,12 @@ if (!profile) return (
                 position: 'relative',
               }}>
               {profile.bannerUrl ? (
-                <img src={profile.bannerUrl} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={profile.bannerUrl} alt="Banner" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               ) : (
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>🖼️</div>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-3)', margin: 0 }}>Click to upload banner</p>
-                  <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '4px 0 0' }}>or drag & drop</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '4px 0 0' }}>1920 × 480 px recommended</p>
                 </div>
               )}
             </div>
@@ -306,7 +307,11 @@ if (!profile) return (
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>Basic Information</p>
 
               <Field label="Channel Name">
-                <input value={profile.channelName ?? ''} onChange={e => setProfile((p: any) => ({ ...p, channelName: e.target.value }))} style={inputStyle} />
+                <input value={profile.channelName ?? ''} onChange={e => {
+                  const v = e.target.value
+                  if (/https?:\/\/|www\.|\.com|\.in|\.net|\.org/i.test(v)) return
+                  setProfile((p: any) => ({ ...p, channelName: v }))
+                }} style={inputStyle} />
               </Field>
 
               <Field label="Channel Link">
@@ -368,22 +373,87 @@ if (!profile) return (
                 <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0, marginTop: 2 }}>Get a Discord message every time you receive a tip</p>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'flex-end' }}>
-              <div>
-                <label style={labelStyle}>Webhook URL</label>
-                <input
-                  value={profile.discordWebhookUrl ?? ''}
-                  onChange={e => setProfile((p: any) => ({ ...p, discordWebhookUrl: e.target.value }))}
-                  placeholder="https://discord.com/api/webhooks/…"
-                  style={inputStyle}
-                />
-              </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={labelStyle}>Webhook URL</label>
+              <input
+                value={profile.discordWebhookUrl ?? ''}
+                onChange={e => setProfile((p: any) => ({ ...p, discordWebhookUrl: e.target.value }))}
+                placeholder="https://discord.com/api/webhooks/…"
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <button
+                disabled={testingDiscord || !profile.discordWebhookUrl}
+                onClick={async () => {
+                  setTestingDiscord(true)
+                  try {
+                    await api.post('/api/streamer/test-discord', {})
+                    toast.success('Test message sent to Discord! Check your channel.')
+                  } catch (e: any) {
+                    toast.error(e.message ?? 'Failed — check your webhook URL')
+                  } finally {
+                    setTestingDiscord(false)
+                  }
+                }}
+                style={{
+                  padding: '9px 18px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
+                  background: profile.discordWebhookUrl ? 'linear-gradient(135deg,#5865f2,#4752c4)' : 'rgba(255,255,255,0.06)',
+                  color: profile.discordWebhookUrl ? 'white' : 'var(--text-3)',
+                  opacity: testingDiscord ? 0.7 : 1, whiteSpace: 'nowrap',
+                }}>
+                {testingDiscord ? '⏳ Sending…' : '🧪 Send Test Message'}
+              </button>
               <a href="https://support.discord.com/hc/en-us/articles/228383668" target="_blank" rel="noopener noreferrer"
-                style={{ padding: '10px 14px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: 'var(--text-2)', background: 'var(--border)', border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', whiteSpace: 'nowrap', display: 'block' }}>
-                How to get webhook →
+                style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-3)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                How to create a webhook →
               </a>
             </div>
-            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8 }}>Create a webhook in your Discord server: Channel Settings → Integrations → Webhooks → New Webhook → Copy URL</p>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8 }}>Channel Settings → Integrations → Webhooks → New Webhook → Copy URL → paste above → Save → Test</p>
+          </div>
+
+          {/* Live Stream Embed */}
+          <div style={{ ...C, padding: '22px 24px', gridColumn: '1 / -1' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🔴</div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>Live Stream on Donation Page</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0, marginTop: 2 }}>When enabled, viewers see your Twitch or Kick stream embedded on your donation page with a split layout</p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  const next = !(profile as any).streamEmbedEnabled
+                  setProfile((p: any) => ({ ...p, streamEmbedEnabled: next }))
+                  try {
+                    await api.patch('/api/streamer/profile', { streamEmbedEnabled: next })
+                    toast.success(next ? 'Live stream embed enabled!' : 'Live stream embed disabled')
+                  } catch (e: any) {
+                    setProfile((p: any) => ({ ...p, streamEmbedEnabled: !next }))
+                    toast.error(e.message)
+                  }
+                }}
+                style={{
+                  padding: '9px 20px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', flexShrink: 0,
+                  background: (profile as any).streamEmbedEnabled ? 'linear-gradient(135deg,#f87171,#ef4444)' : 'rgba(255,255,255,0.06)',
+                  color: (profile as any).streamEmbedEnabled ? 'white' : 'var(--text-3)',
+                  boxShadow: (profile as any).streamEmbedEnabled ? '0 4px 16px rgba(248,113,113,0.35)' : 'none',
+                  transition: 'all 0.2s',
+                }}>
+                {(profile as any).streamEmbedEnabled ? '🔴 Enabled — Click to disable' : '⚪ Disabled — Click to enable'}
+              </button>
+            </div>
+            {(profile as any).streamEmbedEnabled && !(profile as any).socialTwitch && !(profile as any).socialKick && (
+              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <p style={{ fontSize: 12, color: '#f59e0b', margin: 0 }}>⚠ Add your Twitch or Kick link in Social Links above for the stream embed to work</p>
+              </div>
+            )}
+            {(profile as any).streamEmbedEnabled && ((profile as any).socialTwitch || (profile as any).socialKick) && (
+              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 10, background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <p style={{ fontSize: 12, color: '#10b981', margin: 0 }}>✓ Stream embed active. Kick is checked live first; Twitch embed shows automatically if configured. Chat is shown for Twitch streams.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -440,8 +510,17 @@ if (!profile) return (
                 </button>
               </div>
             </Field>
+            <Field label="UPI ID (optional)">
+              <input
+                type="text"
+                value={bank.upiId ?? ''}
+                onChange={e => setBank((b: any) => ({ ...b, upiId: e.target.value }))}
+                placeholder="e.g. yourname@upi"
+                style={inputStyle}
+              />
+            </Field>
             <div style={{ marginTop: 4, padding: '10px 14px', borderRadius: 10, background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.2)' }}>
-              <p style={{ fontSize: 12, color: '#a78bfa', fontWeight: 600, marginBottom: 3 }}>5% Platform Fee</p>
+              <p style={{ fontSize: 12, color: '#a78bfa', fontWeight: 600, marginBottom: 3 }}>7% Platform Fee</p>
               <p style={{ fontSize: 11, color: 'var(--text-3)' }}>Only charged at settlement, never on donations</p>
             </div>
           </div>

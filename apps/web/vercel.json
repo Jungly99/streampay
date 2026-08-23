@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm install --ignore-scripts",
+  "rewrites": [
+    { "source": "/backend/:path*", "destination": "https://api.eztips.live/:path*" }
+  ]
+}

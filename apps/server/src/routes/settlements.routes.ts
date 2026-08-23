@@ -11,12 +11,15 @@ router.get('/fee-breakdown', async (req: AuthRequest, res: Response): Promise<vo
 
   const pending = await prisma.donation.aggregate({
     where: { streamerId: profile.id, status: 'SUCCESS', settled: false },
-    _sum: { amount: true },
+    _sum: { amount: true, feeAmount: true, netAmount: true },
   })
-  const grossAmount = pending._sum.amount ?? 0
-  const feePct = 5
-  const feeAmount = (grossAmount * feePct) / 100
-  const netAmount = grossAmount - feeAmount
+  const grossAmount = Number(pending._sum.amount ?? 0)
+  const feeAmount   = Number(pending._sum.feeAmount ?? 0)
+  const netAmount   = Number(pending._sum.netAmount ?? (grossAmount - feeAmount))
+  // Weighted effective fee % across all pending donations
+  const feePct = grossAmount > 0
+    ? Math.round((feeAmount / grossAmount) * 10000) / 100
+    : Number(profile.platformFeePct ?? 7)
 
   const MIN_SETTLEMENT = 100
   res.json({ grossAmount, feePct, feeAmount, netAmount, canSettle: grossAmount >= MIN_SETTLEMENT, minSettlement: MIN_SETTLEMENT })
@@ -43,9 +46,13 @@ router.post('/initiate', async (req: AuthRequest, res: Response): Promise<void> 
     res.status(400).json({ error: 'Minimum settlement amount is ₹100' })
     return
   }
-  const feePct = 5
-  const feeAmount = (grossAmount * feePct) / 100
+
+  // Use per-donation stored feeAmount (reflects the fee % at time of donation)
+  const feeAmount = unsettled.reduce((s, d) => s + Number(d.feeAmount ?? 0), 0)
   const netAmount = grossAmount - feeAmount
+  const feePct    = grossAmount > 0
+    ? Math.round((feeAmount / grossAmount) * 10000) / 100
+    : Number(profile.platformFeePct ?? 7)
 
   const settlement = await prisma.settlement.create({
     data: {
@@ -62,6 +69,31 @@ router.post('/initiate', async (req: AuthRequest, res: Response): Promise<void> 
     where: { id: { in: unsettled.map(d => d.id) } },
     data: { settled: true, settlementId: settlement.id },
   })
+
+  // Fire Discord webhook for settlement request (fire-and-forget)
+  prisma.platformConfig.findUnique({ where: { key: 'settlement_discord_webhook' } }).then(cfg => {
+    if (!cfg?.value) return
+    fetch(cfg.value, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: '💸 Settlement Request',
+          description: `**${profile.channelName ?? profile.username ?? 'A streamer'}** has requested a payout.`,
+          color: 0x10b981,
+          fields: [
+            { name: 'Gross Amount', value: `₹${grossAmount.toLocaleString('en-IN')}`, inline: true },
+            { name: `Fee (${feePct}%)`, value: `₹${feeAmount.toLocaleString('en-IN')}`, inline: true },
+            { name: 'Net Payout', value: `₹${netAmount.toLocaleString('en-IN')}`, inline: true },
+            { name: 'Streamer', value: profile.username ?? profile.id, inline: true },
+            { name: 'Settlement ID', value: settlement.id.slice(0, 8), inline: true },
+          ],
+          footer: { text: 'EzTips Settlements · eztips.live' },
+          timestamp: new Date().toISOString(),
+        }],
+      }),
+    }).catch(() => {})
+  }).catch(() => {})
 
   res.status(201).json(settlement)
 })
@@ -101,7 +133,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   res.json({
     donations,
     stats: { todayTotal, filteredGross, filteredNet, totalTx, totalSettledGross, totalNetReceived, lastSettled },
-    feePct: 5,
+    feePct: Number(profile.platformFeePct ?? 7),
   })
 })
 

@@ -8,9 +8,13 @@ const C: React.CSSProperties = { background: 'var(--surface)', border: '1px soli
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([])
   const [search, setSearch] = useState('')
+  const [feePct, setFeePct] = useState(7)
 
   useEffect(() => {
     api.get<any[]>('/api/invoices').then(setInvoices).catch(() => {})
+    api.get<{ platformFeePct?: number }>('/api/streamer/profile').then(p => {
+      if (p?.platformFeePct != null) setFeePct(Number(p.platformFeePct))
+    }).catch(() => {})
   }, [])
 
   const filtered = invoices.filter(i => !search || i.invoiceNumber?.toLowerCase().includes(search.toLowerCase()))
@@ -96,8 +100,8 @@ export default function InvoicesPage() {
           <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 14 }}>What's in an Invoice</p>
           {[
             ['Invoice Number', 'Unique sequential ID (e.g. INV-2026-0001) for tax records'],
-            ['Gross Amount', 'Total donations received before the 5% platform fee'],
-            ['Fee Deducted', '5% platform fee — only charged at settlement, not per tip'],
+            ['Gross Amount', `Total donations received before the ${feePct}% platform fee`],
+            ['Fee Deducted', `${feePct}% platform fee — only charged at settlement, not per tip`],
             ['Net Amount', 'Amount transferred to your bank account'],
             ['GST Details', '18% GST applied on the platform fee (₹0.90 per ₹100 tip)'],
           ].map(([title, desc]) => (
@@ -118,7 +122,7 @@ export default function InvoicesPage() {
             {[
               { icon: '📁', text: 'Keep invoices for minimum 7 years (IT requirement)' },
               { icon: '🧾', text: 'Report net income under "Income from Other Sources"' },
-              { icon: '💡', text: 'Platform fee (5%) + GST (18% on fee) are deductible' },
+              { icon: '💡', text: `Platform fee (${feePct}%) + GST (18% on fee) are deductible` },
               { icon: '📧', text: 'Email invoices to your CA directly from downloads' },
             ].map(item => (
               <div key={item.text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>

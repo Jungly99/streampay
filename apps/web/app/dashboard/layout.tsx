@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import DashboardShell from '../../components/dashboard/DashboardShell'
+import VisitorTracker from '../../components/VisitorTracker'
 
 async function getUser() {
   const cookieStore = await cookies()
@@ -27,6 +28,17 @@ async function getStats(token: string) {
   } catch { return { todayEarnings: 0, followerCount: 0 } }
 }
 
+async function getProfile(token: string) {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/streamer/profile`, {
+      headers: { Cookie: `eztips_token=${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    return res.json()
+  } catch { return null }
+}
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
   const token = cookieStore.get('eztips_token')
@@ -35,21 +47,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
   if (user.accountType !== 'streamer') redirect('/fan')
 
-  const stats = await getStats(token!.value)
+  const [stats, profile] = await Promise.all([
+    getStats(token!.value),
+    getProfile(token!.value),
+  ])
 
   return (
+    <>
+    <VisitorTracker page="dashboard" />
     <DashboardShell
       channelName={user.streamerProfile?.channelName ?? user.displayName ?? 'Streamer'}
       email={user.email ?? ''}
       username={user.streamerProfile?.username ?? ''}
       overlayToken={user.streamerProfile?.overlayToken ?? ''}
+      avatarUrl={user.streamerProfile?.avatarUrl ?? null}
       todayEarnings={stats.todayEarnings ?? 0}
       followers={stats.followerCount ?? 0}
       isPremium={user.streamerProfile?.isPremium ?? false}
       isVerified={user.streamerProfile?.isVerified ?? false}
       verificationRequestedAt={user.streamerProfile?.verificationRequestedAt ?? null}
+      platformFeePct={profile?.platformFeePct ?? 7}
     >
       {children}
     </DashboardShell>
+    </>
   )
 }

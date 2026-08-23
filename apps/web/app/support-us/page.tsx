@@ -104,8 +104,7 @@ export default function SupportUsPage() {
       {/* Nav */}
       <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: 'white' }}>ez</div>
-          <span style={{ fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>eztips</span>
+          <img src="/logo.png" alt="eztips" style={{ height: 30, width: 'auto', borderRadius: 8 }} />
         </Link>
         <Link href="/dashboard" style={{ fontSize: 13, color: '#475569', textDecoration: 'none' }}>← Back to Dashboard</Link>
       </div>
@@ -146,7 +145,7 @@ export default function SupportUsPage() {
             <div style={{ padding: '20px 22px', borderRadius: 16, background: 'linear-gradient(135deg,rgba(124,58,237,0.08),rgba(219,39,119,0.06))', border: '1px solid rgba(124,58,237,0.15)', marginTop: 4 }}>
               <p style={{ fontSize: 13, color: '#7c3aed', fontWeight: 700, margin: '0 0 6px' }}>🇮🇳 Made for Indian streamers</p>
               <p style={{ fontSize: 13, color: '#475569', margin: 0, lineHeight: 1.6 }}>
-                5% platform fee — the lowest in India. No viewer signups. Instant overlay alerts.
+                7% platform fee — the lowest in India. No viewer signups. Instant overlay alerts.
                 UPI support. GST invoices. We built everything you asked for.
               </p>
             </div>

@@ -20,6 +20,8 @@ import adminRoutes from './routes/admin.routes'
 import adminAuthRoutes from './routes/adminAuth.routes'
 import ttsRoutes from './routes/tts.routes'
 import supportRoutes from './routes/support.routes'
+import trackRoutes from './routes/track.routes'
+import clipsRoutes from './routes/clips.routes'
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -27,7 +29,17 @@ const httpServer = http.createServer(app)
 initSocket(httpServer)
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
-app.use(cors({ origin: [env.FRONTEND_URL, 'http://localhost:3000'], credentials: true }))
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true) // same-origin / no-origin (curl, OBS)
+    const ok = origin === env.FRONTEND_URL ||
+               origin === 'http://localhost:3000' ||
+               origin.endsWith('.eztips.live') ||
+               origin.endsWith('.vercel.app')
+    cb(null, ok)
+  },
+  credentials: true,
+}))
 app.use(morgan('dev'))
 app.use(cookieParser())
 
@@ -61,6 +73,8 @@ app.use('/api/admin/auth', adminAuthRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/tts', ttsRoutes)
 app.use('/api/support', supportRoutes)
+app.use('/api/track', trackRoutes)
+app.use('/api/clips', clipsRoutes)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 

@@ -57,6 +57,17 @@ router.post('/razorpay', async (req: Request, res: Response): Promise<void> => {
       })
     }
 
+    // Resolve sticker indexes to image URLs
+    const stickerUrls: string[] = []
+    if ((donation as any).stickerIndexes) {
+      const rawEmojis = (donation.streamer as any).customEmojis ?? ''
+      const allEmojis = rawEmojis ? rawEmojis.split('|||').filter(Boolean) : []
+      const indexes = (donation as any).stickerIndexes.split(',').map(Number)
+      for (const idx of indexes) {
+        if (allEmojis[idx]) stickerUrls.push(allEmojis[idx])
+      }
+    }
+
     const overlayToken = donation.streamer.overlayToken
     if (overlayToken) {
       emitToDonationOverlay(overlayToken, 'new-donation', {
@@ -65,6 +76,7 @@ router.post('/razorpay', async (req: Request, res: Response): Promise<void> => {
         message: donation.message,
         amount: donation.amount,
         voiceMessageUrl: donation.voiceMessageUrl,
+        stickerUrls: stickerUrls.length ? stickerUrls : undefined,
         streamerUsername: donation.streamer.username,
       })
 

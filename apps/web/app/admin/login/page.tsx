@@ -21,9 +21,8 @@ function LoginContent() {
 
       <div style={{ width:'100%', maxWidth:380, position:'relative' }}>
         <div style={{ textAlign:'center', marginBottom:36 }}>
-          <div style={{ display:'inline-flex', alignItems:'center', gap:10, marginBottom:24 }}>
-            <div style={{ width:38, height:38, borderRadius:10, background:'linear-gradient(135deg,#7c3aed,#db2777)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:17, color:'white', boxShadow:'0 0 20px rgba(124,58,237,0.4)' }}>e</div>
-            <span style={{ fontWeight:700, fontSize:18, color:'#f8fafc' }}>eztips</span>
+          <div style={{ display:'inline-flex', alignItems:'center', marginBottom:24 }}>
+            <img src="/logo.png" alt="EzTips" style={{ height:52, width:'auto', borderRadius:8 }} />
           </div>
           <h1 style={{ fontSize:26, fontWeight:800, color:'#f8fafc', letterSpacing:'-0.5px', marginBottom:6, marginTop:0 }}>Admin Portal</h1>
           <p style={{ fontSize:13, color:'#475569', margin:0 }}>Sign in with your authorized Google account</p>

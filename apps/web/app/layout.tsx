@@ -3,6 +3,7 @@ import localFont from 'next/font/local'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import ClientProviders from '../components/ClientProviders'
+import VisitorTracker from '../components/VisitorTracker'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -11,7 +12,22 @@ const geistSans = localFont({
 
 export const metadata: Metadata = {
   title: 'eztips — Support Your Favourite Streamers',
-  description: 'The most viewer-friendly way to send superchats and donate to Indian streamers.',
+  description: 'The most viewer-friendly donation platform for Indian streamers. No viewer signup. Real-time OBS alerts. Voice messages. Just 7%.',
+  icons: {
+    icon: [
+      { url: '/logo.png', type: 'image/png' },
+    ],
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
+  openGraph: {
+    title: 'eztips — Support Your Favourite Streamers',
+    description: 'The most viewer-friendly donation platform for Indian streamers. No viewer signup. Real-time OBS alerts. Just 7% fee.',
+    url: 'https://www.eztips.live',
+    siteName: 'eztips',
+    images: [{ url: '/logo.png', width: 512, height: 512 }],
+    type: 'website',
+  },
 }
 
 export const viewport = {
@@ -26,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} antialiased`}>
         <ClientProviders>
+          <VisitorTracker page="website" />
           <div className="ambient" />
           <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
           <Toaster

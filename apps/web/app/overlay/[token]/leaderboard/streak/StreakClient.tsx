@@ -2,10 +2,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getSocket } from '../../../../../lib/socket'
-import type { NewDonationEvent } from '@streampay/types'
+import type { NewDonationEvent } from '../../../../../lib/types'
 
 function readParams() {
-  if (typeof window === 'undefined') return { color: '#f59e0b', resetMin: 5, title: 'Donation Train', bg: '#0a0a1a', opacity: 88, textColor: '#e2e8f0', fontSize: 13, font: 'Arial', bold: true }
+  if (typeof window === 'undefined') return { color: '#f59e0b', resetMin: 5, title: 'Donation Train', bg: '#0a0a1a', opacity: 88, textColor: '#e2e8f0', fontSize: 13, font: 'Arial', bold: true, width: 0, height: 0 }
   const p = new URLSearchParams(window.location.search)
   return {
     color:     '#' + (p.get('c') ?? 'f59e0b'),
@@ -17,6 +17,8 @@ function readParams() {
     fontSize:  Math.max(10, Math.min(20, Number(p.get('fs') ?? '13'))),
     font:      p.get('ff') ?? 'Arial',
     bold:      (p.get('fw') ?? '700') === '700',
+    width:     Number(p.get('w') ?? '0'),
+    height:    Number(p.get('h') ?? '0'),
   }
 }
 
@@ -48,6 +50,8 @@ export default function StreakClient({ token }: { token: string }) {
         font:      sk.font      ?? p.font,
         bold:      sk.bold      ?? p.bold,
         resetMin:  sk.resetMin  ?? p.resetMin,
+        width:     sk.width     ?? p.width,
+        height:    sk.height    ?? p.height,
       }))
     })
     socket.on('new-donation', (data: NewDonationEvent) => {
@@ -64,8 +68,13 @@ export default function StreakClient({ token }: { token: string }) {
     return () => { socket.disconnect(); if (resetTimer.current) clearTimeout(resetTimer.current) }
   }, [token])
 
+  const wStyle: React.CSSProperties = {
+    ...(params.width  > 0 ? { width:  params.width  } : {}),
+    ...(params.height > 0 ? { height: params.height, overflow: 'hidden' } : {}),
+  }
+
   return (
-    <div style={{ background: 'transparent', padding: 8 }}>
+    <div style={{ background: 'transparent', padding: 8, ...wStyle }}>
       <style>{`html,body{background:transparent!important;margin:0;padding:0}*{box-sizing:border-box}`}</style>
       <AnimatePresence>
         {visible && streak > 0 && (

@@ -2,10 +2,46 @@ import Link from 'next/link'
 
 const CHANGELOG = [
   {
-    version: 'v1.4.0',
-    date: 'June 24, 2026',
+    version: 'v1.6.0',
+    date: 'July 5, 2026',
     badge: 'Latest',
     badgeColor: '#7c3aed',
+    entries: [
+      { type: 'new',  text: 'Terms of Service page — accessible at eztips.live/tos, linked from footer and login page' },
+      { type: 'new',  text: 'Privacy Policy page — accessible at eztips.live/privacy, linked from footer and login page' },
+      { type: 'new',  text: 'Live stream embed on donation page — split-screen layout automatically activates when a streamer is live on YouTube or Kick' },
+      { type: 'new',  text: 'Kick stream priority — if the streamer is live on both Kick and YouTube, Kick stream is shown on the donation page' },
+      { type: 'imp',  text: 'YouTube live detection now uses the official YouTube Data API v3 with a 5-minute cache — much more reliable than page scraping' },
+      { type: 'imp',  text: 'Kick live detection moved to client-side browser fetch — server-side detection was blocked by Kick\'s API for datacenter IPs' },
+      { type: 'imp',  text: 'Terms of Service and Privacy Policy text on the login page are now clickable links' },
+      { type: 'fix',  text: 'YouTube was sometimes showing a random live stream instead of the correct channel — fixed by using channel-specific API lookup' },
+    ],
+  },
+  {
+    version: 'v1.5.0',
+    date: 'June 28, 2026',
+    badge: '',
+    badgeColor: '',
+    entries: [
+      { type: 'new',  text: 'Admin audit logs — super admin can see a full log of every action taken by other admins, with timestamp, IP, and detail' },
+      { type: 'new',  text: 'Platform config — super admin can set platform-wide settings (Discord webhooks) from the Team tab' },
+      { type: 'new',  text: 'Support ticket Discord webhook — super admin can set a webhook URL that fires whenever a streamer opens a new support ticket' },
+      { type: 'new',  text: 'Razorpay transaction ID visible in admin donations table for every successful payment' },
+      { type: 'new',  text: 'Platform fee % badge on streamer cards in admin panel' },
+      { type: 'new',  text: 'Support chat widget — streamers can open tickets and chat with the support team directly from the dashboard' },
+      { type: 'new',  text: 'Test Discord webhook button in streamer profile — verify your webhook is working without waiting for a real donation' },
+      { type: 'imp',  text: 'Logo moved to center of top bar on all dashboard pages and is now clickable (returns to main dashboard)' },
+      { type: 'imp',  text: 'Landing page refreshed — navbar removed, logo enlarged in hero' },
+      { type: 'fix',  text: 'Transparent/invisible inputs in support ticket form now use correct background in both dark and light mode' },
+      { type: 'fix',  text: 'Image attachments in support chat no longer show inside a colored bubble — renders cleanly with a subtle border' },
+      { type: 'fix',  text: 'Discord webhook removed from dashboard setup checklist' },
+    ],
+  },
+  {
+    version: 'v1.4.0',
+    date: 'June 24, 2026',
+    badge: '',
+    badgeColor: '',
     entries: [
       { type: 'new',  text: 'Celebrity Voice alerts — AI-powered voices (Modi, Trump, Morgan Freeman) for donations ₹1000+, powered by ElevenLabs' },
       { type: 'new',  text: 'Premium streamer accounts — admin can grant premium access to unlock Celebrity Voice' },
@@ -76,7 +112,7 @@ const CHANGELOG = [
       { type: 'new',  text: 'Razorpay payment integration — UPI, cards, net banking' },
       { type: 'new',  text: 'Anonymous donations — no viewer signup required' },
       { type: 'new',  text: 'Public donation page at eztips.live/send-message/[username]' },
-      { type: 'new',  text: '5% platform fee — lowest in India' },
+      { type: 'new',  text: '7% platform fee — lowest in India' },
     ],
   },
 ]
@@ -96,8 +132,8 @@ export default function ChangelogPage() {
       {/* Nav */}
       <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: 'white' }}>ez</div>
-          <span style={{ fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>eztips</span>
+          <img src="/logo.png" alt="eztips" style={{ height: 30, borderRadius: 7, filter: 'drop-shadow(0 0 8px rgba(124,58,237,0.5))' }} />
+          <span style={{ fontWeight: 800, fontSize: 15, background: 'linear-gradient(135deg,#c4b5fd,#f9a8d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>eztips</span>
         </Link>
         <Link href="/dashboard" style={{ fontSize: 13, color: '#475569', textDecoration: 'none' }}>← Dashboard</Link>
       </div>
@@ -161,7 +197,7 @@ export default function ChangelogPage() {
             <a href="mailto:support@eztips.live" style={{ padding: '9px 20px', borderRadius: 10, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)', color: '#a78bfa', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
               ✉ Email us
             </a>
-            <a href="https://discord.gg/eztips" target="_blank" rel="noopener noreferrer" style={{ padding: '9px 20px', borderRadius: 10, background: 'rgba(88,101,242,0.1)', border: '1px solid rgba(88,101,242,0.2)', color: '#818cf8', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="https://discord.gg/sYq6UQqSt9" target="_blank" rel="noopener noreferrer" style={{ padding: '9px 20px', borderRadius: 10, background: 'rgba(88,101,242,0.1)', border: '1px solid rgba(88,101,242,0.2)', color: '#818cf8', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
               Discord
             </a>
           </div>

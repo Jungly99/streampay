@@ -7,7 +7,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth'
 import { env } from '../config/env'
 
 const SUPER_ADMIN_EMAIL = 'abhinavs199.as@gmail.com'
-const FULL_ADMIN_PERMS: AdminPermissions = { overview:true, streamers:true, users:true, donations:true, settlements:true, restore_accounts:true }
+const FULL_ADMIN_PERMS: AdminPermissions = { overview:true, streamers:true, users:true, donations:true, settlements:true, restore_accounts:true, tickets:true, support:true }
 
 const router = Router()
 
@@ -145,12 +145,95 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response): Promise<
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
     include: {
-      streamerProfile: { select: { username: true, channelName: true, overlayToken: true, isVerified: true, isActive: true, isPremium: true, verificationRequestedAt: true } },
+      streamerProfile: { select: { username: true, channelName: true, avatarUrl: true, overlayToken: true, isVerified: true, isActive: true, isPremium: true, verificationRequestedAt: true } },
       viewerProfile: true,
     },
   })
   if (!user) { res.status(404).json({ error: 'User not found' }); return }
   res.json(user)
+})
+
+// ── YOUTUBE CONNECT ──────────────────────────────────────────────────────────
+
+const ytOauth2Client = new OAuth2Client(
+  env.GOOGLE_CLIENT_ID,
+  env.GOOGLE_CLIENT_SECRET,
+  env.YOUTUBE_CONNECT_CALLBACK_URL,
+)
+
+// Returns the Google OAuth URL as JSON — frontend fetches this then redirects
+router.get('/youtube/url', requireAuth, (req: AuthRequest, res: Response): void => {
+  const state = Buffer.from(JSON.stringify({ flow: 'youtube', userId: req.user!.userId })).toString('base64url')
+  const url = ytOauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: ['https://www.googleapis.com/auth/youtube.force-ssl'],
+    state,
+  })
+  res.json({ url })
+})
+
+router.get('/youtube/callback', async (req: Request, res: Response): Promise<void> => {
+  const { code, state, error } = req.query as Record<string, string>
+  if (error) { res.redirect(`${env.FRONTEND_URL}/dashboard/clips?yt_error=${encodeURIComponent(error)}`); return }
+
+  let userId = ''
+  try {
+    const decoded = JSON.parse(Buffer.from(state, 'base64url').toString())
+    if (decoded.flow !== 'youtube' || !decoded.userId) throw new Error('bad state')
+    userId = decoded.userId
+  } catch {
+    res.redirect(`${env.FRONTEND_URL}/dashboard/clips?yt_error=invalid_state`)
+    return
+  }
+
+  const { tokens } = await ytOauth2Client.getToken(code)
+  if (!tokens.refresh_token) {
+    res.redirect(`${env.FRONTEND_URL}/dashboard/clips?yt_error=no_refresh_token`)
+    return
+  }
+
+  // Get channel title
+  let channelTitle = ''
+  try {
+    ytOauth2Client.setCredentials(tokens)
+    const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&key=${env.YOUTUBE_API_KEY}`, {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    })
+    const d = await r.json()
+    channelTitle = d.items?.[0]?.snippet?.title ?? ''
+  } catch { /* non-fatal */ }
+
+  const profile = await prisma.streamerProfile.findUnique({ where: { userId } })
+  if (!profile) { res.redirect(`${env.FRONTEND_URL}/dashboard/clips?yt_error=no_profile`); return }
+
+  await prisma.streamerProfile.update({
+    where: { id: profile.id },
+    data: { ytRefreshToken: tokens.refresh_token, ytChannelTitle: channelTitle } as any,
+  })
+
+  res.redirect(`${env.FRONTEND_URL}/dashboard/clips?yt=connected`)
+})
+
+router.delete('/youtube/disconnect', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const profile = await prisma.streamerProfile.findUnique({ where: { userId: req.user!.userId } })
+  if (!profile) { res.status(404).json({ error: 'Profile not found' }); return }
+  await prisma.streamerProfile.update({
+    where: { id: profile.id },
+    data: { ytRefreshToken: null, ytChannelTitle: null } as any,
+  })
+  res.json({ ok: true })
+})
+
+router.get('/youtube/status', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const profile = await prisma.streamerProfile.findUnique({
+    where: { userId: req.user!.userId },
+    select: { ytRefreshToken: true, ytChannelTitle: true },
+  })
+  res.json({
+    connected: !!(profile as any)?.ytRefreshToken,
+    channelTitle: (profile as any)?.ytChannelTitle ?? '',
+  })
 })
 
 export default router

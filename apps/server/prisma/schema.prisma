@@ -73,22 +73,31 @@ model StreamerProfile {
   verificationRequestedAt   DateTime? @map("verification_requested_at")
   isActive                  Boolean   @default(true) @map("is_active")
   isPremium                 Boolean   @default(false) @map("is_premium")
+  platformFeePct            Decimal   @default(7.00) @map("platform_fee_pct") @db.Decimal(5, 2)
   minDonationAmount     Int      @default(100) @map("min_donation_amount")
   messageMaxLength      Int      @default(100) @map("message_max_length")
   messageTiers          Json     @default("[]") @map("message_tiers")
+  customEmojis          String   @default("") @map("custom_emojis")
+  streamEmbedEnabled    Boolean  @default(false) @map("stream_embed_enabled")
+  clipDefaultDuration   Int      @default(60) @map("clip_default_duration")
+  clipWebhookUrl        String?  @map("clip_webhook_url")
+  ytRefreshToken        String?  @map("yt_refresh_token")
+  ytChannelTitle        String?  @map("yt_channel_title")
   overlayToken          String?  @unique @map("overlay_token")
   cashfreeBeneficiaryId String?  @map("cashfree_beneficiary_id")
   discordWebhookUrl     String?  @map("discord_webhook_url")
   createdAt             DateTime @default(now()) @map("created_at")
 
-  bankDetails   StreamerBankDetails?
-  alertSettings AlertSettings?
-  voiceTiers    VoiceMessageTier[]
-  goals         OverlayGoal[]
-  donations     Donation[]           @relation("StreamerDonations")
-  settlements   Settlement[]
-  invoices      Invoice[]
-  followers     Follow[]
+  bankDetails     StreamerBankDetails?
+  alertSettings   AlertSettings?
+  voiceTiers      VoiceMessageTier[]
+  goals           OverlayGoal[]
+  donations       Donation[]           @relation("StreamerDonations")
+  settlements     Settlement[]
+  invoices        Invoice[]
+  followers       Follow[]
+  supportTickets  SupportTicket[]
+  clips           StreamClip[]
 
   @@map("streamer_profiles")
 }
@@ -102,6 +111,7 @@ model StreamerBankDetails {
   accountNumber       String?  @map("account_number")
   ifscCode            String?  @map("ifsc_code")
   bankName            String?  @map("bank_name")
+  upiId               String?  @map("upi_id")
   invoiceName         String?  @map("invoice_name")
   streetAddress       String?  @map("street_address")
   city                String?
@@ -132,6 +142,7 @@ model AlertSettings {
   ttsEnabled           Boolean         @default(true) @map("tts_enabled")
   ttsVolume            Int             @default(100) @map("tts_volume")
   ttsVoice             String          @default("en-IN") @map("tts_voice")
+  ttsVoiceId           String          @default("hi-IN-Standard-A") @map("tts_voice_id")
   voiceMessagesEnabled Boolean         @default(false) @map("voice_messages_enabled")
   alertDuration        Int             @default(8) @map("alert_duration")
 
@@ -148,6 +159,9 @@ model AlertSettings {
   ttsSoundDelay        Int             @default(1) @map("tts_sound_delay")
   alertSoundType       String          @default("coin") @map("alert_sound_type")
   customAlertSoundUrl  String?         @map("custom_alert_sound_url")
+  alertImageEnabled    Boolean         @default(false) @map("alert_image_enabled")
+  alertImageUrl        String?         @map("alert_image_url")
+  alertImageSize       Int             @default(200) @map("alert_image_size")
   ttsRate              Float           @default(1.0) @map("tts_rate")
   ttsPitch             Float           @default(1.0) @map("tts_pitch")
   minAlertAmount       Int             @default(0) @map("min_alert_amount")
@@ -166,7 +180,10 @@ model AlertSettings {
   goalBgColor          String          @default("#000000") @map("goal_bg_color")
   goalBgOpacity        Int             @default(78) @map("goal_bg_opacity")
   goalBarHeight        Int             @default(18) @map("goal_bar_height")
+  goalWidth            Int             @default(500) @map("goal_width")
+  goalHeight           Int             @default(0) @map("goal_height")
   goalSecondColor      String          @default("#ec4899") @map("goal_second_color")
+  goalShowPercent      Boolean         @default(true) @map("goal_show_percent")
 
   enableBirthday       Boolean         @default(false) @map("enable_birthday")
   birthdayTemplate     String          @default("Happy Birthday {name}! 🎂") @map("birthday_template")
@@ -220,8 +237,9 @@ model Donation {
   donorName       String         @map("donor_name")
   message         String?
   voiceMessageUrl String?        @map("voice_message_url")
+  stickerIndexes  String?        @map("sticker_indexes")
   amount          Int
-  platformFeePct  Decimal        @default(5.00) @map("platform_fee_pct") @db.Decimal(5, 2)
+  platformFeePct  Decimal        @default(7.00) @map("platform_fee_pct") @db.Decimal(5, 2)
   feeAmount       Decimal?       @map("fee_amount") @db.Decimal(10, 2)
   netAmount       Decimal?       @map("net_amount") @db.Decimal(10, 2)
   cfOrderId       String         @unique @map("cf_order_id")
@@ -243,7 +261,7 @@ model Settlement {
   streamer   StreamerProfile @relation(fields: [streamerId], references: [id])
 
   grossAmount    Int              @map("gross_amount")
-  feePct         Decimal          @default(5.00) @map("fee_pct") @db.Decimal(5, 2)
+  feePct         Decimal          @default(7.00) @map("fee_pct") @db.Decimal(5, 2)
   feeAmount      Decimal          @map("fee_amount") @db.Decimal(10, 2)
   netAmount      Decimal          @map("net_amount") @db.Decimal(10, 2)
   cfTransferId   String?          @map("cf_transfer_id")
@@ -336,4 +354,80 @@ model AdminUser {
   createdAt    DateTime   @default(now()) @map("created_at")
 
   @@map("admin_users")
+}
+
+model AdminLog {
+  id        String    @id @default(uuid())
+  adminId   String?   @map("admin_id")
+  adminEmail String   @map("admin_email")
+  adminName String?   @map("admin_name")
+  action    String
+  entity    String?
+  entityId  String?   @map("entity_id")
+  detail    String?
+  ip        String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("admin_logs")
+}
+
+model SupportTicket {
+  id         String          @id @default(uuid())
+  streamerId String          @map("streamer_id")
+  streamer   StreamerProfile @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+  subject    String
+  status     String          @default("OPEN")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  messages   TicketMessage[]
+
+  @@map("support_tickets")
+}
+
+model TicketMessage {
+  id        String        @id @default(uuid())
+  ticketId  String        @map("ticket_id")
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  body      String
+  fromAdmin Boolean       @default(false) @map("from_admin")
+  adminName String?       @map("admin_name")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@map("ticket_messages")
+}
+
+model PlatformConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_config")
+}
+
+model StreamClip {
+  id          String          @id @default(uuid())
+  streamerId  String          @map("streamer_id")
+  streamer    StreamerProfile @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+  videoId     String          @map("video_id")
+  title       String
+  requestedBy String          @map("requested_by")
+  streamSecs  Int             @map("stream_secs")
+  duration    Int             @default(60)
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@unique([streamerId, videoId, streamSecs])
+  @@map("stream_clips")
+}
+
+model PageVisit {
+  id        String   @id @default(uuid())
+  ip        String
+  page      String
+  date      String
+
+  @@unique([ip, page, date])
+  @@index([page, date])
+  @@map("page_visits")
 }

@@ -154,7 +154,7 @@ export default function VoiceSettingsPage() {
                   {i < arr.length - 1 && <div style={{ width: 2, flex: 1, background: 'var(--surface-2)', marginTop: 6 }} />}
                 </div>
                 <div style={{ paddingTop: 6, paddingBottom: i < arr.length - 1 ? 10 : 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>{step.title}</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>{step.title}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>{step.desc}</p>
                 </div>
               </div>

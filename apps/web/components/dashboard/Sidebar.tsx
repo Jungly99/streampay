@@ -29,8 +29,9 @@ const BASE_NAV_GROUPS: NavGroup[] = [
       { href: '/dashboard/tip-settings',         color: '#f59e0b', symbol: '₹',  label: 'Tip Settings',    sub: 'Min Amount & Char Tiers' },
       { href: '/dashboard/voice-settings',       color: '#a855f7', symbol: '♪',  label: 'Voice',           sub: 'Voice & Subscription' },
       { href: '/dashboard/overlay',              color: '#14b8a6', symbol: '◈',  label: 'Overlay',         sub: 'Customize Alerts' },
+      { href: '/dashboard/clips',               color: '#06b6d4', symbol: '🎬', label: 'Clips',           sub: '!clip command from chat' },
       { href: '/dashboard/celebrity-voice',      color: '#f59e0b', symbol: '🎤', label: 'Celebrity Voice', sub: 'AI Voices & Pricing', premium: true },
-      { href: 'https://discord.gg/eztips',       color: '#5865f2', symbol: '⌘',  label: 'Discord',         sub: 'Join our community',  external: true },
+      { href: 'https://discord.gg/sYq6UQqSt9',       color: '#5865f2', symbol: '⌘',  label: 'Discord',         sub: 'Join our community',  external: true },
       { href: '/support-us',                     color: '#ec4899', symbol: '💜', label: 'Support Us',      sub: 'Help keep eztips alive' },
       { href: '/changelog',                      color: '#0891b2', symbol: '✦',  label: "What's New",      sub: 'Features & fixes' },
     ],
@@ -39,11 +40,12 @@ const BASE_NAV_GROUPS: NavGroup[] = [
 
 interface SidebarProps {
   channelName: string; email: string; username: string
-  overlayToken: string; todayEarnings: number; followers: number; isPremium?: boolean
+  overlayToken: string; avatarUrl?: string | null; todayEarnings: number; followers: number; isPremium?: boolean
+  platformFeePct?: number
   onClose?: () => void
 }
 
-export default function Sidebar({ channelName, email, username, overlayToken, todayEarnings, followers, isPremium, onClose }: SidebarProps) {
+export default function Sidebar({ channelName, email, username, overlayToken, avatarUrl, todayEarnings, followers, isPremium, platformFeePct, onClose }: SidebarProps) {
   const path = usePathname()
   const isActive = (href: string) => path === href
   const [copied, setCopied] = useState(false)
@@ -91,24 +93,12 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
       {/* Top glow */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.5),transparent)', pointerEvents: 'none' }} />
 
-      {/* Logo row */}
-      <div style={{ padding: '16px 16px 12px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/dashboard" onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: 'linear-gradient(135deg,#7c3aed 0%,#ec4899 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 900, fontSize: 14, color: 'white',
-            boxShadow: '0 4px 14px rgba(124,58,237,0.45)', letterSpacing: '-1px',
-          }}>ez</div>
-          <span style={{ fontWeight: 800, fontSize: 15, color: textPrimary, letterSpacing: '-0.4px' }}>eztips</span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#7c3aed', letterSpacing: '0.1em', background: 'rgba(124,58,237,0.12)', padding: '2px 6px', borderRadius: 4 }}>LIVE</span>
-        </Link>
-        {/* Theme toggle */}
+      {/* Top row — theme toggle only */}
+      <div style={{ padding: '12px 12px 8px', flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
         <button
           onClick={toggleTheme}
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${borderColor}`, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${borderColor}`, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {isDark ? '☀️' : '🌙'}
         </button>
       </div>
@@ -116,8 +106,10 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
       {/* Channel card */}
       <div style={{ margin: '0 10px 10px', padding: '12px 14px', borderRadius: 12, background: channelCardBg, border: `1px solid ${channelCardBorder}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: 'white', boxShadow: '0 2px 10px rgba(124,58,237,0.3)' }}>
-            {channelName?.[0]?.toUpperCase() ?? 'S'}
+          <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: 'white', boxShadow: '0 2px 10px rgba(124,58,237,0.3)', overflow: 'hidden', position: 'relative' }}>
+            {avatarUrl
+              ? <img src={avatarUrl} alt={channelName} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+              : (channelName?.[0]?.toUpperCase() ?? 'S')}
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: textPrimary, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{channelName}</p>
@@ -209,7 +201,7 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
             {[
-              { label: 'Platform Fee', value: '5%' },
+              { label: 'Platform Fee', value: `${platformFeePct ?? 7}%` },
               { label: 'Settlement', value: 'Any Time' },
               { label: 'Viewer Signup', value: 'Never' },
               { label: 'Min Tip', value: '₹100' },
@@ -229,8 +221,10 @@ export default function Sidebar({ channelName, email, username, overlayToken, to
       {/* Footer */}
       <div style={{ padding: '8px 10px 10px', borderTop: `1px solid ${dividerBg}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 6px', marginBottom: 4 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 8, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0 }}>
-            {channelName?.[0]?.toUpperCase() ?? 'S'}
+          <div style={{ width: 26, height: 26, borderRadius: 8, background: 'linear-gradient(135deg,#7c3aed,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+            {avatarUrl
+              ? <img src={avatarUrl} alt={channelName} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
+              : (channelName?.[0]?.toUpperCase() ?? 'S')}
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{ fontSize: 11, fontWeight: 500, color: textMuted, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{email}</p>

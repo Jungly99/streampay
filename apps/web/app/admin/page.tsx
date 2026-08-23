@@ -1,14 +1,15 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import StyledSelect, { SelectOption } from '../../components/ui/StyledSelect'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donations:boolean; settlements:boolean; restore_accounts:boolean }
+interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donations:boolean; settlements:boolean; restore_accounts:boolean; tickets:boolean; support:boolean }
 interface AdminMe { adminId:string; email:string; name?:string; avatar?:string; isSuperAdmin:boolean; permissions:AdminPerms }
-interface Stats { totalStreamers:number; totalViewers:number; totalDonations:number; totalCollected:number; pendingSettlements:number; totalPaidOut:number }
-interface BankDetails { id:string; accountHolderName:string|null; accountNumber:string|null; ifscCode:string|null; bankName:string|null; invoiceName:string|null; streetAddress:string|null; city:string|null; state:string|null; pincode:string|null }
-interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; isPremium:boolean; verificationRequestedAt:string|null; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; bankDetails:BankDetails|null }
+interface VisitorStats { websiteTotal:number; dashboardTotal:number; websiteToday:number; dashboardToday:number }
+interface Stats { totalStreamers:number; totalViewers:number; totalDonations:number; totalCollected:number; pendingSettlements:number; totalPaidOut:number; visitors:VisitorStats }
+interface BankDetails { id:string; accountHolderName:string|null; accountNumber:string|null; ifscCode:string|null; bankName:string|null; upiId:string|null; invoiceName:string|null; streetAddress:string|null; city:string|null; state:string|null; pincode:string|null }
+interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; isPremium:boolean; verificationRequestedAt:string|null; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; platformFeePct:number; bankDetails:BankDetails|null }
 interface User { id:string; email:string; accountType:string; displayName:string|null; createdAt:string; deletedAt?:string|null; streamerProfile:{id:string;username:string|null;channelName:string|null;isActive:boolean;isVerified:boolean;_count?:{donations:number}}|null; viewerProfile:{id:string;displayName:string|null}|null }
 interface Donation { id:string; donorName:string; message:string|null; amount:number; status:string; createdAt:string; cfOrderId:string; cfPaymentId:string|null; settled:boolean; streamer:{username:string|null;channelName:string|null} }
 interface Settlement { id:string; grossAmount:number; feeAmount:string; netAmount:string; status:'INITIATED'|'SUCCESS'|'FAILED'; initiatedAt:string; settledAt:string|null; failureReason:string|null; cfTransferId:string|null; streamer:{username:string|null;channelName:string|null;user:{email:string};bankDetails:BankDetails|null} }
@@ -16,18 +17,18 @@ interface Role { id:string; name:string; permissions:AdminPerms; _count?:{admins
 interface AdminUser { id:string; email:string; name:string|null; avatar:string|null; isSuperAdmin:boolean; role:Role|null; createdAt:string }
 interface SupportPayment { id:string; orderId:string; paymentId:string|null; amount:number; name:string|null; message:string|null; status:string; createdAt:string; paidAt:string|null }
 
-type TabType = 'overview'|'streamers'|'users'|'deleted'|'donations'|'settlements'|'support'|'team'
+type TabType = 'overview'|'streamers'|'users'|'deleted'|'donations'|'settlements'|'support'|'tickets'|'logs'|'team'
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const fmt = (n:number) => `₹${n.toLocaleString('en-IN')}`
 const S_COLORS:Record<string,string> = { INITIATED:'#f59e0b', SUCCESS:'#10b981', FAILED:'#ef4444', PENDING:'#6b7280', REFUNDED:'#8b5cf6', streamer:'#7c3aed', viewer:'#06b6d4' }
 function Badge({v}:{v:string}){ return <span style={{padding:'2px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:(S_COLORS[v]??'#6b7280')+'22',color:S_COLORS[v]??'#6b7280',textTransform:'uppercase',letterSpacing:.5}}>{v}</span> }
 const card:React.CSSProperties = { background:'#1a1a2e', border:'1px solid #2d2d4e', borderRadius:14 }
-const inp:React.CSSProperties = { width:'100%', padding:'8px 12px', background:'#0f0f1a', border:'1px solid #2d2d4e', borderRadius:8, color:'#e2e8f0', fontSize:13, boxSizing:'border-box' }
+const inp:React.CSSProperties = { width:'100%', padding:'8px 12px', background:'#0f0f1a', border:'1px solid #2d2d4e', borderRadius:8, color:'#e2e8f0', fontSize:13, boxSizing:'border-box', colorScheme:'dark', WebkitTextFillColor:'#e2e8f0' }
 const btn = (bg='#7c3aed',c='#fff'):React.CSSProperties => ({ padding:'7px 16px', background:bg, color:c, border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600 })
 const ghostBtn:React.CSSProperties = { ...btn('transparent','#aaa'), border:'1px solid #2d2d4e' }
 const dangerBtn:React.CSSProperties = btn('#ef444422','#f87171')
-const ALL_PERMS:Array<keyof AdminPerms> = ['overview','streamers','users','donations','settlements','restore_accounts']
+const ALL_PERMS:Array<keyof AdminPerms> = ['overview','streamers','users','donations','settlements','restore_accounts','tickets','support']
 
 // ─── Modal ─────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children }:{ title:string; onClose:()=>void; children:React.ReactNode }) {
@@ -66,6 +67,15 @@ export default function AdminDashboard() {
   const [settlements, setSettlements]   = useState<Settlement[]>([])
   const [deletedUsers, setDeletedUsers] = useState<User[]>([])
   const [supportPayments, setSupportPayments] = useState<SupportPayment[]>([])
+  const [tickets, setTickets] = useState<any[]>([])
+  const [activeTicket, setActiveTicket] = useState<any|null>(null)
+  const [ticketReply, setTicketReply] = useState('')
+  const [ticketSending, setTicketSending] = useState(false)
+  const [ticketImage, setTicketImage] = useState('')
+  const [logs, setLogs] = useState<any[]>([])
+  const [platformConfig, setPlatformConfig] = useState<Record<string,string>>({})
+  const [testingWebhook, setTestingWebhook] = useState(false)
+  const ticketFileRef = typeof document !== 'undefined' ? { current: null as HTMLInputElement | null } : { current: null as HTMLInputElement | null }
   const [roles, setRoles]           = useState<Role[]>([])
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
 
@@ -88,11 +98,14 @@ export default function AdminDashboard() {
 
   // Role/admin management state
   const [newRoleName, setNewRoleName]   = useState('')
-  const [newRolePerms, setNewRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false })
+  const [newRolePerms, setNewRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false, tickets:false, support:false })
   const [editRole, setEditRole]         = useState<Role|null>(null)
-  const [editRolePerms, setEditRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false })
+  const [editRolePerms, setEditRolePerms] = useState<AdminPerms>({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false, tickets:false, support:false })
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [newAdminRoleId, setNewAdminRoleId] = useState('')
+
+  const [testDonation, setTestDonation] = useState({ streamerId:'', donorName:'SuperAdmin', amount:100, message:'This is a test donation!' })
+  const [testDonationSending, setTestDonationSending] = useState(false)
 
   const showToast = useCallback((msg:string) => { setToast(msg); setTimeout(()=>setToast(''),3500) }, [])
 
@@ -129,12 +142,15 @@ export default function AdminDashboard() {
     if (tab==='users' && (admin.isSuperAdmin||admin.permissions.users)) api('/users').then(setUsers).catch(()=>{})
     if (tab==='donations' && (admin.isSuperAdmin||admin.permissions.donations)) api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}`).then((d:any)=>setDonations(d.donations)).catch(()=>{})
     if (tab==='settlements' && (admin.isSuperAdmin||admin.permissions.settlements)) api(`/settlements${settlementFilter?`?status=${settlementFilter}`:''}`).then(setSettlements).catch(()=>{})
-    if (tab==='support' && admin.isSuperAdmin) api('/support-payments').then(setSupportPayments).catch(()=>{})
+    if (tab==='support' && (admin.isSuperAdmin||admin.permissions.support)) api('/support-payments').then(setSupportPayments).catch(()=>{})
+    if (tab==='tickets' && (admin.isSuperAdmin||admin.permissions.tickets)) api('/tickets').then(setTickets).catch(()=>{})
+    if (tab==='logs' && admin.isSuperAdmin) api('/logs').then(setLogs).catch(()=>{})
   }, [admin, tab, api, donationFilter, settlementFilter])
 
   useEffect(() => {
     if (!admin) return
     if (admin.isSuperAdmin || admin.permissions.overview) api('/stats').then(setStats).catch(()=>{})
+    if (admin.isSuperAdmin) api('/streamers').then(setStreamers).catch(()=>{})
   }, [admin, api])
 
   useEffect(() => {
@@ -143,14 +159,35 @@ export default function AdminDashboard() {
     if (tab==='users' && (admin.isSuperAdmin||admin.permissions.users)) api(`/users${userSearch?`?search=${userSearch}`:''}`).then(setUsers).catch(()=>{})
     if (tab==='donations' && (admin.isSuperAdmin||admin.permissions.donations)) api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${donationSearch}`:''}`).then((d:any)=>setDonations(d.donations)).catch(()=>{})
     if (tab==='settlements' && (admin.isSuperAdmin||admin.permissions.settlements)) api(`/settlements${settlementFilter?`?status=${settlementFilter}`:''}`).then(setSettlements).catch(()=>{})
-    if (tab==='support' && admin.isSuperAdmin) api('/support-payments').then(setSupportPayments).catch(()=>{})
+    if (tab==='support' && (admin.isSuperAdmin||admin.permissions.support)) api('/support-payments').then(setSupportPayments).catch(()=>{})
+    if (tab==='tickets' && (admin.isSuperAdmin||admin.permissions.tickets)) api('/tickets').then(setTickets).catch(()=>{})
     if (tab==='deleted' && (admin.isSuperAdmin||admin.permissions.restore_accounts)) api('/deleted-users').then(setDeletedUsers).catch(()=>{})
     if (tab==='team' && admin.isSuperAdmin) {
       api('/roles').then(setRoles).catch(()=>{})
       api('/admin-users').then(setAdminUsers).catch(()=>{})
+      api('/config').then(setPlatformConfig).catch(()=>{})
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, admin, settlementFilter, donationFilter])
+
+  // Poll for new messages while admin has a ticket thread open
+  const ticketPollRef = useRef<ReturnType<typeof setInterval>|null>(null)
+  useEffect(() => {
+    if (ticketPollRef.current) clearInterval(ticketPollRef.current)
+    if (!activeTicket || activeTicket.status === 'CLOSED') return
+    ticketPollRef.current = setInterval(async () => {
+      try {
+        const fresh: any[] = await api('/tickets')
+        const updated = fresh.find((t: any) => t.id === activeTicket.id)
+        if (updated && updated.messages.length !== activeTicket.messages?.length) {
+          setActiveTicket(updated)
+          setTickets(fresh)
+        }
+      } catch {}
+    }, 5000)
+    return () => { if (ticketPollRef.current) clearInterval(ticketPollRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTicket?.id, activeTicket?.messages?.length, activeTicket?.status])
 
   // ── Streamer actions ────────────────────────────────────────────────────────
   async function toggleStreamerField(id:string, field:'isActive'|'isVerified'|'isPremium', val:boolean) {
@@ -212,12 +249,6 @@ export default function AdminDashboard() {
     showToast('Account restored ✓')
   }
 
-  // ── Donation actions ──────────────────────────────────────────────────────────
-  async function updateDonationStatus(id:string, status:string) {
-    await api(`/donations/${id}`, { method:'PATCH', body:JSON.stringify({ status }) })
-    setDonations(p=>p.map(d=>d.id===id?{...d,status}:d))
-    showToast('Status updated')
-  }
 
   // ── Settlement actions ────────────────────────────────────────────────────────
   async function markPaid(id:string) {
@@ -237,7 +268,7 @@ export default function AdminDashboard() {
     if (!newRoleName.trim()) return
     const role = await api('/roles', { method:'POST', body:JSON.stringify({ name:newRoleName.trim(), permissions:newRolePerms }) })
     setRoles(p=>[...p, role])
-    setNewRoleName(''); setNewRolePerms({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false })
+    setNewRoleName(''); setNewRolePerms({ overview:false, streamers:false, users:false, donations:false, settlements:false, restore_accounts:false, tickets:false, support:false })
     showToast('Role created')
   }
   async function saveEditRole() {
@@ -292,18 +323,21 @@ export default function AdminDashboard() {
     { key:'deleted'     as TabType, label:'🗑 Deleted',  show:canRestore },
     { key:'donations'   as TabType, label:'Donations',   show:canSee('donations') },
     { key:'settlements' as TabType, label:'Settlements', show:canSee('settlements') },
-    { key:'support'     as TabType, label:'💜 Support Us', show:admin.isSuperAdmin },
+    { key:'support'     as TabType, label:'💜 Support Us', show:admin.isSuperAdmin || admin.permissions.support },
+    { key:'tickets'     as TabType, label:'🎫 Tickets',     show:admin.isSuperAdmin || admin.permissions.tickets },
+    { key:'logs'        as TabType, label:'📋 Logs',     show:admin.isSuperAdmin },
     { key:'team'        as TabType, label:'Team',        show:admin.isSuperAdmin },
   ] as Array<{key:TabType;label:string;show:boolean}>).filter(t=>t.show)
 
   return (
     <div style={{fontFamily:'system-ui,sans-serif',background:'#0f0f1a',minHeight:'100vh',color:'#e2e8f0'}}>
+      <style>{`input,textarea,select{color:#e2e8f0!important;-webkit-text-fill-color:#e2e8f0!important;background-color:#0f0f1a!important;}input::placeholder,textarea::placeholder{color:#555!important;-webkit-text-fill-color:#555!important;}input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px #0f0f1a inset!important;-webkit-text-fill-color:#e2e8f0!important;}`}</style>
       {toast && <div style={{position:'fixed',top:64,right:20,zIndex:200,background:'#10b981',color:'#fff',padding:'10px 20px',borderRadius:10,fontSize:14,fontWeight:600,boxShadow:'0 4px 20px #0008'}}>{toast}</div>}
 
       {/* top bar */}
       <div style={{background:'#1a1a2e',borderBottom:'1px solid #2d2d4e',padding:'12px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <a href="/dashboard" style={{fontWeight:800,fontSize:18,color:'#7c3aed',textDecoration:'none'}}>eztips</a>
+          <a href="/dashboard" style={{textDecoration:'none'}}><img src="/logo.png" alt="EzTips" style={{height:36,width:'auto',borderRadius:6,verticalAlign:'middle'}} /></a>
           <span style={{color:'#555',fontSize:12}}>{admin.isSuperAdmin ? '⭐ Super Admin' : '🔑 Admin'}</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
@@ -345,10 +379,75 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+            {/* Visitor Counter */}
+            <div style={{...card,padding:'20px 24px',marginBottom:16}}>
+              <p style={{color:'#888',fontSize:12,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,margin:'0 0 16px'}}>👁 Unique Visitors (by IP)</p>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <div style={{background:'rgba(124,58,237,0.08)',border:'1px solid rgba(124,58,237,0.2)',borderRadius:10,padding:'14px 18px'}}>
+                  <p style={{color:'#888',fontSize:11,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:.5}}>🌐 Website — All Time</p>
+                  <p style={{color:'#a78bfa',fontSize:28,fontWeight:800,margin:'0 0 2px'}}>{stats.visitors?.websiteTotal ?? 0}</p>
+                  <p style={{color:'#666',fontSize:11,margin:0}}>+{stats.visitors?.websiteToday ?? 0} today</p>
+                </div>
+                <div style={{background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:10,padding:'14px 18px'}}>
+                  <p style={{color:'#888',fontSize:11,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:.5}}>📊 Dashboard — All Time</p>
+                  <p style={{color:'#34d399',fontSize:28,fontWeight:800,margin:'0 0 2px'}}>{stats.visitors?.dashboardTotal ?? 0}</p>
+                  <p style={{color:'#666',fontSize:11,margin:0}}>+{stats.visitors?.dashboardToday ?? 0} today</p>
+                </div>
+              </div>
+            </div>
+
             {stats.pendingSettlements>0 && (
               <div style={{...card,borderColor:'#f59e0b55',padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <span style={{color:'#f59e0b',fontWeight:600}}>⚠ {stats.pendingSettlements} pending settlement{stats.pendingSettlements!==1?'s':''}</span>
                 {canSee('settlements') && <button onClick={()=>setTab('settlements')} style={btn()}>View →</button>}
+              </div>
+            )}
+
+            {admin.isSuperAdmin && (
+              <div style={{...card,padding:'20px 24px',marginTop:16,border:'1px solid rgba(219,39,119,0.25)',background:'rgba(219,39,119,0.04)'}}>
+                <p style={{color:'#f472b6',fontSize:12,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,margin:'0 0 16px'}}>🎭 Test Donation — Fire a fake alert on any streamer&apos;s overlay</p>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+                  <div>
+                    <label style={{display:'block',color:'#888',fontSize:12,marginBottom:4}}>Streamer</label>
+                    <select
+                      value={testDonation.streamerId}
+                      onChange={e=>setTestDonation(d=>({...d,streamerId:e.target.value}))}
+                      style={{...inp,cursor:'pointer'}}
+                    >
+                      <option value=''>— select streamer —</option>
+                      {streamers.map(s=>(
+                        <option key={s.id} value={s.id}>{s.channelName || s.username || s.email}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display:'block',color:'#888',fontSize:12,marginBottom:4}}>Donor Name</label>
+                    <input style={inp} value={testDonation.donorName} onChange={e=>setTestDonation(d=>({...d,donorName:e.target.value}))} placeholder='SuperAdmin' />
+                  </div>
+                  <div>
+                    <label style={{display:'block',color:'#888',fontSize:12,marginBottom:4}}>Amount (₹)</label>
+                    <input style={inp} type='number' min={1} value={testDonation.amount} onChange={e=>setTestDonation(d=>({...d,amount:Number(e.target.value)}))} />
+                  </div>
+                  <div>
+                    <label style={{display:'block',color:'#888',fontSize:12,marginBottom:4}}>Message</label>
+                    <input style={inp} value={testDonation.message} onChange={e=>setTestDonation(d=>({...d,message:e.target.value}))} placeholder='You are good!' />
+                  </div>
+                </div>
+                <button
+                  disabled={testDonationSending || !testDonation.streamerId}
+                  onClick={async()=>{
+                    if (!testDonation.streamerId) return
+                    setTestDonationSending(true)
+                    try {
+                      await api('/test-donation', { method:'POST', body: JSON.stringify(testDonation) })
+                      showToast('Test donation sent! Check the overlay.')
+                    } catch(e:any) { showToast('Error: ' + (e.message||'failed')) }
+                    setTestDonationSending(false)
+                  }}
+                  style={{...btn('#db2777'),opacity:(!testDonation.streamerId||testDonationSending)?0.5:1}}
+                >
+                  {testDonationSending ? 'Sending…' : '🚀 Fire Test Donation'}
+                </button>
               </div>
             )}
           </div>
@@ -423,7 +522,7 @@ export default function AdminDashboard() {
                     <p style={{color:'#666',fontSize:12,margin:0}}>{s.email} · Joined {new Date(s.createdAt).toLocaleDateString('en-IN')}</p>
                   </div>
                   <div style={{display:'flex',gap:20,alignItems:'center',flexWrap:'wrap'}}>
-                    {[['COLLECTED',fmt(s.totalCollected),'#10b981'],['PENDING',fmt(s.pendingBalance),'#f59e0b'],['NET PAYABLE',fmt(s.pendingNet),'#7c3aed'],['DONATIONS',String(s.donationCount),'#fff']].map(([l,v,c])=>(
+                    {[['COLLECTED',fmt(s.totalCollected),'#10b981'],['PENDING',fmt(s.pendingBalance),'#f59e0b'],['NET PAYABLE',fmt(s.pendingNet),'#7c3aed'],['PLATFORM FEE',`${s.platformFeePct??7}%`,'#f59e0b'],['DONATIONS',String(s.donationCount),'#fff']].map(([l,v,c])=>(
                       <div key={l} style={{textAlign:'center'}}>
                         <p style={{color:'#888',fontSize:11,margin:'0 0 2px'}}>{l}</p>
                         <p style={{color:c,fontWeight:700,margin:0}}>{v}</p>
@@ -437,13 +536,14 @@ export default function AdminDashboard() {
                     <span>Acc: <strong style={{color:'#fff',fontFamily:'monospace'}}>{s.bankDetails.accountNumber}</strong></span>
                     <span>IFSC: <strong style={{color:'#fff',fontFamily:'monospace'}}>{s.bankDetails.ifscCode}</strong></span>
                     <span>Name: <strong style={{color:'#fff'}}>{s.bankDetails.accountHolderName}</strong></span>
+                    {s.bankDetails.upiId && <span>UPI: <strong style={{color:'#fff',fontFamily:'monospace'}}>{s.bankDetails.upiId}</strong></span>}
                   </div>
                 ) : (
                   <div style={{background:'#ef444411',borderRadius:8,padding:'8px 14px',fontSize:12,color:'#f87171',marginBottom:12}}>⚠ No bank details</div>
                 )}
                 <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                  <button onClick={()=>{setEditStreamer(s);setSForm({channelName:s.channelName??'',bio:s.bio??'',channelLink:s.channelLink??'',username:s.username??'',minDonationAmount:s.minDonationAmount,discordWebhookUrl:s.discordWebhookUrl??''})}} style={btn()}>✏ Edit</button>
-                  <button onClick={()=>{setEditBank(s);setBForm({accountHolderName:s.bankDetails?.accountHolderName??'',accountNumber:s.bankDetails?.accountNumber??'',ifscCode:s.bankDetails?.ifscCode??'',bankName:s.bankDetails?.bankName??'',invoiceName:s.bankDetails?.invoiceName??'',streetAddress:s.bankDetails?.streetAddress??'',city:s.bankDetails?.city??'',state:s.bankDetails?.state??'',pincode:s.bankDetails?.pincode??''})}} style={btn('#0f0f1a','#aaa')}>🏦 Bank</button>
+                  <button onClick={()=>{setEditStreamer(s);setSForm({channelName:s.channelName??'',bio:s.bio??'',channelLink:s.channelLink??'',username:s.username??'',minDonationAmount:s.minDonationAmount,discordWebhookUrl:s.discordWebhookUrl??'',platformFeePct:s.platformFeePct??7})}} style={btn()}>✏ Edit</button>
+                  <button onClick={()=>{setEditBank(s);setBForm({accountHolderName:s.bankDetails?.accountHolderName??'',accountNumber:s.bankDetails?.accountNumber??'',ifscCode:s.bankDetails?.ifscCode??'',bankName:s.bankDetails?.bankName??'',upiId:s.bankDetails?.upiId??'',invoiceName:s.bankDetails?.invoiceName??'',streetAddress:s.bankDetails?.streetAddress??'',city:s.bankDetails?.city??'',state:s.bankDetails?.state??'',pincode:s.bankDetails?.pincode??''})}} style={btn('#0f0f1a','#aaa')}>🏦 Bank</button>
                   {s.isVerified
                     ? <button onClick={()=>toggleStreamerField(s.id,'isVerified',false)} style={btn('#10b98122','#10b981')}>✓ Verified</button>
                     : s.verificationRequestedAt
@@ -545,14 +645,17 @@ export default function AdminDashboard() {
                 {['SUCCESS','PENDING','FAILED','REFUNDED'].map(s=><SelectOption key={s} value={s}>{s}</SelectOption>)}
               </StyledSelect>
               <input placeholder="Search donor…" value={donationSearch} onChange={e=>setDonationSearch(e.target.value)}
-                onKeyDown={e=>e.key==='Enter'&&api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${donationSearch}`:''}`).then((d:any)=>setDonations(d.donations))}
-                style={{...inp,width:220}} />
-              <button onClick={()=>api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${donationSearch}`:''}`).then((d:any)=>setDonations(d.donations))} style={btn()}>Search</button>
+                onKeyDown={e=>{ if(e.key==='Enter') { const q=`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${encodeURIComponent(donationSearch)}`:''}${streamerSearch?`&streamer=${encodeURIComponent(streamerSearch)}`:''}`;api(q).then((d:any)=>setDonations(d.donations)) }}}
+                style={{...inp,width:200}} />
+              <input placeholder="Search streamer…" value={streamerSearch??''} onChange={e=>setStreamerSearch(e.target.value)}
+                onKeyDown={e=>{ if(e.key==='Enter') { const q=`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${encodeURIComponent(donationSearch)}`:''}${streamerSearch?`&streamer=${encodeURIComponent(streamerSearch)}`:''}`;api(q).then((d:any)=>setDonations(d.donations)) }}}
+                style={{...inp,width:200}} />
+              <button onClick={()=>{ const q=`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}${donationSearch?`&search=${encodeURIComponent(donationSearch)}`:''}${streamerSearch?`&streamer=${encodeURIComponent(streamerSearch)}`:''}`;api(q).then((d:any)=>setDonations(d.donations)) }} style={btn()}>Search</button>
             </div>
             <div style={{...card,overflow:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse',fontSize:13,minWidth:800}}>
                 <thead><tr style={{background:'#0f0f1a',color:'#666'}}>
-                  {['Donor','Streamer','Amount','Message','Status','Settled','Date','Change'].map(h=><th key={h} style={{padding:'11px 16px',fontWeight:600,textAlign:'left',whiteSpace:'nowrap'}}>{h}</th>)}
+                  {['Donor','Streamer','Amount','Message','Status','Settled','Date','Transaction ID'].map(h=><th key={h} style={{padding:'11px 16px',fontWeight:600,textAlign:'left',whiteSpace:'nowrap'}}>{h}</th>)}
                 </tr></thead>
                 <tbody>
                   {donations.map((d,i)=>(
@@ -563,12 +666,18 @@ export default function AdminDashboard() {
                       <td style={{padding:'11px 16px',color:'#aaa',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.message??'—'}</td>
                       <td style={{padding:'11px 16px'}}><Badge v={d.status}/></td>
                       <td style={{padding:'11px 16px',color:d.settled?'#10b981':'#f59e0b'}}>{d.settled?'Yes':'No'}</td>
-                      <td style={{padding:'11px 16px',color:'#666',fontSize:12}}>{new Date(d.createdAt).toLocaleDateString('en-IN')}</td>
+                      <td style={{padding:'11px 16px',color:'#666',fontSize:12,whiteSpace:'nowrap'}}>{new Date(d.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}<br/><span style={{color:'#888',fontSize:11}}>{new Date(d.createdAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})}</span></td>
                       <td style={{padding:'11px 16px'}}>
-                        <StyledSelect defaultValue="" onChange={e=>e.target.value&&updateDonationStatus(d.id,e.target.value)} style={{width:'auto',padding:'5px 28px 5px 8px',fontSize:12}}>
-                          <SelectOption value="">—</SelectOption>
-                          {['SUCCESS','PENDING','FAILED','REFUNDED'].filter(s=>s!==d.status).map(s=><SelectOption key={s} value={s}>{s}</SelectOption>)}
-                        </StyledSelect>
+                        {d.cfPaymentId ? (
+                          <div>
+                            <p style={{fontSize:10,color:'#475569',margin:'0 0 2px',letterSpacing:.3}}>Pay ID</p>
+                            <span style={{fontSize:11,fontFamily:'monospace',color:'#a78bfa',background:'rgba(124,58,237,0.08)',padding:'2px 6px',borderRadius:4}}>{d.cfPaymentId}</span>
+                          </div>
+                        ) : (
+                          <span style={{fontSize:11,color:'#334155',fontFamily:'monospace'}}>
+                            {d.cfOrderId ? <span title={d.cfOrderId} style={{color:'#475569'}}>Order: {d.cfOrderId.slice(-8)}</span> : '—'}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -636,7 +745,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ═══ SUPPORT US PAYMENTS ════════════════════════════════════════════════ */}
-        {tab==='support' && admin.isSuperAdmin && (
+        {tab==='support' && (admin.isSuperAdmin||admin.permissions.support) && (
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
@@ -675,8 +784,286 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* ═══ TICKETS (super admin only) ══════════════════════════════════════════ */}
+        {tab==='tickets' && (admin.isSuperAdmin||admin.permissions.tickets) && (
+          <div style={{display:'grid',gridTemplateColumns:'320px 1fr',gap:20,height:'calc(100vh - 180px)'}}>
+            {/* Ticket list */}
+            <div style={{...card,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+              <div style={{padding:'14px 16px',borderBottom:'1px solid #2d2d4e',flexShrink:0}}>
+                <h3 style={{fontWeight:700,fontSize:14,color:'#f1f5f9',margin:0}}>Support Tickets</h3>
+                <p style={{fontSize:11,color:'#475569',margin:'2px 0 0'}}>{tickets.filter(t=>t.status==='OPEN').length} open · {tickets.length} total</p>
+              </div>
+              <div style={{flex:1,overflowY:'auto'}}>
+                {tickets.length===0 && <p style={{padding:24,textAlign:'center',color:'#475569',fontSize:13}}>No tickets yet</p>}
+                {tickets.map((t:any)=>(
+                  <div key={t.id} onClick={()=>{setActiveTicket(t);setTicketReply('')}}
+                    style={{padding:'12px 16px',borderBottom:'1px solid #1e1e35',cursor:'pointer',
+                      background:activeTicket?.id===t.id?'rgba(124,58,237,0.12)':'transparent'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+                      <span style={{fontSize:13,fontWeight:600,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:180}}>{t.subject}</span>
+                      <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:20,
+                        background:t.status==='OPEN'?'#10b98120':'#6b728020',
+                        color:t.status==='OPEN'?'#10b981':'#6b7280'}}>{t.status}</span>
+                    </div>
+                    <p style={{fontSize:11,color:'#475569',margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {t.streamer?.channelName||t.streamer?.username||'Unknown'} · {t.messages?.length||0} msgs
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Thread */}
+            <div style={{...card,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+              {!activeTicket ? (
+                <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
+                  <p style={{fontSize:28}}>🎫</p>
+                  <p style={{fontSize:14,color:'#475569'}}>Select a ticket to view</p>
+                </div>
+              ) : (
+                <>
+                  {/* Thread header */}
+                  <div style={{padding:'14px 18px',borderBottom:'1px solid #2d2d4e',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    <div>
+                      <p style={{fontSize:14,fontWeight:700,color:'#f1f5f9',margin:0}}>{activeTicket.subject}</p>
+                      <p style={{fontSize:11,color:'#475569',margin:'3px 0 0'}}>
+                        {activeTicket.streamer?.channelName||activeTicket.streamer?.username} · {activeTicket.streamer?.user?.email}
+                      </p>
+                    </div>
+                    <div style={{display:'flex',gap:8}}>
+                      {activeTicket.status==='OPEN' ? (
+                        <button onClick={async()=>{
+                          await api(`/tickets/${activeTicket.id}/close`,{method:'PATCH'})
+                          setActiveTicket((p:any)=>({...p,status:'CLOSED'}))
+                          setTickets((prev:any[])=>prev.map((t:any)=>t.id===activeTicket.id?{...t,status:'CLOSED'}:t))
+                          showToast('Ticket closed')
+                        }} style={{...btn('danger'),padding:'7px 14px',fontSize:12}}>Close</button>
+                      ) : (
+                        <button onClick={async()=>{
+                          await api(`/tickets/${activeTicket.id}/reopen`,{method:'PATCH'})
+                          setActiveTicket((p:any)=>({...p,status:'OPEN'}))
+                          setTickets((prev:any[])=>prev.map((t:any)=>t.id===activeTicket.id?{...t,status:'OPEN'}:t))
+                          showToast('Ticket reopened')
+                        }} style={{...btn(),padding:'7px 14px',fontSize:12}}>Reopen</button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Messages */}
+                  <div style={{flex:1,overflowY:'auto',padding:'12px 18px',display:'flex',flexDirection:'column',gap:10}}>
+                    {(activeTicket.messages||[]).map((m:any)=>(
+                      <div key={m.id} style={{display:'flex',flexDirection:'column',alignItems:m.fromAdmin?'flex-start':'flex-end'}}>
+                        {m.fromAdmin && <span style={{fontSize:10,color:'#475569',marginBottom:2,marginLeft:4}}>{m.adminName||'Admin'}</span>}
+                        <div style={{maxWidth:'80%',padding:'9px 14px',borderRadius:m.fromAdmin?'4px 14px 14px 14px':'14px 4px 14px 14px',
+                          background:m.fromAdmin?'rgba(255,255,255,0.04)':'rgba(124,58,237,0.25)',
+                          border:m.fromAdmin?'1px solid #2d2d4e':'1px solid rgba(124,58,237,0.3)',
+                          color:'#e2e8f0',fontSize:13,lineHeight:1.5}}>
+                        {m.body.split('\n').map((line:string,li:number)=>
+                          line.startsWith('data:image')
+                            ? <img key={li} src={line} alt="attachment" style={{maxWidth:'100%',borderRadius:8,marginTop:4,display:'block'}} />
+                            : line ? <span key={li} style={{display:'block'}}>{line}</span> : null
+                        )}
+                      </div>
+                        <span style={{fontSize:10,color:'#334155',marginTop:2,marginLeft:4,marginRight:4}}>
+                          {m.fromAdmin?'':'Streamer · '}{new Date(m.createdAt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Reply box */}
+                  {activeTicket.status==='OPEN' && (
+                    <div style={{padding:'12px 18px',borderTop:'1px solid #2d2d4e',display:'flex',gap:10,flexShrink:0}}>
+                      {ticketImage && (
+                        <div style={{padding:'6px 0',position:'relative',display:'inline-block',marginRight:8}}>
+                          <img src={ticketImage} alt="preview" style={{maxHeight:72,maxWidth:160,borderRadius:8,display:'block'}}/>
+                          <button onClick={()=>setTicketImage('')} style={{position:'absolute',top:2,right:2,background:'rgba(0,0,0,0.7)',border:'none',borderRadius:'50%',width:18,height:18,color:'#fff',cursor:'pointer',fontSize:11,display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
+                        </div>
+                      )}
+                      <div style={{display:'flex',gap:8,flex:1}}>
+                      <button onClick={()=>{const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=(e:any)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=(ev:any)=>setTicketImage(ev.target.result);r.readAsDataURL(f)};i.click()}} style={{...inp,width:40,padding:'8px',background:'rgba(255,255,255,0.04)',cursor:'pointer',flexShrink:0,textAlign:'center'}} title="Attach image">📎</button>
+                      <input value={ticketReply} onChange={e=>setTicketReply(e.target.value)}
+                        onKeyDown={async e=>{
+                          if (e.key!=='Enter'||e.shiftKey||!ticketReply.trim()) return
+                          setTicketSending(true)
+                          try {
+                            const msg = await api(`/tickets/${activeTicket.id}/reply`,{method:'POST',body:JSON.stringify({body:ticketImage?(ticketReply.trim()?ticketReply.trim()+'\n'+ticketImage:ticketImage):ticketReply.trim()})})
+                            setActiveTicket((p:any)=>({...p,messages:[...(p.messages||[]),msg]}))
+                            setTickets((prev:any[])=>prev.map((t:any)=>t.id===activeTicket.id?{...t,messages:[...(t.messages||[]),msg]}:t))
+                            setTicketReply('');setTicketImage('')
+                          } catch(e:any){showToast(e.message)} finally{setTicketSending(false)}
+                        }}
+                        placeholder="Reply to streamer… (Enter to send)"
+                        style={{...inp,flex:1,background:'rgba(255,255,255,0.04)'}} />
+                      <button disabled={ticketSending||!ticketReply.trim()} onClick={async()=>{
+                        if (!ticketReply.trim()) return
+                        setTicketSending(true)
+                        try {
+                          const msg = await api(`/tickets/${activeTicket.id}/reply`,{method:'POST',body:JSON.stringify({body:ticketImage?(ticketReply.trim()?ticketReply.trim()+'\n'+ticketImage:ticketImage):ticketReply.trim()})})
+                          setActiveTicket((p:any)=>({...p,messages:[...(p.messages||[]),msg]}))
+                          setTickets((prev:any[])=>prev.map((t:any)=>t.id===activeTicket.id?{...t,messages:[...(t.messages||[]),msg]}:t))
+                          setTicketReply('');setTicketImage('')
+                        } catch(e:any){showToast(e.message)} finally{setTicketSending(false)}
+                      }} style={{...btn(),flexShrink:0,opacity:ticketSending||(!ticketReply.trim()&&!ticketImage)?0.5:1}}>
+                        {ticketSending?'…':'Send'}
+                      </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ LOGS (super admin only) ════════════════════════════════════════════ */}
+        {tab==='logs' && admin.isSuperAdmin && (
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <h2 style={{margin:0,fontSize:18,fontWeight:700}}>Admin Activity Logs</h2>
+              <button onClick={()=>api('/logs').then(setLogs).catch(()=>{})} style={{background:'#7c3aed',color:'white',border:'none',borderRadius:8,padding:'7px 16px',fontWeight:600,cursor:'pointer',fontSize:13}}>Refresh</button>
+            </div>
+            <div style={{overflowX:'auto',borderRadius:12,border:'1px solid #2d2d4e'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+                <thead>
+                  <tr style={{background:'#0f0f1a',color:'#64748b'}}>
+                    {['Time','Admin','Action','Entity','Detail','IP'].map(h=><th key={h} style={{padding:'11px 14px',fontWeight:600,textAlign:'left',whiteSpace:'nowrap'}}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.length===0 && (
+                    <tr><td colSpan={6} style={{padding:32,textAlign:'center',color:'#475569'}}>No logs yet — actions will appear here</td></tr>
+                  )}
+                  {logs.map((l,i)=>(
+                    <tr key={l.id} style={{borderTop:'1px solid #2d2d4e',background:i%2?'#ffffff04':'transparent'}}>
+                      <td style={{padding:'10px 14px',color:'#64748b',fontSize:11,whiteSpace:'nowrap'}}>{new Date(l.createdAt).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</td>
+                      <td style={{padding:'10px 14px'}}>
+                        <div style={{fontWeight:600,fontSize:12}}>{l.adminName||l.adminEmail}</div>
+                        <div style={{color:'#64748b',fontSize:11}}>{l.adminEmail}</div>
+                      </td>
+                      <td style={{padding:'10px 14px'}}>
+                        <span style={{background:'rgba(124,58,237,0.12)',color:'#a78bfa',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:600,fontFamily:'monospace'}}>{l.action}</span>
+                      </td>
+                      <td style={{padding:'10px 14px',color:'#94a3b8',fontSize:12}}>{l.entity??'—'}{l.entityId?<span style={{color:'#475569',fontSize:10,display:'block',fontFamily:'monospace'}}>{l.entityId.slice(0,12)}…</span>:null}</td>
+                      <td style={{padding:'10px 14px',color:'#64748b',fontSize:11,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.detail&&l.detail!=='null'?l.detail.slice(0,80):'—'}</td>
+                      <td style={{padding:'10px 14px',color:'#475569',fontSize:11,fontFamily:'monospace'}}>{l.ip||'—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* ═══ TEAM (super admin only) ════════════════════════════════════════════ */}
         {tab==='team' && admin.isSuperAdmin && (
+          <div style={{display:'flex',flexDirection:'column',gap:24}}>
+
+            {/* ── Platform Webhooks ── */}
+            <div style={{...card,padding:'22px 24px'}}>
+              <h2 style={{margin:'0 0 6px',fontSize:17,fontWeight:700}}>🔔 Platform Webhooks</h2>
+              <p style={{margin:'0 0 20px',fontSize:13,color:'#64748b'}}>Discord notifications sent automatically by the platform (not per-streamer)</p>
+
+              {/* Tickets webhook */}
+              <div style={{marginBottom:16,padding:'16px',background:'rgba(124,58,237,0.06)',border:'1px solid rgba(124,58,237,0.15)',borderRadius:10}}>
+                <p style={{margin:'0 0 4px',fontSize:13,fontWeight:700,color:'#e2e8f0'}}>🎫 New Support Ticket Alert</p>
+                <p style={{margin:'0 0 12px',fontSize:12,color:'#64748b'}}>Sends a Discord message every time a streamer opens a support ticket</p>
+                <div style={{display:'flex',gap:8,marginBottom:10}}>
+                  <input
+                    value={platformConfig['tickets_discord_webhook']??''}
+                    onChange={e=>setPlatformConfig(p=>({...p,tickets_discord_webhook:e.target.value}))}
+                    placeholder="https://discord.com/api/webhooks/…"
+                    style={{...inp,flex:1}}
+                  />
+                  <button
+                    onClick={async()=>{
+                      await api('/config',{method:'PATCH',body:JSON.stringify({tickets_discord_webhook:platformConfig['tickets_discord_webhook']??''})})
+                      showToast('Webhook saved!')
+                    }}
+                    style={btn()}>Save</button>
+                </div>
+                <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                  <button
+                    disabled={testingWebhook||!platformConfig['tickets_discord_webhook']}
+                    onClick={async()=>{
+                      setTestingWebhook(true)
+                      try {
+                        await api('/config/test-webhook',{method:'POST',body:JSON.stringify({url:platformConfig['tickets_discord_webhook'],type:'tickets'})})
+                        showToast('Test message sent to Discord!')
+                      } catch(e:any){ showToast('Failed: '+e.message) }
+                      finally{ setTestingWebhook(false) }
+                    }}
+                    style={{...btn('#5865f2'),opacity:(!platformConfig['tickets_discord_webhook']||testingWebhook)?.5:1}}>
+                    {testingWebhook?'Sending…':'🧪 Send Test'}
+                  </button>
+                  <span style={{fontSize:12,color:'#475569'}}>Channel Settings → Integrations → Webhooks → New Webhook → Copy URL</span>
+                </div>
+              </div>
+
+              {/* Settlement webhook */}
+              <div style={{marginBottom:12,padding:'16px',background:'rgba(16,185,129,0.06)',border:'1px solid rgba(16,185,129,0.15)',borderRadius:10}}>
+                <p style={{margin:'0 0 4px',fontSize:13,fontWeight:700,color:'#e2e8f0'}}>💸 Settlement Request Alert</p>
+                <p style={{margin:'0 0 12px',fontSize:12,color:'#64748b'}}>Sends a Discord message every time a streamer requests a payout settlement</p>
+                <div style={{display:'flex',gap:8,marginBottom:10}}>
+                  <input
+                    value={platformConfig['settlement_discord_webhook']??''}
+                    onChange={e=>setPlatformConfig(p=>({...p,settlement_discord_webhook:e.target.value}))}
+                    placeholder="https://discord.com/api/webhooks/…"
+                    style={{...inp,flex:1}}
+                  />
+                  <button
+                    onClick={async()=>{
+                      await api('/config',{method:'PATCH',body:JSON.stringify({settlement_discord_webhook:platformConfig['settlement_discord_webhook']??''})})
+                      showToast('Webhook saved!')
+                    }}
+                    style={btn()}>Save</button>
+                </div>
+                <button
+                  disabled={testingWebhook||!platformConfig['settlement_discord_webhook']}
+                  onClick={async()=>{
+                    setTestingWebhook(true)
+                    try {
+                      await api('/config/test-webhook',{method:'POST',body:JSON.stringify({url:platformConfig['settlement_discord_webhook'],type:'settlement'})})
+                      showToast('Test message sent to Discord!')
+                    } catch(e:any){ showToast('Failed: '+e.message) }
+                    finally{ setTestingWebhook(false) }
+                  }}
+                  style={{...btn('#5865f2'),opacity:(!platformConfig['settlement_discord_webhook']||testingWebhook)?.5:1}}>
+                  {testingWebhook?'Sending…':'🧪 Send Test'}
+                </button>
+              </div>
+
+              {/* Verification webhook */}
+              <div style={{marginBottom:0,padding:'16px',background:'rgba(16,185,129,0.06)',border:'1px solid rgba(16,185,129,0.15)',borderRadius:10}}>
+                <p style={{margin:'0 0 4px',fontSize:13,fontWeight:700,color:'#e2e8f0'}}>✅ Verification Request Alert</p>
+                <p style={{margin:'0 0 12px',fontSize:12,color:'#64748b'}}>Sends a Discord message every time a streamer submits a verification request</p>
+                <div style={{display:'flex',gap:8,marginBottom:10}}>
+                  <input
+                    value={platformConfig['verification_discord_webhook']??''}
+                    onChange={e=>setPlatformConfig(p=>({...p,verification_discord_webhook:e.target.value}))}
+                    placeholder="https://discord.com/api/webhooks/…"
+                    style={{...inp,flex:1}}
+                  />
+                  <button
+                    onClick={async()=>{
+                      await api('/config',{method:'PATCH',body:JSON.stringify({verification_discord_webhook:platformConfig['verification_discord_webhook']??''})})
+                      showToast('Webhook saved!')
+                    }}
+                    style={btn()}>Save</button>
+                </div>
+                <button
+                  disabled={testingWebhook||!platformConfig['verification_discord_webhook']}
+                  onClick={async()=>{
+                    setTestingWebhook(true)
+                    try {
+                      await api('/config/test-webhook',{method:'POST',body:JSON.stringify({url:platformConfig['verification_discord_webhook'],type:'verification'})})
+                      showToast('Test message sent to Discord!')
+                    } catch(e:any){ showToast('Failed: '+e.message) }
+                    finally{ setTestingWebhook(false) }
+                  }}
+                  style={{...btn('#5865f2'),opacity:(!platformConfig['verification_discord_webhook']||testingWebhook)?.5:1}}>
+                  {testingWebhook?'Sending…':'🧪 Send Test'}
+                </button>
+              </div>
+            </div>
+
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24,alignItems:'start'}}>
 
             {/* Roles */}
@@ -763,6 +1150,7 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+          </div>
         )}
       </div>
 
@@ -773,6 +1161,14 @@ export default function AdminDashboard() {
           <Field label="Username (slug)" value={sForm.username as string??''} onChange={v=>setSForm(p=>({...p,username:v}))} />
           <Field label="Channel Link" value={sForm.channelLink as string??''} onChange={v=>setSForm(p=>({...p,channelLink:v}))} />
           <Field label="Min Donation (₹)" value={String(sForm.minDonationAmount??11)} onChange={v=>setSForm(p=>({...p,minDonationAmount:parseInt(v)||11}))} type="number" />
+          <div>
+            <label style={{fontSize:11,color:'#64748b',fontWeight:600,letterSpacing:.5,display:'block',marginBottom:4}}>PLATFORM FEE %</label>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <input type="number" min={0} max={50} step={0.5} value={sForm.platformFeePct??7} onChange={e=>setSForm(p=>({...p,platformFeePct:parseFloat(e.target.value)||7}))} style={{...inp,width:100}} />
+              <span style={{fontSize:12,color:'#64748b'}}>% (default 7% · max 50%)</span>
+            </div>
+            <p style={{fontSize:11,color:'#475569',marginTop:4}}>Applies to all future donations from this streamer</p>
+          </div>
           <Field label="Discord Webhook" value={sForm.discordWebhookUrl as string??''} onChange={v=>setSForm(p=>({...p,discordWebhookUrl:v}))} />
           <div style={{marginBottom:14}}>
             <label style={{display:'block',color:'#888',fontSize:12,marginBottom:4}}>Bio</label>
@@ -791,6 +1187,7 @@ export default function AdminDashboard() {
           <Field label="Account Number" value={bForm.accountNumber as string??''} onChange={v=>setBForm(p=>({...p,accountNumber:v}))} />
           <Field label="IFSC Code" value={bForm.ifscCode as string??''} onChange={v=>setBForm(p=>({...p,ifscCode:v}))} />
           <Field label="Bank Name" value={bForm.bankName as string??''} onChange={v=>setBForm(p=>({...p,bankName:v}))} />
+          <Field label="UPI ID (optional)" value={bForm.upiId as string??''} onChange={v=>setBForm(p=>({...p,upiId:v}))} />
           <hr style={{border:'none',borderTop:'1px solid #2d2d4e',margin:'14px 0'}}/>
           <Field label="Invoice Name" value={bForm.invoiceName as string??''} onChange={v=>setBForm(p=>({...p,invoiceName:v}))} />
           <Field label="Street Address" value={bForm.streetAddress as string??''} onChange={v=>setBForm(p=>({...p,streetAddress:v}))} />

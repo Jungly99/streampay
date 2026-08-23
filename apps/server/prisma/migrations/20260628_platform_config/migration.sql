@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS "platform_config" (
+  "key"        TEXT NOT NULL PRIMARY KEY,
+  "value"      TEXT NOT NULL,
+  "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

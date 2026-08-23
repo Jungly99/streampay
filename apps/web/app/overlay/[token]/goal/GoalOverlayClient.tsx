@@ -7,14 +7,16 @@ interface GS {
   barColor: string; secondColor: string; barOpacity: number; layout: string
   fontSize: number; fontFamily: string; textColor: string; barTextColor: string
   enableTextShadow: boolean; enableBg: boolean; bgColor: string; bgOpacity: number
-  barHeight: number; enableCelebration: boolean
+  barHeight: number; enableCelebration: boolean; goalWidth: number; goalHeight: number
+  showPercent: boolean
 }
 
 const DEF: GS = {
   barColor:'#7c3aed', secondColor:'#ec4899', barOpacity:100, layout:'standard',
   fontSize:16, fontFamily:'Arial', textColor:'#ffffff', barTextColor:'#ffffff',
   enableTextShadow:true, enableBg:true, bgColor:'#000000', bgOpacity:78,
-  barHeight:18, enableCelebration:true,
+  barHeight:18, enableCelebration:true, goalWidth:0, goalHeight:0,
+  showPercent: true,
 }
 
 function mapS(d: any): GS {
@@ -33,6 +35,9 @@ function mapS(d: any): GS {
     bgOpacity:         d.goalBgOpacity          ?? DEF.bgOpacity,
     barHeight:         d.goalBarHeight          ?? DEF.barHeight,
     enableCelebration: d.enableGoalCelebration  ?? DEF.enableCelebration,
+    goalWidth:         d.goalWidth              ?? DEF.goalWidth,
+    goalHeight:        d.goalHeight             ?? DEF.goalHeight,
+    showPercent:       d.goalShowPercent        ?? DEF.showPercent,
   }
 }
 
@@ -50,7 +55,7 @@ function Bar({ pct, s }: { pct: number; s: GS }) {
         height:'100%', width:`${pct}%`,
         background:`linear-gradient(90deg,${s.barColor},${s.secondColor})`,
         borderRadius:s.barHeight, transition:'width 0.9s cubic-bezier(0.4,0,0.2,1)',
-        boxShadow:`0 0 14px ${s.barColor}66`, position:'relative',
+        position:'relative',
       }}>
         {pct > 5 && pct < 100 && (
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.22) 50%,transparent 100%)', backgroundSize:'200% 100%', animation:'shimmer 2s linear infinite' }}/>
@@ -107,12 +112,9 @@ export default function GoalOverlayClient({ token }: { token: string }) {
   const cardBg = s.enableBg ? hex2rgba(s.bgColor, s.bgOpacity) : 'transparent'
   const cardStyle: React.CSSProperties = {
     background: cardBg,
-    backdropFilter: s.enableBg ? 'blur(14px)' : 'none',
-    WebkitBackdropFilter: s.enableBg ? 'blur(14px)' : 'none',
     borderRadius: 14,
     padding: s.enableBg ? '16px 20px' : '0',
     border: s.enableBg ? '1px solid rgba(255,255,255,0.08)' : 'none',
-    boxShadow: s.enableBg ? '0 8px 32px rgba(0,0,0,0.45)' : 'none',
   }
   const titleSt: React.CSSProperties = { color: s.textColor, fontWeight:700, fontSize: s.fontSize, textShadow: sh, letterSpacing:'-0.3px' }
   const dimSt: React.CSSProperties   = { color: s.textColor, opacity: 0.55, fontSize: s.fontSize * 0.85, textShadow: sh }
@@ -129,12 +131,14 @@ export default function GoalOverlayClient({ token }: { token: string }) {
             <span style={dimSt}>{fmt(goal.currentAmount)} / {fmt(goal.targetAmount)}</span>
           </div>
           <Bar pct={pct} s={s} />
-          <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, fontFamily:ff }}>
-            <span style={{ fontSize:s.fontSize*0.78, color: reached ? '#fbbf24' : s.textColor, opacity: reached ? 1 : 0.45, fontWeight: reached ? 700 : 400, textShadow:sh }}>
-              {reached ? '🎊 Goal reached!' : `${Math.round(pct)}% reached`}
-            </span>
-            {!reached && <span style={{ fontSize:s.fontSize*0.78, color:s.textColor, opacity:0.3, textShadow:sh }}>{fmt(remaining)} to go</span>}
-          </div>
+          {s.showPercent && (
+            <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, fontFamily:ff }}>
+              <span style={{ fontSize:s.fontSize*0.78, color: reached ? '#fbbf24' : s.textColor, opacity: reached ? 1 : 0.45, fontWeight: reached ? 700 : 400, textShadow:sh }}>
+                {reached ? '🎊 Goal reached!' : `${Math.round(pct)}% reached`}
+              </span>
+              {!reached && <span style={{ fontSize:s.fontSize*0.78, color:s.textColor, opacity:0.3, textShadow:sh }}>{fmt(remaining)} to go</span>}
+            </div>
+          )}
         </div>
       )
 
@@ -146,9 +150,11 @@ export default function GoalOverlayClient({ token }: { token: string }) {
             <span style={{ ...dimSt }}>{fmt(goal.currentAmount)} / {fmt(goal.targetAmount)}</span>
           </div>
           <Bar pct={pct} s={s} />
-          <div style={{ textAlign:'center', marginTop:5 }}>
-            <span style={{ fontSize:s.fontSize*0.72, color:s.barColor, fontWeight:700, textShadow:sh }}>{Math.round(pct)}%</span>
-          </div>
+          {s.showPercent && (
+            <div style={{ textAlign:'center', marginTop:5 }}>
+              <span style={{ fontSize:s.fontSize*0.72, color:s.barColor, fontWeight:700, textShadow:sh }}>{Math.round(pct)}%</span>
+            </div>
+          )}
         </div>
       )
 
@@ -160,11 +166,13 @@ export default function GoalOverlayClient({ token }: { token: string }) {
           </div>
           <div style={{ position:'relative', height:Math.max(s.barHeight, 26) }}>
             <div style={{ height:'100%', background:'rgba(255,255,255,0.1)', borderRadius:Math.max(s.barHeight,26), overflow:'hidden', position:'relative' }}>
-              <div style={{ height:'100%', width:`${pct}%`, background:`linear-gradient(90deg,${s.barColor},${s.secondColor})`, borderRadius:Math.max(s.barHeight,26), transition:'width 0.9s cubic-bezier(0.4,0,0.2,1)', boxShadow:`0 0 14px ${s.barColor}66` }}/>
+              <div style={{ height:'100%', width:`${pct}%`, background:`linear-gradient(90deg,${s.barColor},${s.secondColor})`, borderRadius:Math.max(s.barHeight,26), transition:'width 0.9s cubic-bezier(0.4,0,0.2,1)' }}/>
             </div>
-            <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', fontSize:s.fontSize*0.78, color:s.barTextColor, fontWeight:700, textShadow:sh, fontFamily:ff, pointerEvents:'none' }}>
-              {Math.round(pct)}%
-            </span>
+            {s.showPercent && (
+              <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', fontSize:s.fontSize*0.78, color:s.barTextColor, fontWeight:700, textShadow:sh, fontFamily:ff, pointerEvents:'none' }}>
+                {Math.round(pct)}%
+              </span>
+            )}
             {!reached && remaining > 0 && (
               <span style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontSize:s.fontSize*0.72, color:s.textColor, opacity:0.6, textShadow:sh, fontFamily:ff, pointerEvents:'none' }}>
                 {fmt(remaining)} to go
@@ -196,10 +204,10 @@ export default function GoalOverlayClient({ token }: { token: string }) {
 
       // ──────────────── 5. COMPACT PILL ─────────────────────────────────────────
       case 'compact': return (
-        <div style={{ display:'flex', alignItems:'center', gap:10, background:cardBg, backdropFilter:'blur(14px)', borderRadius:50, padding:`6px 16px 6px 14px`, border:'1px solid rgba(255,255,255,0.08)', fontFamily:ff }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, background:cardBg, borderRadius:50, padding:`6px 16px 6px 14px`, border:'1px solid rgba(255,255,255,0.08)', fontFamily:ff }}>
           <span style={{ ...titleSt, fontSize:s.fontSize*0.88, whiteSpace:'nowrap', flexShrink:0 }}>{goal.title || 'Donation Goal'}</span>
           <div style={{ flex:1, minWidth:80 }}><Bar pct={pct} s={s} /></div>
-          <span style={{ color:s.barColor, fontWeight:800, fontSize:s.fontSize*0.9, whiteSpace:'nowrap', textShadow:`0 0 8px ${s.barColor}88`, flexShrink:0 }}>{Math.round(pct)}%</span>
+          {s.showPercent && <span style={{ color:s.barColor, fontWeight:800, fontSize:s.fontSize*0.9, whiteSpace:'nowrap', textShadow:`0 0 8px ${s.barColor}88`, flexShrink:0 }}>{Math.round(pct)}%</span>}
           <span style={{ color:s.textColor, opacity:0.5, fontSize:s.fontSize*0.78, whiteSpace:'nowrap', flexShrink:0 }}>{fmt(goal.currentAmount)}/{fmt(goal.targetAmount)}</span>
         </div>
       )
@@ -210,7 +218,6 @@ export default function GoalOverlayClient({ token }: { token: string }) {
           ...cardStyle,
           background: s.enableBg ? hex2rgba(s.bgColor, Math.min(s.bgOpacity, 90)) : 'transparent',
           border: `1.5px solid ${s.barColor}55`,
-          boxShadow: `0 0 30px ${s.barColor}33, 0 0 60px ${s.barColor}18, inset 0 0 30px ${s.barColor}08`,
         }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, fontFamily:ff }}>
             <span style={{ ...titleSt, color:s.barColor, textShadow:`0 0 10px ${s.barColor}cc, 0 0 20px ${s.barColor}66` }}>{goal.title || 'Donation Goal'}</span>
@@ -219,14 +226,16 @@ export default function GoalOverlayClient({ token }: { token: string }) {
             </span>
           </div>
           <div style={{ height:s.barHeight, background:'rgba(255,255,255,0.06)', borderRadius:s.barHeight, overflow:'hidden', border:`1px solid ${s.barColor}33` }}>
-            <div style={{ height:'100%', width:`${pct}%`, background:`linear-gradient(90deg,${s.barColor},${s.secondColor})`, borderRadius:s.barHeight, transition:'width 0.9s cubic-bezier(0.4,0,0.2,1)', boxShadow:`0 0 20px ${s.barColor}, 0 0 40px ${s.barColor}88` }}/>
+            <div style={{ height:'100%', width:`${pct}%`, background:`linear-gradient(90deg,${s.barColor},${s.secondColor})`, borderRadius:s.barHeight, transition:'width 0.9s cubic-bezier(0.4,0,0.2,1)' }}/>
           </div>
-          <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, fontFamily:ff }}>
-            <span style={{ fontSize:s.fontSize*0.78, color:s.barColor, fontWeight:700, textShadow:`0 0 8px ${s.barColor}` }}>
-              {reached ? '⚡ GOAL REACHED!' : `${Math.round(pct)}% COMPLETE`}
-            </span>
-            {!reached && <span style={{ fontSize:s.fontSize*0.72, color:s.textColor, opacity:0.35 }}>{fmt(remaining)} remaining</span>}
-          </div>
+          {s.showPercent && (
+            <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, fontFamily:ff }}>
+              <span style={{ fontSize:s.fontSize*0.78, color:s.barColor, fontWeight:700, textShadow:`0 0 8px ${s.barColor}` }}>
+                {reached ? '⚡ GOAL REACHED!' : `${Math.round(pct)}% COMPLETE`}
+              </span>
+              {!reached && <span style={{ fontSize:s.fontSize*0.72, color:s.textColor, opacity:0.35 }}>{fmt(remaining)} remaining</span>}
+            </div>
+          )}
         </div>
       )
     }
@@ -236,26 +245,18 @@ export default function GoalOverlayClient({ token }: { token: string }) {
     <>
       <style>{`
         @import url('${GFONTS}');
-        html,body{background:transparent!important;margin:0;padding:0;overflow:hidden}
+        html,body{background:transparent!important;margin:0;padding:0;}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-        @keyframes popIn{0%{transform:scale(0.92) translateX(-50%);opacity:0}100%{transform:scale(1) translateX(-50%);opacity:1}}
-        @keyframes celebrate{0%,100%{transform:scale(1) translateX(-50%)}40%{transform:scale(1.05) translateX(-50%)}}
+        @keyframes popIn{0%{transform:scale(0.92);opacity:0}100%{transform:scale(1);opacity:1}}
+        @keyframes celebrate{0%,100%{transform:scale(1)}40%{transform:scale(1.05)}}
       `}</style>
-      <div style={{ position:'fixed', inset:0, background:'transparent', overflow:'hidden' }}>
-        <div style={{
-          position:'absolute', bottom:'15%', left:'50%',
-          width:'min(700px,90vw)',
-          opacity: s.barOpacity / 100,
-          animation: celebrating ? 'celebrate 0.7s ease' : ready ? 'popIn 0.35s ease forwards' : undefined,
-          transform: celebrating ? undefined : 'translateX(-50%)',
-        }}>
-          {ready && !goal && (
-            <p style={{ color:'rgba(255,255,255,0.3)', fontSize:14, margin:0, textAlign:'center', fontFamily:'Arial,sans-serif' }}>
-              No active goal — create one in the dashboard
-            </p>
-          )}
-          {ready && goal && renderLayout()}
-        </div>
+      <div style={{
+        width: s.goalWidth > 0 ? s.goalWidth : '100%',
+        ...(s.goalHeight > 0 ? { height: s.goalHeight, overflow:'hidden', display:'flex', flexDirection:'column', justifyContent:'center' } : {}),
+        opacity: s.barOpacity / 100,
+        animation: celebrating ? 'celebrate 0.7s ease' : ready ? 'popIn 0.35s ease forwards' : undefined,
+      }}>
+        {ready && goal && renderLayout()}
       </div>
     </>
   )

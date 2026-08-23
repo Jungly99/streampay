@@ -15,47 +15,60 @@ async function getUser() {
   } catch { return null }
 }
 
+const navLinks: { href: string; label: string; icon: string }[] = [
+  { href: '/fan',               icon: '📊', label: 'Overview' },
+  { href: '/fan/find-streamer', icon: '🔍', label: 'Find Streamer' },
+  { href: '/fan/following',     icon: '👥', label: 'Following' },
+  { href: '/fan/donations',     icon: '💰', label: 'My Donations' },
+  { href: '/fan/profile',       icon: '👤', label: 'Profile' },
+]
+
 export default async function FanLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser()
   if (!user) redirect('/login')
   if (user.accountType !== 'viewer') redirect('/dashboard')
 
-  const navLinks: [string, string][] = [
-    ['/fan', '📊 Dashboard'],
-    ['/fan/profile', '👤 Profile'],
-    ['/fan/find-streamer', '🔍 Find Streamer'],
-    ['/fan/following', '👥 Following'],
-    ['/fan/donations', '💰 My Donations'],
-  ]
-
   return (
-    <div className="min-h-screen bg-[#0a0a1a]">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="glass-card p-5 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold">
-              {user.displayName?.[0] ?? 'V'}
-            </div>
-            <div>
-              <p className="font-bold text-white flex items-center gap-2">👋 Welcome, {user.displayName}</p>
-              <p className="text-xs text-slate-500">{user.email}</p>
-            </div>
-          </div>
-          <Link href="/api/auth/logout" className="text-sm text-slate-400 hover:text-white border border-white/10 px-4 py-2 rounded-xl transition-colors">
-            🚪 Logout
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text-1)', fontFamily: 'system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Top bar */}
+      <header style={{ background: 'rgba(6,6,15,0.95)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 20px', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="EzTips" style={{ height: 34, width: 'auto', borderRadius: 6 }} />
           </Link>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, color: 'white' }}>
+              {user.displayName?.[0]?.toUpperCase() ?? 'V'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>{user.displayName}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Viewer</span>
+            </div>
+            <Link href="/api/auth/logout"
+              style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: 'var(--text-3)', textDecoration: 'none', padding: '6px 12px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', transition: 'all 0.15s' }}>
+              Sign out
+            </Link>
+          </div>
         </div>
+      </header>
+
+      <div style={{ maxWidth: 960, margin: '0 auto', width: '100%', padding: '28px 20px', flex: 1 }}>
 
         {/* Nav tabs */}
-        <div className="flex gap-1 mb-6 overflow-x-auto">
-          {navLinks.map(([href, label]) => (
-            <Link key={href} href={href}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all">
-              {label}
+        <nav style={{ display: 'flex', gap: 4, marginBottom: 28, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 5, overflowX: 'auto' }}>
+          {navLinks.map(({ href, icon, label }) => (
+            <Link key={href} href={href} style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10,
+              fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap',
+              color: 'var(--text-2)', transition: 'all 0.15s',
+            }}
+              className="fan-nav-link">
+              <span>{icon}</span> {label}
             </Link>
           ))}
-        </div>
+        </nav>
 
         {children}
       </div>

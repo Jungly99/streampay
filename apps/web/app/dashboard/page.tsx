@@ -40,6 +40,7 @@ export default async function DashboardPage() {
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 7,
@@ -163,7 +164,6 @@ export default async function DashboardPage() {
               { done: !!links.messageLink,               label: 'Donation link active' },
               { done: !!links.overlayToken,              label: 'OBS overlay ready' },
               { done: (stats.totalPaymentsCount ?? 0) > 0, label: 'First donation received' },
-              { done: false,                             label: 'Connect Discord webhook' },
             ].map(step => (
               <div key={step.label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <div style={{
@@ -178,7 +178,7 @@ export default async function DashboardPage() {
               </div>
             ))}
             <div style={{ marginTop: 16, padding: '10px 12px', borderRadius: 10, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)' }}>
-              <p style={{ fontSize: 11, color: '#a78bfa', fontWeight: 500 }}>💡 Platform fee: only 5% — lower than any competitor</p>
+              <p style={{ fontSize: 11, color: '#a78bfa', fontWeight: 500 }}>💡 Platform fee: only {profile?.platformFeePct ?? 7}% — lower than any competitor</p>
             </div>
           </div>
 

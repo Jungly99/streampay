@@ -1,13 +1,17 @@
 import { Router, Response } from 'express'
+import { randomUUID } from 'crypto'
 import { requireAdmin, requireSuperAdmin, requirePermission, AdminRequest } from '../middleware/auth'
 import { prisma } from '../db/prisma'
 import { nanoid } from 'nanoid'
+import { auditLog } from '../middleware/auditLog'
+import { emitToDonationOverlay } from '../socket'
 
 const router = Router()
 router.use(requireAdmin)
 
 // ── STATS ──────────────────────────────────────────────────────────────────
 router.get('/stats', requirePermission('overview'), async (_req: AdminRequest, res: Response): Promise<void> => {
+  const today = new Date().toISOString().slice(0, 10)
   const [
     totalStreamers,
     totalViewers,
@@ -15,14 +19,24 @@ router.get('/stats', requirePermission('overview'), async (_req: AdminRequest, r
     successDonations,
     pendingSettlements,
     paidSettlements,
+    visitorStats,
   ] = await Promise.all([
     prisma.streamerProfile.count(),
     prisma.viewerProfile.count(),
-    prisma.donation.count(),
+    prisma.donation.count({ where: { status: 'SUCCESS' } }),
     prisma.donation.aggregate({ where: { status: 'SUCCESS' }, _sum: { amount: true } }),
     prisma.settlement.count({ where: { status: 'INITIATED' } }),
     prisma.settlement.aggregate({ where: { status: 'SUCCESS' }, _sum: { netAmount: true } }),
+    prisma.$queryRaw<[{website_total:bigint;dashboard_total:bigint;website_today:bigint;dashboard_today:bigint}]>`
+      SELECT
+        COUNT(DISTINCT CASE WHEN page = 'website' THEN ip END)             AS website_total,
+        COUNT(DISTINCT CASE WHEN page = 'dashboard' THEN ip END)           AS dashboard_total,
+        COUNT(DISTINCT CASE WHEN page = 'website' AND date = ${today} THEN ip END)   AS website_today,
+        COUNT(DISTINCT CASE WHEN page = 'dashboard' AND date = ${today} THEN ip END) AS dashboard_today
+      FROM page_visits
+    `,
   ])
+  const v = visitorStats[0]
   res.json({
     totalStreamers,
     totalViewers,
@@ -30,6 +44,12 @@ router.get('/stats', requirePermission('overview'), async (_req: AdminRequest, r
     totalCollected: successDonations._sum.amount ?? 0,
     pendingSettlements,
     totalPaidOut: Number(paidSettlements._sum.netAmount ?? 0),
+    visitors: {
+      websiteTotal:    Number(v?.website_total    ?? 0),
+      dashboardTotal:  Number(v?.dashboard_total  ?? 0),
+      websiteToday:    Number(v?.website_today    ?? 0),
+      dashboardToday:  Number(v?.dashboard_today  ?? 0),
+    },
   })
 })
 
@@ -50,7 +70,7 @@ router.get('/users', requirePermission('users'), async (req: AdminRequest, res: 
   res.json(users)
 })
 
-router.patch('/users/:id', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.patch('/users/:id', requirePermission('users'), auditLog('UPDATE_USER','user',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
   const { email, displayName } = req.body as { email?: string; displayName?: string }
   const updated = await prisma.user.update({
@@ -60,7 +80,7 @@ router.patch('/users/:id', requirePermission('users'), async (req: AdminRequest,
   res.json(updated)
 })
 
-router.delete('/users/:id', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.delete('/users/:id', requirePermission('users'), auditLog('DELETE_USER','user',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const streamer = await prisma.streamerProfile.findUnique({ where: { userId: req.params.id } })
   // Soft delete — preserve all data for potential restore
   await prisma.user.update({ where: { id: req.params.id }, data: { deletedAt: new Date() } })
@@ -83,7 +103,7 @@ router.get('/deleted-users', requirePermission('restore_accounts'), async (_req:
   res.json(users)
 })
 
-router.post('/users/:id/restore', requirePermission('restore_accounts'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.post('/users/:id/restore', requirePermission('restore_accounts'), auditLog('RESTORE_USER','user',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const user = await prisma.user.findUnique({ where: { id: req.params.id } })
   if (!user || !user.deletedAt) { res.status(404).json({ error: 'User not found or not deleted' }); return }
   await prisma.user.update({ where: { id: req.params.id }, data: { deletedAt: null } })
@@ -145,6 +165,7 @@ router.get('/streamers', requirePermission('streamers'), async (_req: AdminReque
     pendingBalance: pendingMap[s.id] ?? 0,
     pendingNet: Math.round((pendingMap[s.id] ?? 0) * 0.95),
     totalCollected: totalMap[s.id] ?? 0,
+    platformFeePct: Number(s.platformFeePct ?? 5),
     bankDetails: s.bankDetails,
   })))
 })
@@ -161,11 +182,14 @@ router.get('/streamers/:id', requirePermission('streamers'), async (req: AdminRe
   res.json(streamer)
 })
 
-router.patch('/streamers/:id', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.patch('/streamers/:id', requirePermission('streamers'), auditLog('UPDATE_STREAMER','streamer',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
-  const { channelName, bio, channelLink, username, isActive, isVerified, isPremium, minDonationAmount, discordWebhookUrl } = req.body as {
+  const { channelName, bio, channelLink, username, isActive, isVerified, isPremium, minDonationAmount, discordWebhookUrl, platformFeePct } = req.body as {
     channelName?: string; bio?: string; channelLink?: string; username?: string
-    isActive?: boolean; isVerified?: boolean; isPremium?: boolean; minDonationAmount?: number; discordWebhookUrl?: string
+    isActive?: boolean; isVerified?: boolean; isPremium?: boolean; minDonationAmount?: number; discordWebhookUrl?: string; platformFeePct?: number
+  }
+  if (platformFeePct !== undefined && (platformFeePct < 0 || platformFeePct > 50)) {
+    res.status(400).json({ error: 'Platform fee must be between 0% and 50%' }); return
   }
   const updated = await prisma.streamerProfile.update({
     where: { id },
@@ -179,12 +203,13 @@ router.patch('/streamers/:id', requirePermission('streamers'), async (req: Admin
       ...(isPremium         !== undefined && { isPremium }),
       ...(minDonationAmount !== undefined && { minDonationAmount }),
       ...(discordWebhookUrl !== undefined && { discordWebhookUrl }),
+      ...(platformFeePct    !== undefined && { platformFeePct }),
     },
   })
   res.json(updated)
 })
 
-router.post('/streamers/:id/approve-verification', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.post('/streamers/:id/approve-verification', requirePermission('streamers'), auditLog('APPROVE_VERIFICATION','streamer',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const updated = await prisma.streamerProfile.update({
     where: { id: req.params.id },
     data: { isVerified: true, verificationRequestedAt: null },
@@ -192,7 +217,7 @@ router.post('/streamers/:id/approve-verification', requirePermission('streamers'
   res.json({ isVerified: updated.isVerified })
 })
 
-router.post('/streamers/:id/reject-verification', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.post('/streamers/:id/reject-verification', requirePermission('streamers'), auditLog('REJECT_VERIFICATION','streamer',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const updated = await prisma.streamerProfile.update({
     where: { id: req.params.id },
     data: { verificationRequestedAt: null },
@@ -208,18 +233,19 @@ router.post('/streamers/:id/reset-overlay', requirePermission('streamers'), asyn
 
 router.patch('/streamers/:id/bank', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
-  const { accountHolderName, accountNumber, ifscCode, bankName, invoiceName, streetAddress, city, state, pincode } = req.body as {
-    accountHolderName?: string; accountNumber?: string; ifscCode?: string; bankName?: string
+  const { accountHolderName, accountNumber, ifscCode, bankName, upiId, invoiceName, streetAddress, city, state, pincode } = req.body as {
+    accountHolderName?: string; accountNumber?: string; ifscCode?: string; bankName?: string; upiId?: string
     invoiceName?: string; streetAddress?: string; city?: string; state?: string; pincode?: string
   }
   const updated = await prisma.streamerBankDetails.upsert({
     where: { streamerId: id },
-    create: { streamerId: id, accountHolderName, accountNumber, ifscCode, bankName, invoiceName, streetAddress, city, state, pincode },
+    create: { streamerId: id, accountHolderName, accountNumber, ifscCode, bankName, upiId, invoiceName, streetAddress, city, state, pincode },
     update: {
       ...(accountHolderName !== undefined && { accountHolderName }),
       ...(accountNumber     !== undefined && { accountNumber }),
       ...(ifscCode          !== undefined && { ifscCode }),
       ...(bankName          !== undefined && { bankName }),
+      ...(upiId             !== undefined && { upiId }),
       ...(invoiceName       !== undefined && { invoiceName }),
       ...(streetAddress     !== undefined && { streetAddress }),
       ...(city              !== undefined && { city }),
@@ -232,10 +258,25 @@ router.patch('/streamers/:id/bank', requirePermission('streamers'), async (req: 
 
 // ── DONATIONS ──────────────────────────────────────────────────────────────
 router.get('/donations', requirePermission('donations'), async (req: AdminRequest, res: Response): Promise<void> => {
-  const { page = '1', limit = '50', status, search } = req.query
+  const { page = '1', limit = '50', status, search, streamer } = req.query
   const skip = (parseInt(page as string) - 1) * parseInt(limit as string)
+
+  // Resolve streamer filter to streamer profile IDs
+  let streamerIds: string[] | undefined
+  if (streamer) {
+    const profiles = await prisma.streamerProfile.findMany({
+      where: { OR: [
+        { channelName: { contains: streamer as string, mode: 'insensitive' } },
+        { username:    { contains: streamer as string, mode: 'insensitive' } },
+      ]},
+      select: { id: true },
+    })
+    streamerIds = profiles.map(p => p.id)
+  }
+
   const where = {
     ...(status && { status: status as 'PENDING' | 'SUCCESS' | 'FAILED' }),
+    ...(streamerIds && { streamerId: { in: streamerIds } }),
     ...(search && { OR: [
       { donorName: { contains: search as string, mode: 'insensitive' as const } },
       { message:   { contains: search as string, mode: 'insensitive' as const } },
@@ -253,7 +294,7 @@ router.get('/donations', requirePermission('donations'), async (req: AdminReques
   res.json({ donations, total, page: parseInt(page as string) })
 })
 
-router.patch('/donations/:id', requirePermission('donations'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.patch('/donations/:id', requirePermission('donations'), auditLog('UPDATE_DONATION','donation',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const { status, message } = req.body as { status?: string; message?: string }
   const updated = await prisma.donation.update({
     where: { id: req.params.id },
@@ -280,7 +321,7 @@ router.get('/settlements', requirePermission('settlements'), async (req: AdminRe
   res.json(settlements)
 })
 
-router.patch('/settlements/:id/mark-paid', requirePermission('settlements'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.patch('/settlements/:id/mark-paid', requirePermission('settlements'), auditLog('MARK_SETTLEMENT_PAID','settlement',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
   const { transferRef } = req.body as { transferRef?: string }
   const settlement = await prisma.settlement.findUnique({ where: { id } })
@@ -293,7 +334,7 @@ router.patch('/settlements/:id/mark-paid', requirePermission('settlements'), asy
   res.json(updated)
 })
 
-router.patch('/settlements/:id/mark-failed', requirePermission('settlements'), async (req: AdminRequest, res: Response): Promise<void> => {
+router.patch('/settlements/:id/mark-failed', requirePermission('settlements'), auditLog('MARK_SETTLEMENT_FAILED','settlement',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const { reason } = req.body as { reason?: string }
   const updated = await prisma.settlement.update({
     where: { id: req.params.id },
@@ -311,7 +352,7 @@ router.get('/roles', requireSuperAdmin, async (_req: AdminRequest, res: Response
   res.json(roles)
 })
 
-router.post('/roles', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+router.post('/roles', requireSuperAdmin, auditLog('CREATE_ROLE','role'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { name, permissions } = req.body as { name: string; permissions: object }
   if (!name) { res.status(400).json({ error: 'Role name required' }); return }
   try {
@@ -322,7 +363,7 @@ router.post('/roles', requireSuperAdmin, async (req: AdminRequest, res: Response
   }
 })
 
-router.patch('/roles/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+router.patch('/roles/:id', requireSuperAdmin, auditLog('UPDATE_ROLE','role',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const { name, permissions } = req.body as { name?: string; permissions?: object }
   const updated = await prisma.adminRole.update({
     where: { id: req.params.id },
@@ -331,7 +372,7 @@ router.patch('/roles/:id', requireSuperAdmin, async (req: AdminRequest, res: Res
   res.json(updated)
 })
 
-router.delete('/roles/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+router.delete('/roles/:id', requireSuperAdmin, auditLog('DELETE_ROLE','role',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   await prisma.adminRole.delete({ where: { id: req.params.id } })
   res.json({ ok: true })
 })
@@ -345,7 +386,7 @@ router.get('/admin-users', requireSuperAdmin, async (_req: AdminRequest, res: Re
   res.json(admins)
 })
 
-router.post('/admin-users', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+router.post('/admin-users', requireSuperAdmin, auditLog('CREATE_ADMIN'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { email, roleId } = req.body as { email: string; roleId?: string }
   if (!email) { res.status(400).json({ error: 'Email required' }); return }
   try {
@@ -359,7 +400,7 @@ router.post('/admin-users', requireSuperAdmin, async (req: AdminRequest, res: Re
   }
 })
 
-router.patch('/admin-users/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+router.patch('/admin-users/:id', requireSuperAdmin, auditLog('UPDATE_ADMIN','admin',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const { roleId } = req.body as { roleId?: string | null }
   const updated = await prisma.adminUser.update({
     where: { id: req.params.id },
@@ -369,19 +410,150 @@ router.patch('/admin-users/:id', requireSuperAdmin, async (req: AdminRequest, re
   res.json(updated)
 })
 
-router.delete('/admin-users/:id', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+router.delete('/admin-users/:id', requireSuperAdmin, auditLog('DELETE_ADMIN','admin',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
   const target = await prisma.adminUser.findUnique({ where: { id: req.params.id } })
   if (target?.isSuperAdmin) { res.status(400).json({ error: 'Cannot remove super admin' }); return }
   await prisma.adminUser.delete({ where: { id: req.params.id } })
   res.json({ ok: true })
 })
 
-router.get('/support-payments', requireSuperAdmin, async (_req: AdminRequest, res: Response): Promise<void> => {
+router.get('/support-payments', requirePermission('support'), async (_req: AdminRequest, res: Response): Promise<void> => {
   const payments = await prisma.supportPayment.findMany({
     orderBy: { createdAt: 'desc' },
     take: 200,
   })
   res.json(payments)
+})
+
+// ── SUPPORT TICKETS ───────────────────────────────────────────────────────────
+
+router.get('/tickets', requirePermission('tickets'), async (_req: AdminRequest, res: Response): Promise<void> => {
+  const tickets = await prisma.supportTicket.findMany({
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      messages: { orderBy: { createdAt: 'asc' } },
+      streamer: { select: { channelName: true, username: true, user: { select: { email: true } } } },
+    },
+  })
+  res.json(tickets)
+})
+
+router.post('/tickets/:id/reply', requirePermission('tickets'), auditLog('TICKET_REPLY','ticket',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { body } = req.body as { body: string }
+  if (!body?.trim()) { res.status(400).json({ error: 'Body required' }); return }
+  const msg = await prisma.ticketMessage.create({
+    data: {
+      id: randomUUID(),
+      ticketId: req.params.id,
+      body: body.trim(),
+      fromAdmin: true,
+      adminName: req.admin?.name ?? req.admin?.email ?? 'Admin',
+    },
+  })
+  await prisma.supportTicket.update({ where: { id: req.params.id }, data: { updatedAt: new Date() } })
+  res.json(msg)
+})
+
+router.patch('/tickets/:id/close', requirePermission('tickets'), auditLog('TICKET_CLOSE','ticket',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const ticket = await prisma.supportTicket.update({
+    where: { id: req.params.id },
+    data: { status: 'CLOSED', updatedAt: new Date() },
+  })
+  res.json(ticket)
+})
+
+router.patch('/tickets/:id/reopen', requirePermission('tickets'), auditLog('TICKET_REOPEN','ticket',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const ticket = await prisma.supportTicket.update({
+    where: { id: req.params.id },
+    data: { status: 'OPEN', updatedAt: new Date() },
+  })
+  res.json(ticket)
+})
+
+// ── PLATFORM CONFIG (super admin only) ────────────────────────────────────
+router.get('/config', requireSuperAdmin, async (_req: AdminRequest, res: Response): Promise<void> => {
+  const rows = await prisma.platformConfig.findMany()
+  const cfg: Record<string, string> = {}
+  for (const r of rows) cfg[r.key] = r.value
+  res.json(cfg)
+})
+
+router.patch('/config', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const updates = req.body as Record<string, string>
+  await Promise.all(Object.entries(updates).map(([key, value]) =>
+    prisma.platformConfig.upsert({ where: { key }, update: { value }, create: { key, value } })
+  ))
+  res.json({ ok: true })
+})
+
+router.post('/config/test-webhook', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const { url, type } = req.body as { url: string; type: string }
+  if (!url) { res.status(400).json({ error: 'No URL provided' }); return }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: type === 'tickets' ? '🧪 Test — EzTips Ticket Alert' : type === 'verification' ? '🧪 Test — EzTips Verification Alert' : type === 'settlement' ? '🧪 Test — EzTips Settlement Alert' : '🧪 Test — EzTips Webhook',
+          description: type === 'tickets'
+            ? '**Subject:** Test ticket\n**From:** TestStreamer\n**Message:** This is a test notification from EzTips admin panel.'
+            : type === 'verification'
+            ? '**Channel:** TestStreamer\n**Username:** teststreamer\n**Bank:** State Bank — Test User'
+            : type === 'settlement'
+            ? '**TestStreamer** has requested a payout.\n**Gross:** ₹1,000 | **Fee (7%):** ₹70 | **Net:** ₹930'
+            : 'This is a test webhook notification from EzTips.',
+          color: type === 'verification' ? 0x10b981 : type === 'settlement' ? 0x10b981 : 0x7c3aed,
+          footer: { text: 'EzTips · eztips.live' },
+          timestamp: new Date().toISOString(),
+        }],
+      }),
+    })
+    if (resp.ok || resp.status === 204) { res.json({ ok: true }) }
+    else { const t = await resp.text(); res.status(400).json({ error: `Discord returned ${resp.status}: ${t}` }) }
+  } catch (e: any) { res.status(500).json({ error: e.message ?? 'Failed to reach Discord' }) }
+})
+
+// ── TEST DONATION (super admin only) ───────────────────────────────────────
+router.post('/test-donation', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const { streamerId, donorName, amount, message } = req.body
+
+  if (!streamerId || typeof streamerId !== 'string') { res.status(400).json({ error: 'streamerId required' }); return }
+  if (!donorName || typeof donorName !== 'string') { res.status(400).json({ error: 'donorName required' }); return }
+  if (typeof amount !== 'number' || amount < 1) { res.status(400).json({ error: 'amount must be a positive number' }); return }
+
+  const profile = await prisma.streamerProfile.findUnique({
+    where: { id: streamerId },
+    select: { overlayToken: true },
+  })
+  if (!profile?.overlayToken) { res.status(404).json({ error: 'Streamer or overlay token not found' }); return }
+
+  emitToDonationOverlay(profile.overlayToken, 'new-donation', {
+    donationId: `test_${Date.now()}`,
+    donorName: donorName.trim(),
+    message: message?.trim() || null,
+    amount,
+    voiceMessageUrl: null,
+    stickerUrls: undefined,
+    streamerUsername: null,
+  })
+
+  res.json({ ok: true })
+})
+
+// ── AUDIT LOGS (super admin only) ──────────────────────────────────────────
+router.get('/logs', requireSuperAdmin, async (req: AdminRequest, res: Response): Promise<void> => {
+  const { adminId, action, limit = '100', offset = '0' } = req.query as Record<string, string>
+  const logs = await prisma.adminLog.findMany({
+    where: {
+      ...(adminId ? { adminId } : {}),
+      ...(action ? { action: { contains: action, mode: 'insensitive' as const } } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: Math.min(Number(limit), 500),
+    skip: Number(offset),
+  })
+  res.json(logs)
 })
 
 export default router

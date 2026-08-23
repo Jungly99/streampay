@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { api } from '../../../lib/api'
 
@@ -23,14 +23,19 @@ const PRESETS: Tier[] = [
   { minAmount: 500, charLimit: 200 },
 ]
 
+const MAX_EMOJI_IMAGES = 5
+const MAX_EMOJI_SIZE = 200 * 1024 // 200 KB per image
+
 export default function TipSettingsClient({
   initial,
 }: {
-  initial: { minDonationAmount: number; messageTiers: Tier[] }
+  initial: { minDonationAmount: number; messageTiers: Tier[]; customEmojis: string[] }
 }) {
   const [minAmount, setMinAmount] = useState(initial.minDonationAmount)
   const [tiers, setTiers] = useState<Tier[]>(initial.messageTiers.length ? initial.messageTiers : PRESETS)
+  const [customEmojis, setCustomEmojis] = useState<string[]>(initial.customEmojis ?? [])
   const [saving, setSaving] = useState(false)
+  const emojiFileRef = useRef<HTMLInputElement>(null)
 
   const sorted = [...tiers].sort((a, b) => a.minAmount - b.minAmount)
 
@@ -51,13 +56,29 @@ export default function TipSettingsClient({
     setTiers(prev => [...prev, { minAmount: maxMin + 50, charLimit: 50 }])
   }
 
+  function addEmojiImage(file: File) {
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return }
+    if (file.size > MAX_EMOJI_SIZE) { toast.error('Max 200 KB per image'); return }
+    if (customEmojis.length >= MAX_EMOJI_IMAGES) { toast.error('Max 5 custom emojis'); return }
+    const reader = new FileReader()
+    reader.onload = e => {
+      const dataUrl = e.target?.result as string
+      setCustomEmojis(prev => prev.length < MAX_EMOJI_IMAGES ? [...prev, dataUrl] : prev)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function removeEmoji(i: number) {
+    setCustomEmojis(prev => prev.filter((_, idx) => idx !== i))
+  }
+
   async function save() {
     if (tiers.length === 0) { toast.error('Add at least one tier'); return }
     const dupes = tiers.map(t => t.minAmount).filter((v, i, a) => a.indexOf(v) !== i)
     if (dupes.length) { toast.error('Duplicate tier amounts — each must be unique'); return }
     setSaving(true)
     try {
-      await api.patch('/api/streamer/tip-settings', { minDonationAmount: minAmount, messageTiers: tiers })
+      await api.patch('/api/streamer/tip-settings', { minDonationAmount: minAmount, messageTiers: tiers, customEmojis })
       toast.success('Tip settings saved!')
     } catch (e: any) { toast.error(e.message) } finally { setSaving(false) }
   }
@@ -99,42 +120,31 @@ export default function TipSettingsClient({
           <span />
         </div>
 
-        {/* Rows */}
-        {sorted.length === 0 && (
+        {tiers.length === 0 && (
           <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
             No tiers yet — click "+ Add Tier" to start
           </div>
         )}
-        {sorted.map((tier, i) => (
+        {tiers.map((tier, i) => (
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 40px', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 13, color: 'var(--text-3)' }}>₹</span>
               <input type="number" value={tier.minAmount} min={1}
-                onChange={e => {
-                  const originalIdx = tiers.findIndex(t => t.minAmount === tier.minAmount && t.charLimit === tier.charLimit)
-                  updateTier(originalIdx === -1 ? i : originalIdx, 'minAmount', Number(e.target.value))
-                }}
+                onChange={e => updateTier(i, 'minAmount', Number(e.target.value))}
                 style={{ ...inp, width: '100%' }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input type="number" value={tier.charLimit} min={1} max={500}
-                onChange={e => {
-                  const originalIdx = tiers.findIndex(t => t.minAmount === tier.minAmount && t.charLimit === tier.charLimit)
-                  updateTier(originalIdx === -1 ? i : originalIdx, 'charLimit', Number(e.target.value))
-                }}
+                onChange={e => updateTier(i, 'charLimit', Number(e.target.value))}
                 style={{ ...inp, width: '100%' }} />
               <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>chars</span>
             </div>
-            <button onClick={() => {
-              const originalIdx = tiers.findIndex(t => t.minAmount === tier.minAmount && t.charLimit === tier.charLimit)
-              removeTier(originalIdx === -1 ? i : originalIdx)
-            }} style={{ width: 32, height: 32, borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={() => removeTier(i)} style={{ width: 32, height: 32, borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ×
             </button>
           </div>
         ))}
 
-        {/* Preview note */}
         {sorted.length >= 2 && (
           <div style={{ marginTop: 16, padding: '12px 14px', borderRadius: 10, background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
             <p style={{ fontSize: 12, color: '#a78bfa', fontWeight: 500 }}>
@@ -142,6 +152,48 @@ export default function TipSettingsClient({
             </p>
           </div>
         )}
+      </div>
+
+      {/* Custom Emojis */}
+      <div style={{ ...C, padding: '24px 28px' }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>Custom Emojis for Viewers</p>
+        <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>Upload up to 5 images — they appear as quick-tap buttons on your donation page only</p>
+
+        {/* Hidden file input */}
+        <input ref={emojiFileRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) addEmojiImage(f); e.target.value = '' }} />
+
+        {/* Upload slots */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {customEmojis.map((src, i) => (
+            <div key={i} style={{ position: 'relative', width: 64, height: 64 }}>
+              <img src={src} alt={`custom emoji ${i + 1}`}
+                style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover', border: '2px solid rgba(124,58,237,0.4)', display: 'block' }} />
+              <button type="button" onClick={() => removeEmoji(i)}
+                style={{ position: 'absolute', top: -7, right: -7, width: 20, height: 20, borderRadius: '50%', background: '#ef4444', border: '2px solid var(--surface)', cursor: 'pointer', color: 'white', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                ×
+              </button>
+            </div>
+          ))}
+          {customEmojis.length < MAX_EMOJI_IMAGES && (
+            <button type="button" onClick={() => emojiFileRef.current?.click()}
+              style={{ width: 64, height: 64, borderRadius: 12, border: '2px dashed rgba(124,58,237,0.35)', background: 'rgba(124,58,237,0.06)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: '#a78bfa', transition: 'all 0.15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.12)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.06)' }}>
+              <span style={{ fontSize: 22 }}>+</span>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em' }}>UPLOAD</span>
+            </button>
+          )}
+          {/* Empty placeholder slots */}
+          {Array.from({ length: Math.max(0, MAX_EMOJI_IMAGES - customEmojis.length - 1) }).map((_, i) => (
+            <div key={i} style={{ width: 64, height: 64, borderRadius: 12, border: '2px dashed rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.01)' }} />
+          ))}
+        </div>
+
+        <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 14 }}>
+          PNG, JPG, GIF, WebP · Max 200 KB each · {customEmojis.length}/{MAX_EMOJI_IMAGES} uploaded<br/>
+          Appear as clickable shortcuts in the message box on your donation page.
+        </p>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -185,7 +237,7 @@ export default function TipSettingsClient({
               <div key={step.title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <div style={{ width: 30, height: 30, borderRadius: 8, background: `${step.color}18`, border: `1px solid ${step.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: step.color, flexShrink: 0 }}>{step.icon}</div>
                 <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9', margin: 0 }}>{step.title}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', margin: 0 }}>{step.title}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '3px 0 0', lineHeight: 1.5 }}>{step.desc}</p>
                 </div>
               </div>

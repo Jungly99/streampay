@@ -1,5 +1,5 @@
 'use client'
-import { useState, Suspense } from 'react'
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
@@ -18,11 +18,8 @@ function GoogleIcon() {
 
 function SignupContent() {
   const params = useSearchParams()
-  const [accountType, setAccountType] = useState<'streamer' | 'viewer'>(
-    (params.get('type') as 'streamer' | 'viewer') ?? 'streamer'
-  )
-
-  const googleUrl = `${BACKEND}/api/auth/google?mode=signup&accountType=${accountType}`
+  // Always streamer — viewer option removed
+  const googleUrl = `${BACKEND}/api/auth/google?mode=signup&accountType=streamer`
 
   return (
     <div style={{ minHeight: '100vh', background: '#06060f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'system-ui,sans-serif' }}>
@@ -35,42 +32,14 @@ function SignupContent() {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 24 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: 'white', boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}>S</div>
-            <span style={{ fontWeight: 700, fontSize: 17, color: '#f8fafc' }}>eztips</span>
+          <Link href="/" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 0, textDecoration: 'none', marginBottom: 24 }}>
+            <img src="/logo.png" alt="EzTips" style={{ height: 72, width: 'auto', borderRadius: 16, filter: 'drop-shadow(0 0 20px rgba(124,58,237,0.55))' }} />
           </Link>
           <h1 style={{ fontSize: 26, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.5px', marginBottom: 6 }}>Create your account</h1>
           <p style={{ fontSize: 13, color: '#475569' }}>Join Indian streamers on eztips. Free forever.</p>
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: '28px 28px' }}>
-
-          {/* Account type selector */}
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 12, letterSpacing: '0.05em', textTransform: 'uppercase' }}>I want to</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 28 }}>
-            {(['streamer', 'viewer'] as const).map(type => {
-              const active = accountType === type
-              return (
-                <button key={type} type="button" onClick={() => setAccountType(type)} style={{
-                  padding: '16px 14px', borderRadius: 12, textAlign: 'left', cursor: 'pointer',
-                  background: active ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.03)',
-                  border: `2px solid ${active ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.07)'}`,
-                  transition: 'all 0.15s', position: 'relative',
-                }}>
-                  <div style={{ fontSize: 22, marginBottom: 8 }}>{type === 'streamer' ? '🎮' : '👤'}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: active ? '#f8fafc' : '#64748b', marginBottom: 2 }}>
-                    {type === 'streamer' ? 'Accept Donations' : 'Support Streamers'}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#334155' }}>
-                    {type === 'streamer' ? 'Streamer account' : 'Viewer account'}
-                  </div>
-                  {active && (
-                    <div style={{ position: 'absolute', top: 10, right: 10, width: 18, height: 18, borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'white', fontWeight: 700 }}>✓</div>
-                  )}
-                </button>
-              )
-            })}
-          </div>
 
           {/* Google button */}
           <a href={googleUrl} style={{

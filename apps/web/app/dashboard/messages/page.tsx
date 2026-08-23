@@ -32,6 +32,13 @@ export default function MessagesPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [feePct, setFeePct] = useState(7)
+
+  useEffect(() => {
+    api.get<{ platformFeePct?: number }>('/api/streamer/profile').then(p => {
+      if (p?.platformFeePct != null) setFeePct(Number(p.platformFeePct))
+    }).catch(() => {})
+  }, [])
 
   function exportCsv() {
     if (!donations.length) { return }
@@ -120,7 +127,7 @@ export default function MessagesPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['Donor', 'Message', 'Amount', 'Net (after 5%)', 'Status', 'Date'].map(h => (
+                {['Donor', 'Message', 'Amount', `Net (after ${feePct}%)`, 'Status', 'Date'].map(h => (
                   <th key={h} style={{ textAlign: h === 'Message' ? 'left' : 'right', padding: '13px 18px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     {h === 'Donor' ? <span style={{ textAlign: 'left', display: 'block' }}>{h}</span> : h}
                   </th>

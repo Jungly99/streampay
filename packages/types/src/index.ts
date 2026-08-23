@@ -98,6 +98,7 @@ export interface DonationPageStreamer {
   voiceMessagesEnabled: boolean
   celebrityVoiceEnabled: boolean
   celebrityVoiceMinAmount: number
+  customEmojis: string[]
 }
 
 export interface MessageTier {

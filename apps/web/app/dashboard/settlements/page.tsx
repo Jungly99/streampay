@@ -5,7 +5,7 @@ import { formatINR, formatDate } from '../../../lib/utils'
 import toast from 'react-hot-toast'
 
 interface FeeBreakdown { grossAmount: number; feePct: number; feeAmount: number; netAmount: number; canSettle: boolean; minSettlement: number }
-interface DonationRow { id: string; donorName: string; amount: number; feeAmount: number; netAmount: number; settled: boolean; createdAt: string; settlement?: { status: string } | null }
+interface DonationRow { id: string; donorName: string; amount: number; feeAmount: number; netAmount: number; platformFeePct?: number; settled: boolean; createdAt: string; settlement?: { status: string } | null }
 
 const C: React.CSSProperties = { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }
 
@@ -22,22 +22,22 @@ export default function SettlementsPage() {
     const params = new URLSearchParams({ ...(startDate ? { startDate } : {}), ...(endDate ? { endDate } : {}), ...(search ? { search } : {}) })
     const [bkdwn, res] = await Promise.all([
       api.get<FeeBreakdown>('/api/settlements/fee-breakdown'),
-      api.get<{ donations: DonationRow[]; stats: any }>(`/api/settlements?${params}`),
+      api.get<{ donations: DonationRow[]; stats: any; feePct: number }>(`/api/settlements?${params}`),
     ])
     setBreakdown(bkdwn)
     setDonations(res.donations)
-    setStats(res.stats)
+    setStats({ ...res.stats, feePct: res.feePct })
   }
 
   useEffect(() => { load() }, [startDate, endDate, search])
 
   function exportCsv() {
     if (!donations.length) { toast.error('No data to export'); return }
-    const headers = ['Donor', 'Gross Amount (₹)', 'Fee (5%)', 'Fee Deducted (₹)', 'Net Amount (₹)', 'Status', 'Date']
+    const headers = ['Donor', 'Gross Amount (₹)', 'Fee %', 'Fee Deducted (₹)', 'Net Amount (₹)', 'Status', 'Date']
     const rows = donations.map(d => [
       d.donorName,
       d.amount,
-      '5.00%',
+      `${Number(d.platformFeePct ?? stats?.feePct ?? 7).toFixed(2)}%`,
       Number(d.feeAmount).toFixed(2),
       Number(d.netAmount).toFixed(2),
       d.settled ? (d.settlement?.status === 'SUCCESS' ? 'Paid' : d.settlement?.status === 'FAILED' ? 'Failed' : 'Processing') : 'Pending',
@@ -158,7 +158,7 @@ export default function SettlementsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              {['Donor', 'Gross Amount', 'Fee (5%)', 'Fee Deducted', 'Net Amount', 'Status', 'Date'].map(h => (
+              {['Donor', 'Gross Amount', `Fee %`, 'Fee Deducted', 'Net Amount', 'Status', 'Date'].map(h => (
                 <th key={h} style={{ padding: '13px 18px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
@@ -177,7 +177,7 @@ export default function SettlementsPage() {
                   </div>
                 </td>
                 <td style={{ padding: '13px 18px', fontSize: 13, fontWeight: 600, color: '#10b981' }}>{formatINR(d.amount)}</td>
-                <td style={{ padding: '13px 18px', fontSize: 12, color: '#f59e0b' }}>5.00%</td>
+                <td style={{ padding: '13px 18px', fontSize: 12, color: '#f59e0b' }}>{Number(d.platformFeePct ?? stats?.feePct ?? 7).toFixed(2)}%</td>
                 <td style={{ padding: '13px 18px', fontSize: 13, color: '#f87171' }}>{formatINR(Number(d.feeAmount))}</td>
                 <td style={{ padding: '13px 18px', fontSize: 13, fontWeight: 700, color: '#60a5fa' }}>{formatINR(Number(d.netAmount))}</td>
                 <td style={{ padding: '13px 18px' }}>

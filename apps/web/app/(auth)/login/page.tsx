@@ -27,9 +27,8 @@ function LoginContent() {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 28 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 17, color: 'white', boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}>S</div>
-            <span style={{ fontWeight: 700, fontSize: 18, color: '#f8fafc' }}>eztips</span>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginBottom: 28 }}>
+            <img src="/logo.png" alt="EzTips" style={{ height: 72, width: 'auto', borderRadius: 16, filter: 'drop-shadow(0 0 20px rgba(124,58,237,0.55))' }} />
           </Link>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.5px', marginBottom: 6 }}>Welcome back</h1>
           <p style={{ fontSize: 14, color: '#475569' }}>Sign in to your account</p>
@@ -55,7 +54,10 @@ function LoginContent() {
           </a>
 
           <p style={{ marginTop: 20, fontSize: 12, color: '#334155', textAlign: 'center', lineHeight: 1.6 }}>
-            By signing in you agree to our Terms of Service and Privacy Policy.
+            By signing in you agree to our{' '}
+            <Link href="/tos" style={{ color: '#a78bfa', textDecoration: 'none' }}>Terms of Service</Link>
+            {' '}and{' '}
+            <Link href="/privacy" style={{ color: '#a78bfa', textDecoration: 'none' }}>Privacy Policy</Link>.
           </p>
         </div>
 
