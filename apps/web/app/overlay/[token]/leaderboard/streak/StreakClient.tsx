@@ -22,6 +22,31 @@ function readParams() {
   }
 }
 
+type SavedStreak = { streak: number; lastDonor: string; totalInStreak: number; lastDonationAt: number }
+
+function storageKey(token: string) { return `streak-${token}` }
+
+function loadSavedStreak(token: string, resetMin: number): SavedStreak | null {
+  try {
+    const raw = window.localStorage.getItem(storageKey(token))
+    if (!raw) return null
+    const saved: SavedStreak = JSON.parse(raw)
+    if (Date.now() - saved.lastDonationAt >= resetMin * 60 * 1000) {
+      window.localStorage.removeItem(storageKey(token))
+      return null
+    }
+    return saved
+  } catch { return null }
+}
+
+function saveStreak(token: string, data: SavedStreak) {
+  try { window.localStorage.setItem(storageKey(token), JSON.stringify(data)) } catch {}
+}
+
+function clearSavedStreak(token: string) {
+  try { window.localStorage.removeItem(storageKey(token)) } catch {}
+}
+
 export default function StreakClient({ token }: { token: string }) {
   const [streak, setStreak] = useState(0)
   const [lastDonor, setLastDonor] = useState('')
@@ -33,6 +58,20 @@ export default function StreakClient({ token }: { token: string }) {
   useEffect(() => { setParams(readParams()) }, [])
 
   useEffect(() => {
+    const initialParams = readParams()
+    const saved = loadSavedStreak(token, initialParams.resetMin)
+    if (saved) {
+      setStreak(saved.streak)
+      setLastDonor(saved.lastDonor)
+      setTotalInStreak(saved.totalInStreak)
+      setVisible(true)
+      const remaining = initialParams.resetMin * 60 * 1000 - (Date.now() - saved.lastDonationAt)
+      resetTimer.current = setTimeout(() => {
+        setStreak(0); setTotalInStreak(0); setLastDonor(''); setVisible(false)
+        clearSavedStreak(token)
+      }, Math.max(0, remaining))
+    }
+
     const socket = getSocket()
     socket.connect()
     socket.on('connect', () => socket.emit('join-overlay', { token }))
@@ -55,14 +94,22 @@ export default function StreakClient({ token }: { token: string }) {
       }))
     })
     socket.on('new-donation', (data: NewDonationEvent) => {
-      setStreak(s => s + 1)
+      setStreak(s => {
+        const nextStreak = s + 1
+        setTotalInStreak(t => {
+          const nextTotal = t + data.amount
+          saveStreak(token, { streak: nextStreak, lastDonor: data.donorName, totalInStreak: nextTotal, lastDonationAt: Date.now() })
+          return nextTotal
+        })
+        return nextStreak
+      })
       setLastDonor(data.donorName)
-      setTotalInStreak(t => t + data.amount)
       setVisible(true)
 
       if (resetTimer.current) clearTimeout(resetTimer.current)
       resetTimer.current = setTimeout(() => {
         setStreak(0); setTotalInStreak(0); setLastDonor(''); setVisible(false)
+        clearSavedStreak(token)
       }, params.resetMin * 60 * 1000)
     })
     return () => { socket.disconnect(); if (resetTimer.current) clearTimeout(resetTimer.current) }
