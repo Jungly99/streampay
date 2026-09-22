@@ -298,7 +298,7 @@ export default function OverlayPage() {
   })
   const [bgTransparent, setBgTransparent] = useState(false)
   const [ttsVoiceId, setTtsVoiceId] = useState('hi-IN-Standard-A')
-  const [goal, setGoal] = useState<any>({ title:'', targetAmount:1000, isActive:false, currentAmount:0 })
+  const [goal, setGoal] = useState<any>({ title:'', targetAmount:1000, isActive:true, currentAmount:0 })
   const [manualAdd, setManualAdd] = useState('')
   const [customSoundBase64, setCustomSoundBase64] = useState('')
   const [customSoundName, setCustomSoundName] = useState('')
@@ -462,7 +462,7 @@ export default function OverlayPage() {
     try {
       await Promise.all([
         api.patch('/api/streamer/alert-settings', { ...s, ttsVoiceId }),
-        goal.title ? api.put('/api/streamer/goal', goal) : Promise.resolve(),
+        goal.title ? api.put('/api/streamer/goal', { title: goal.title, targetAmount: goal.targetAmount, isActive: goal.isActive }) : Promise.resolve(),
       ])
       toast.success('Settings saved!')
     } catch (e: any) { toast.error(e.message) } finally { setSaving(false) }
