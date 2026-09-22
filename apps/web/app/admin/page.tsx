@@ -13,7 +13,7 @@ interface AdminMe { adminId:string; email:string; name?:string; avatar?:string; 
 interface VisitorStats { websiteTotal:number; dashboardTotal:number; websiteToday:number; dashboardToday:number }
 interface Stats { totalStreamers:number; totalViewers:number; totalDonations:number; totalCollected:number; pendingSettlements:number; totalPaidOut:number; visitors:VisitorStats }
 interface BankDetails { id:string; accountHolderName:string|null; accountNumber:string|null; ifscCode:string|null; bankName:string|null; upiId:string|null; invoiceName:string|null; streetAddress:string|null; city:string|null; state:string|null; pincode:string|null }
-interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; isPremium:boolean; verificationRequestedAt:string|null; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; platformFeePct:number; bankDetails:BankDetails|null }
+interface Streamer { id:string; userId:string; username:string|null; channelName:string|null; channelLink:string|null; bio:string|null; email:string; displayName:string|null; isActive:boolean; isVerified:boolean; isPremium:boolean; verificationRequestedAt:string|null; minDonationAmount:number; overlayToken:string|null; discordWebhookUrl:string|null; createdAt:string; donationCount:number; settlementCount:number; pendingBalance:number; pendingNet:number; totalCollected:number; platformFeePct:number; bankDetails:BankDetails|null; referredBy:{id:string;displayName:string;referralCode:string|null}|null }
 interface User { id:string; email:string; accountType:string; displayName:string|null; createdAt:string; deletedAt?:string|null; streamerProfile:{id:string;username:string|null;channelName:string|null;isActive:boolean;isVerified:boolean;_count?:{donations:number}}|null; viewerProfile:{id:string;displayName:string|null}|null }
 interface Donation { id:string; donorName:string; message:string|null; amount:number; status:string; createdAt:string; cfOrderId:string; cfPaymentId:string|null; settled:boolean; streamer:{username:string|null;channelName:string|null} }
 interface Settlement { id:string; grossAmount:number; feeAmount:string; netAmount:string; status:'INITIATED'|'SUCCESS'|'FAILED'; initiatedAt:string; settledAt:string|null; failureReason:string|null; cfTransferId:string|null; streamer:{username:string|null;channelName:string|null;user:{email:string};bankDetails:BankDetails|null} }
@@ -828,6 +828,11 @@ export default function AdminDashboard() {
                       {!s.isVerified && s.verificationRequestedAt && <Badge v="PENDING" />}
                     </div>
                     <p style={{color:'#666',fontSize:12,margin:0}}>{s.email} · Joined {new Date(s.createdAt).toLocaleDateString('en-IN')}</p>
+                    {s.referredBy && (
+                      <p style={{color:'#22d3ee',fontSize:11.5,margin:'4px 0 0'}}>
+                        🔗 Referred by <strong>{s.referredBy.displayName}</strong>{s.referredBy.referralCode && <span style={{fontFamily:"'JetBrains Mono',monospace",color:'#9a9cbe'}}> ({s.referredBy.referralCode})</span>}
+                      </p>
+                    )}
                   </div>
                   <div style={{display:'flex',gap:20,alignItems:'center',flexWrap:'wrap'}}>
                     {[['COLLECTED',fmt(s.totalCollected),'#10b981'],['PENDING',fmt(s.pendingBalance),'#f59e0b'],['NET PAYABLE',fmt(s.pendingNet),'#7c3aed'],['PLATFORM FEE',`${s.platformFeePct??7}%`,'#f59e0b'],['DONATIONS',String(s.donationCount),'#fff']].map(([l,v,c])=>(
@@ -1110,6 +1115,18 @@ export default function AdminDashboard() {
                     </div>
                   ) : (
                     <div style={{background:'#f8717111',borderRadius:8,padding:'8px 14px',fontSize:12,color:'#f87171',marginBottom:12}}>⚠ No bank details</div>
+                  )}
+                  {r.referredStreamers?.length > 0 && (
+                    <div style={{background:'#1a1a2b',borderRadius:8,padding:'10px 14px',marginBottom:12}}>
+                      <p style={{color:'#5c5e80',fontSize:10.5,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,margin:'0 0 6px'}}>Referred Streamers ({r.referredStreamers.length})</p>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                        {r.referredStreamers.map((rs:any)=>(
+                          <span key={rs.id} style={{fontSize:12,color:'#f5f6fb',background:'#8b5cf622',padding:'3px 10px',borderRadius:20}}>
+                            {rs.channelName??rs.username??'Unnamed'} <span style={{color:'#5c5e80',fontSize:11}}>· {new Date(rs.createdAt).toLocaleDateString('en-IN')}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
                   <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                     <button onClick={()=>{setEditReferralBank(r);setRbForm(r.bankDetails??{})}} style={btn('#1a1a2b','#9a9cbe')}>🏦 Edit Bank</button>

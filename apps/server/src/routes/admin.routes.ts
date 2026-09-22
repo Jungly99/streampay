@@ -160,6 +160,7 @@ router.get('/streamers', requirePermission('streamers'), async (_req: AdminReque
     include: {
       user: { select: { id: true, email: true, createdAt: true, displayName: true } },
       bankDetails: true,
+      referredBy: { select: { id: true, displayName: true, referralCode: true, user: { select: { email: true } } } },
       _count: { select: { donations: true, settlements: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -207,6 +208,7 @@ router.get('/streamers', requirePermission('streamers'), async (_req: AdminReque
     totalCollected: totalMap[s.id] ?? 0,
     platformFeePct: Number(s.platformFeePct ?? 5),
     bankDetails: s.bankDetails,
+    referredBy: s.referredBy ? { id: s.referredBy.id, displayName: s.referredBy.displayName ?? s.referredBy.user.email, referralCode: s.referredBy.referralCode } : null,
   })))
 })
 
@@ -533,6 +535,7 @@ router.get('/referrals', requirePermission('referrals'), async (_req: AdminReque
     include: {
       user: { select: { email: true, displayName: true, createdAt: true } },
       bankDetails: true,
+      referredStreamers: { select: { id: true, channelName: true, username: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
       _count: { select: { referredStreamers: true } },
     },
     orderBy: { createdAt: 'desc' },
