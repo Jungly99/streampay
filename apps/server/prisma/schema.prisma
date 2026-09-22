@@ -11,6 +11,7 @@ datasource db {
 enum AccountType {
   streamer
   viewer
+  referral
 }
 
 enum DonationStatus {
@@ -46,6 +47,7 @@ model User {
 
   streamerProfile StreamerProfile?
   viewerProfile   ViewerProfile?
+  referralPartner ReferralPartner?
   donations       Donation[]       @relation("ViewerDonations")
   follows         Follow[]
 
@@ -88,6 +90,9 @@ model StreamerProfile {
   discordWebhookUrl     String?  @map("discord_webhook_url")
   createdAt             DateTime @default(now()) @map("created_at")
 
+  referredById    String?          @map("referred_by_id")
+  referredBy      ReferralPartner? @relation(fields: [referredById], references: [id])
+
   bankDetails     StreamerBankDetails?
   alertSettings   AlertSettings?
   voiceTiers      VoiceMessageTier[]
@@ -96,6 +101,7 @@ model StreamerProfile {
   settlements     Settlement[]
   invoices        Invoice[]
   followers       Follow[]
+  referralEarnings ReferralEarning[]
   supportTickets  SupportTicket[]
   clips           StreamClip[]
 
@@ -249,6 +255,7 @@ model Donation {
   settled         Boolean        @default(false)
   settlementId    String?        @map("settlement_id")
   settlement      Settlement?    @relation(fields: [settlementId], references: [id])
+  referralEarning ReferralEarning?
   createdAt       DateTime       @default(now()) @map("created_at")
   paidAt          DateTime?      @map("paid_at")
 
@@ -430,4 +437,81 @@ model PageVisit {
   @@unique([ip, page, date])
   @@index([page, date])
   @@map("page_visits")
+}
+
+model ReferralPartner {
+  id      String @id @default(uuid())
+  userId  String @unique @map("user_id")
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  displayName             String?   @map("display_name")
+  isVerified              Boolean   @default(false) @map("is_verified")
+  verificationRequestedAt DateTime? @map("verification_requested_at")
+  isActive                Boolean   @default(true) @map("is_active")
+  referralCode            String?   @unique @map("referral_code")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  bankDetails       ReferralBankDetails?
+  referredStreamers StreamerProfile[]
+  earnings          ReferralEarning[]
+  settlements       ReferralSettlement[]
+
+  @@map("referral_partners")
+}
+
+model ReferralBankDetails {
+  id                String          @id @default(uuid())
+  referralPartnerId String          @unique @map("referral_partner_id")
+  referralPartner   ReferralPartner @relation(fields: [referralPartnerId], references: [id], onDelete: Cascade)
+
+  accountHolderName String?  @map("account_holder_name")
+  accountNumber     String?  @map("account_number")
+  ifscCode          String?  @map("ifsc_code")
+  bankName          String?  @map("bank_name")
+  upiId             String?  @map("upi_id")
+  invoiceName       String?  @map("invoice_name")
+  streetAddress     String?  @map("street_address")
+  city              String?
+  state             String?
+  pincode           String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("referral_bank_details")
+}
+
+model ReferralEarning {
+  id                String          @id @default(uuid())
+  referralPartnerId String          @map("referral_partner_id")
+  referralPartner   ReferralPartner @relation(fields: [referralPartnerId], references: [id])
+  streamerId        String          @map("streamer_id")
+  streamer          StreamerProfile @relation(fields: [streamerId], references: [id])
+  donationId        String          @unique @map("donation_id")
+  donation          Donation        @relation(fields: [donationId], references: [id])
+
+  amount       Decimal             @db.Decimal(10, 2)
+  settled      Boolean             @default(false)
+  settlementId String?             @map("settlement_id")
+  settlement   ReferralSettlement? @relation(fields: [settlementId], references: [id])
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  @@map("referral_earnings")
+}
+
+model ReferralSettlement {
+  id                String          @id @default(uuid())
+  referralPartnerId String          @map("referral_partner_id")
+  referralPartner   ReferralPartner @relation(fields: [referralPartnerId], references: [id])
+
+  amount        Decimal          @db.Decimal(10, 2)
+  status        SettlementStatus @default(INITIATED)
+  initiatedAt   DateTime         @default(now()) @map("initiated_at")
+  settledAt     DateTime?        @map("settled_at")
+  failureReason String?          @map("failure_reason")
+  transferRef   String?          @map("transfer_ref")
+
+  earnings ReferralEarning[]
+
+  @@map("referral_settlements")
 }

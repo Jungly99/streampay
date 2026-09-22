@@ -22,6 +22,7 @@ import ttsRoutes from './routes/tts.routes'
 import supportRoutes from './routes/support.routes'
 import trackRoutes from './routes/track.routes'
 import clipsRoutes from './routes/clips.routes'
+import referralRoutes from './routes/referral.routes'
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -75,6 +76,7 @@ app.use('/api/tts', ttsRoutes)
 app.use('/api/support', supportRoutes)
 app.use('/api/track', trackRoutes)
 app.use('/api/clips', clipsRoutes)
+app.use('/api/referral', referralRoutes)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 

@@ -527,6 +527,126 @@ router.patch('/settlements/:id/mark-failed', requirePermission('settlements'), a
   res.json(updated)
 })
 
+// ── REFERRAL PARTNERS ───────────────────────────────────────────────────────
+router.get('/referrals', requirePermission('referrals'), async (_req: AdminRequest, res: Response): Promise<void> => {
+  const partners = await prisma.referralPartner.findMany({
+    include: {
+      user: { select: { email: true, displayName: true, createdAt: true } },
+      bankDetails: true,
+      _count: { select: { referredStreamers: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+  const partnerIds = partners.map(p => p.id)
+  const [pendingTotals, lifetimeTotals] = await Promise.all([
+    prisma.referralEarning.groupBy({ by: ['referralPartnerId'], where: { referralPartnerId: { in: partnerIds }, settled: false }, _sum: { amount: true } }),
+    prisma.referralEarning.groupBy({ by: ['referralPartnerId'], where: { referralPartnerId: { in: partnerIds } }, _sum: { amount: true } }),
+  ])
+  const pendingMap = Object.fromEntries(pendingTotals.map(p => [p.referralPartnerId, Number(p._sum.amount ?? 0)]))
+  const lifetimeMap = Object.fromEntries(lifetimeTotals.map(p => [p.referralPartnerId, Number(p._sum.amount ?? 0)]))
+
+  res.json(partners.map(p => ({
+    id: p.id,
+    email: p.user.email,
+    displayName: p.displayName ?? p.user.displayName,
+    isVerified: p.isVerified,
+    verificationRequestedAt: p.verificationRequestedAt,
+    isActive: p.isActive,
+    referralCode: p.referralCode,
+    createdAt: p.user.createdAt,
+    referredCount: p._count.referredStreamers,
+    pendingBalance: pendingMap[p.id] ?? 0,
+    lifetimeEarned: lifetimeMap[p.id] ?? 0,
+    bankDetails: p.bankDetails,
+  })))
+})
+
+router.get('/referrals/:id', requirePermission('referrals'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const partner = await prisma.referralPartner.findUnique({
+    where: { id: req.params.id },
+    include: {
+      user: true, bankDetails: true,
+      referredStreamers: { select: { id: true, channelName: true, username: true, createdAt: true } },
+    },
+  })
+  if (!partner) { res.status(404).json({ error: 'Not found' }); return }
+  res.json(partner)
+})
+
+router.patch('/referrals/:id', requirePermission('referrals'), auditLog('UPDATE_REFERRAL_PARTNER','referral',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { displayName, isActive, referralCode } = req.body as { displayName?: string; isActive?: boolean; referralCode?: string }
+  const updated = await prisma.referralPartner.update({
+    where: { id: req.params.id },
+    data: {
+      ...(displayName !== undefined && { displayName }),
+      ...(isActive !== undefined && { isActive }),
+      ...(referralCode !== undefined && { referralCode: referralCode || null }),
+    },
+  })
+  res.json(updated)
+})
+
+router.patch('/referrals/:id/bank', requirePermission('referrals'), auditLog('UPDATE_REFERRAL_BANK','referral',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { accountHolderName, accountNumber, ifscCode, bankName, upiId, invoiceName, streetAddress, city, state, pincode } = req.body as {
+    accountHolderName?: string; accountNumber?: string; ifscCode?: string; bankName?: string; upiId?: string
+    invoiceName?: string; streetAddress?: string; city?: string; state?: string; pincode?: string
+  }
+  const data = { accountHolderName, accountNumber, ifscCode, bankName, upiId, invoiceName, streetAddress, city, state, pincode }
+  const updated = await prisma.referralBankDetails.upsert({
+    where: { referralPartnerId: req.params.id },
+    create: { referralPartnerId: req.params.id, ...data },
+    update: data,
+  })
+  res.json(updated)
+})
+
+router.post('/referrals/:id/approve-verification', requirePermission('referrals'), auditLog('APPROVE_REFERRAL_VERIFICATION','referral',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const updated = await prisma.referralPartner.update({
+    where: { id: req.params.id },
+    data: { isVerified: true, verificationRequestedAt: null },
+  })
+  res.json({ isVerified: updated.isVerified })
+})
+
+router.post('/referrals/:id/reject-verification', requirePermission('referrals'), auditLog('REJECT_REFERRAL_VERIFICATION','referral',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const updated = await prisma.referralPartner.update({
+    where: { id: req.params.id },
+    data: { verificationRequestedAt: null },
+  })
+  res.json({ verificationRequestedAt: updated.verificationRequestedAt })
+})
+
+router.get('/referral-settlements', requirePermission('referrals'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { status } = req.query
+  const settlements = await prisma.referralSettlement.findMany({
+    where: status ? { status: status as 'INITIATED' | 'SUCCESS' | 'FAILED' } : undefined,
+    include: { referralPartner: { include: { user: { select: { email: true } }, bankDetails: true } } },
+    orderBy: { initiatedAt: 'desc' },
+  })
+  res.json(settlements)
+})
+
+router.patch('/referral-settlements/:id/mark-paid', requirePermission('referrals'), auditLog('MARK_REFERRAL_SETTLEMENT_PAID','referral_settlement',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { transferRef } = req.body as { transferRef?: string }
+  const settlement = await prisma.referralSettlement.findUnique({ where: { id: req.params.id } })
+  if (!settlement) { res.status(404).json({ error: 'Not found' }); return }
+  if (settlement.status === 'SUCCESS') { res.status(400).json({ error: 'Already marked as paid' }); return }
+  const updated = await prisma.referralSettlement.update({
+    where: { id: req.params.id },
+    data: { status: 'SUCCESS', settledAt: new Date(), transferRef: transferRef ?? null },
+  })
+  res.json(updated)
+})
+
+router.patch('/referral-settlements/:id/mark-failed', requirePermission('referrals'), auditLog('MARK_REFERRAL_SETTLEMENT_FAILED','referral_settlement',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { reason } = req.body as { reason?: string }
+  const updated = await prisma.referralSettlement.update({
+    where: { id: req.params.id },
+    data: { status: 'FAILED', failureReason: reason ?? 'Marked failed by admin' },
+  })
+  res.json(updated)
+})
+
 // ── ROLES (super admin only) ───────────────────────────────────────────────
 router.get('/roles', requireSuperAdmin, async (_req: AdminRequest, res: Response): Promise<void> => {
   const roles = await prisma.adminRole.findMany({

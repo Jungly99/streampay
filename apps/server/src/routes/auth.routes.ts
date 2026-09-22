@@ -7,7 +7,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth'
 import { env } from '../config/env'
 
 const SUPER_ADMIN_EMAIL = 'abhinavs199.as@gmail.com'
-const FULL_ADMIN_PERMS: AdminPermissions = { overview:true, streamers:true, users:true, donations:true, settlements:true, restore_accounts:true, tickets:true, support:true }
+const FULL_ADMIN_PERMS: AdminPermissions = { overview:true, streamers:true, users:true, donations:true, settlements:true, restore_accounts:true, tickets:true, support:true, referrals:true }
 
 const router = Router()
 
@@ -32,8 +32,9 @@ const oauth2Client = new OAuth2Client(
 router.get('/google', (req: Request, res: Response): void => {
   const accountType = (req.query.accountType as string) || 'streamer'
   const mode        = (req.query.mode as string)        || 'login'
+  const refCode     = (req.query.refCode as string)     || undefined
 
-  const state = Buffer.from(JSON.stringify({ accountType, mode })).toString('base64url')
+  const state = Buffer.from(JSON.stringify({ accountType, mode, refCode })).toString('base64url')
 
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -57,11 +58,13 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
   let flow = 'user'
   let accountType = 'streamer'
   let mode = 'login'
+  let refCode: string | undefined
   try {
     const decoded = JSON.parse(Buffer.from(state, 'base64url').toString())
     flow        = decoded.flow        || 'user'
     accountType = decoded.accountType || 'streamer'
     mode        = decoded.mode        || 'login'
+    refCode     = decoded.refCode     || undefined
   } catch { /* ignore malformed state */ }
 
   // Exchange code for tokens
@@ -118,12 +121,21 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
       res.redirect(`${env.FRONTEND_URL}/login?error=no_account`)
       return
     }
+
+    let referredById: string | undefined
+    if (accountType === 'streamer' && refCode) {
+      const partner = await prisma.referralPartner.findUnique({ where: { referralCode: refCode } })
+      if (partner && partner.isVerified && partner.isActive) referredById = partner.id
+    }
+
     user = await prisma.user.create({
       data: {
         email, googleId, displayName: name, avatarUrl,
-        accountType: accountType as 'streamer' | 'viewer',
+        accountType: accountType as 'streamer' | 'viewer' | 'referral',
         ...(accountType === 'streamer'
-          ? { streamerProfile: { create: { channelName: name, overlayToken: generateOverlayToken(), alertSettings: { create: {} }, bankDetails: { create: {} } } } }
+          ? { streamerProfile: { create: { channelName: name, overlayToken: generateOverlayToken(), alertSettings: { create: {} }, bankDetails: { create: {} }, ...(referredById && { referredById }) } } }
+          : accountType === 'referral'
+          ? { referralPartner: { create: { displayName: name } } }
           : { viewerProfile: { create: { displayName: name } } }),
       },
     })
@@ -133,7 +145,8 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
 
   const token = signToken({ userId: user.id, accountType: user.accountType })
   res.cookie('eztips_token', token, COOKIE_OPTIONS)
-  res.redirect(`${env.FRONTEND_URL}${user.accountType === 'streamer' ? '/dashboard' : '/fan'}`)
+  const dest = user.accountType === 'streamer' ? '/dashboard' : user.accountType === 'referral' ? '/refer/dashboard' : '/fan'
+  res.redirect(`${env.FRONTEND_URL}${dest}`)
 })
 
 router.post('/logout', (_req: Request, res: Response): void => {

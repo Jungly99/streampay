@@ -44,6 +44,16 @@ export function requireViewer(req: AuthRequest, res: Response, next: NextFunctio
   })
 }
 
+export function requireReferral(req: AuthRequest, res: Response, next: NextFunction): void {
+  requireAuth(req, res, () => {
+    if (req.user?.accountType !== 'referral') {
+      res.status(403).json({ error: 'Referral partner account required' })
+      return
+    }
+    next()
+  })
+}
+
 export async function requireAdmin(req: AdminRequest, res: Response, next: NextFunction): Promise<void> {
   const token = req.cookies?.eztips_admin_token
   if (!token) { res.status(401).json({ error: 'Unauthorized' }); return }

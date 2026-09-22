@@ -46,8 +46,27 @@ router.post('/razorpay', async (req: Request, res: Response): Promise<void> => {
     const donation = await prisma.donation.update({
       where: { cfOrderId: razorpayOrderId },
       data: { status: 'SUCCESS', cfPaymentId: razorpayPaymentId, paidAt: new Date() },
-      include: { streamer: { include: { alertSettings: true, goals: { where: { isActive: true } } } } },
+      include: { streamer: { include: { alertSettings: true, goals: { where: { isActive: true } }, referredBy: true } } },
     })
+
+    // Referral partner cut — flat 1% of the donation, capped at whatever this
+    // streamer's own platform fee is (so the platform's share never goes negative).
+    const referredBy = donation.streamer.referredBy
+    if (referredBy && referredBy.isVerified && referredBy.isActive) {
+      const feePct = Number(donation.streamer.platformFeePct ?? 7)
+      const referralPct = Math.min(1, feePct)
+      const referralAmount = Math.round(donation.amount * referralPct) / 100
+      if (referralAmount > 0) {
+        await prisma.referralEarning.create({
+          data: {
+            referralPartnerId: referredBy.id,
+            streamerId: donation.streamer.id,
+            donationId: donation.id,
+            amount: referralAmount,
+          },
+        })
+      }
+    }
 
     const activeGoal = donation.streamer.goals[0]
     if (activeGoal) {

@@ -18,8 +18,9 @@ function GoogleIcon() {
 
 function SignupContent() {
   const params = useSearchParams()
+  const refCode = params.get('ref')
   // Always streamer — viewer option removed
-  const googleUrl = `${BACKEND}/api/auth/google?mode=signup&accountType=streamer`
+  const googleUrl = `${BACKEND}/api/auth/google?mode=signup&accountType=streamer${refCode ? `&refCode=${encodeURIComponent(refCode)}` : ''}`
 
   return (
     <div style={{ minHeight: '100vh', background: '#06060f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'system-ui,sans-serif' }}>
@@ -37,6 +38,11 @@ function SignupContent() {
           </Link>
           <h1 style={{ fontSize: 26, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.5px', marginBottom: 6 }}>Create your account</h1>
           <p style={{ fontSize: 13, color: '#475569' }}>Join Indian streamers on eztips. Free forever.</p>
+          {refCode && (
+            <p style={{ fontSize: 12, color: '#a78bfa', marginTop: 10, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 8, padding: '6px 12px', display: 'inline-block' }}>
+              Referred with code <strong>{refCode}</strong>
+            </p>
+          )}
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: '28px 28px' }}>

@@ -3,7 +3,7 @@ import { env } from '../config/env'
 
 export interface JwtPayload {
   userId: string
-  accountType: 'streamer' | 'viewer'
+  accountType: 'streamer' | 'viewer' | 'referral'
 }
 
 export interface AdminPermissions {
@@ -15,6 +15,7 @@ export interface AdminPermissions {
   restore_accounts: boolean
   tickets: boolean
   support: boolean
+  referrals: boolean
 }
 
 export interface AdminJwtPayload {
