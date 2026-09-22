@@ -256,6 +256,28 @@ router.patch('/streamers/:id/bank', requirePermission('streamers'), async (req: 
   res.json(updated)
 })
 
+// Data-repair: goals left inactive (overlay hidden, donations not tracked) by the
+// isActive-mismatch bug, identified by having real accumulated progress already.
+router.post('/goals/fix-inactive', requirePermission('streamers'), auditLog('FIX_INACTIVE_GOALS'), async (_req: AdminRequest, res: Response): Promise<void> => {
+  const affected = await prisma.overlayGoal.findMany({
+    where: { isActive: false, currentAmount: { gt: 0 } },
+    include: { streamer: { select: { channelName: true, username: true } } },
+  })
+  if (affected.length) {
+    await prisma.overlayGoal.updateMany({
+      where: { id: { in: affected.map(g => g.id) } },
+      data: { isActive: true },
+    })
+  }
+  res.json({
+    fixedCount: affected.length,
+    fixed: affected.map(g => ({
+      channelName: g.streamer.channelName, username: g.streamer.username,
+      title: g.title, currentAmount: g.currentAmount, targetAmount: g.targetAmount,
+    })),
+  })
+})
+
 // ── DONATIONS ──────────────────────────────────────────────────────────────
 router.get('/donations', requirePermission('donations'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { page = '1', limit = '50', status, search, streamer } = req.query
