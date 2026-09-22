@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import StyledSelect, { SelectOption } from '../../components/ui/StyledSelect'
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donations:boolean; settlements:boolean; restore_accounts:boolean; tickets:boolean; support:boolean }
@@ -29,6 +30,70 @@ const btn = (bg='#7c3aed',c='#fff'):React.CSSProperties => ({ padding:'7px 16px'
 const ghostBtn:React.CSSProperties = { ...btn('transparent','#aaa'), border:'1px solid #2d2d4e' }
 const dangerBtn:React.CSSProperties = btn('#ef444422','#f87171')
 const ALL_PERMS:Array<keyof AdminPerms> = ['overview','streamers','users','donations','settlements','restore_accounts','tickets','support']
+
+// ─── Trend charts ──────────────────────────────────────────────────────────────
+function fmtDay(d:string){ const dt = new Date(d+'T00:00:00Z'); return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) }
+
+function TrendTooltip({active,payload,label,valueFmt}:any){
+  if(!active||!payload?.length) return null
+  return (
+    <div style={{background:'#0f0f1a',border:'1px solid #2d2d4e',borderRadius:8,padding:'8px 12px',fontSize:12}}>
+      <p style={{margin:'0 0 4px',color:'#888'}}>{fmtDay(label)}</p>
+      {payload.map((p:any)=>(
+        <p key={p.dataKey} style={{margin:0,color:p.color,fontWeight:700}}>{p.name}: {valueFmt?valueFmt(p.value):p.value}</p>
+      ))}
+    </div>
+  )
+}
+
+function MiniAreaCard({title,data,dataKey,color,valueFmt}:{title:string;data:any[];dataKey:string;color:string;valueFmt?:(v:number)=>string}){
+  const total = data.reduce((s,d)=>s+(d[dataKey]||0),0)
+  const gradId = `grad-${dataKey}`
+  return (
+    <div style={{...card,padding:'16px 18px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
+        <p style={{color:'#888',fontSize:11,textTransform:'uppercase',letterSpacing:.5,margin:0}}>{title}</p>
+        <p style={{color,fontSize:17,fontWeight:800,margin:0}}>{valueFmt?valueFmt(total):total}</p>
+      </div>
+      <ResponsiveContainer width="100%" height={64}>
+        <AreaChart data={data} margin={{top:4,right:2,left:2,bottom:0}}>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.35}/>
+              <stop offset="100%" stopColor={color} stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <XAxis dataKey="day" hide/>
+          <YAxis hide domain={[0,'auto']}/>
+          <Tooltip content={<TrendTooltip valueFmt={valueFmt}/>} cursor={{stroke:'#2d2d4e'}}/>
+          <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fill={`url(#${gradId})`} dot={false} activeDot={{r:4}} isAnimationActive={false}/>
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function SignupsTrendCard({data}:{data:any[]}){
+  const totalStreamers = data.reduce((s,d)=>s+(d.newStreamers||0),0)
+  const totalViewers = data.reduce((s,d)=>s+(d.newViewers||0),0)
+  return (
+    <div style={{...card,padding:'16px 18px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
+        <p style={{color:'#888',fontSize:11,textTransform:'uppercase',letterSpacing:.5,margin:0}}>New Signups</p>
+        <p style={{fontSize:13,margin:0}}><span style={{color:S_COLORS.streamer,fontWeight:800}}>{totalStreamers}</span><span style={{color:'#555'}}> streamers · </span><span style={{color:S_COLORS.viewer,fontWeight:800}}>{totalViewers}</span><span style={{color:'#555'}}> viewers</span></p>
+      </div>
+      <ResponsiveContainer width="100%" height={64}>
+        <BarChart data={data} margin={{top:4,right:2,left:2,bottom:0}} barGap={2}>
+          <XAxis dataKey="day" hide/>
+          <YAxis hide/>
+          <Tooltip content={<TrendTooltip/>} cursor={{fill:'rgba(255,255,255,0.04)'}}/>
+          <Bar dataKey="newStreamers" name="Streamers" fill={S_COLORS.streamer} radius={[3,3,0,0]} isAnimationActive={false}/>
+          <Bar dataKey="newViewers" name="Viewers" fill={S_COLORS.viewer} radius={[3,3,0,0]} isAnimationActive={false}/>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
 // ─── Modal ─────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children }:{ title:string; onClose:()=>void; children:React.ReactNode }) {
@@ -95,6 +160,24 @@ export default function AdminDashboard() {
   const [sForm, setSForm]   = useState<Partial<Streamer>>({})
   const [bForm, setBForm]   = useState<Partial<BankDetails>>({})
   const [uForm, setUForm]   = useState<{email:string;displayName:string}>({email:'',displayName:''})
+  const [editDonation, setEditDonation] = useState<Donation|null>(null)
+  const [dForm, setDForm]   = useState<{amount:string;donorName:string;message:string;status:string}>({amount:'',donorName:'',message:'',status:'SUCCESS'})
+  const [dSaving, setDSaving] = useState(false)
+
+  // Balance adjustment + goal editing
+  const [adjustTarget, setAdjustTarget] = useState<Streamer|null>(null)
+  const [adjustForm, setAdjustForm]     = useState<{amount:string;reason:string}>({amount:'',reason:''})
+  const [adjustSaving, setAdjustSaving] = useState(false)
+  const [goalTarget, setGoalTarget]     = useState<Streamer|null>(null)
+  const [goalForm, setGoalForm]         = useState<{title:string;targetAmount:number;currentAmount:number;isActive:boolean}>({title:'',targetAmount:1000,currentAmount:0,isActive:true})
+  const [goalLoading, setGoalLoading]   = useState(false)
+  const [goalSaving, setGoalSaving]     = useState(false)
+
+  // 7-day trend data
+  const [trend, setTrend]           = useState<any[]>([])
+  const [trendDays, setTrendDays]   = useState(7)
+  const [streamerTrend, setStreamerTrend]               = useState<{id:string;data:any[]}|null>(null)
+  const [streamerTrendLoading, setStreamerTrendLoading] = useState<string|null>(null)
 
   // Role/admin management state
   const [newRoleName, setNewRoleName]   = useState('')
@@ -138,6 +221,7 @@ export default function AdminDashboard() {
   const reload = useCallback(() => {
     if (!admin) return
     if (admin.isSuperAdmin || admin.permissions.overview) api('/stats').then(setStats).catch(()=>{})
+    if (admin.isSuperAdmin || admin.permissions.overview) api(`/stats/trend?days=${trendDays}`).then((d:any)=>setTrend(d.trend)).catch(()=>{})
     if (tab==='streamers' && (admin.isSuperAdmin||admin.permissions.streamers)) api('/streamers').then(setStreamers).catch(()=>{})
     if (tab==='users' && (admin.isSuperAdmin||admin.permissions.users)) api('/users').then(setUsers).catch(()=>{})
     if (tab==='donations' && (admin.isSuperAdmin||admin.permissions.donations)) api(`/donations?limit=100${donationFilter?`&status=${donationFilter}`:''}`).then((d:any)=>setDonations(d.donations)).catch(()=>{})
@@ -145,7 +229,12 @@ export default function AdminDashboard() {
     if (tab==='support' && (admin.isSuperAdmin||admin.permissions.support)) api('/support-payments').then(setSupportPayments).catch(()=>{})
     if (tab==='tickets' && (admin.isSuperAdmin||admin.permissions.tickets)) api('/tickets').then(setTickets).catch(()=>{})
     if (tab==='logs' && admin.isSuperAdmin) api('/logs').then(setLogs).catch(()=>{})
-  }, [admin, tab, api, donationFilter, settlementFilter])
+  }, [admin, tab, api, donationFilter, settlementFilter, trendDays])
+
+  useEffect(() => {
+    if (!admin) return
+    if (admin.isSuperAdmin || admin.permissions.overview) api(`/stats/trend?days=${trendDays}`).then((d:any)=>setTrend(d.trend)).catch(()=>{})
+  }, [admin, api, trendDays])
 
   useEffect(() => {
     if (!admin) return
@@ -222,6 +311,73 @@ export default function AdminDashboard() {
     const res = await api(`/streamers/${id}/reset-overlay`, { method:'POST' })
     setStreamers(p=>p.map(s=>s.id===id?{...s,overlayToken:res.overlayToken}:s))
     showToast('Overlay token reset')
+  }
+
+  // ── Donation editing ─────────────────────────────────────────────────────────
+  async function saveDonation() {
+    if (!editDonation) return
+    const amount = Number(dForm.amount)
+    if (!Number.isInteger(amount) || amount <= 0) { showToast('Amount must be a positive whole number'); return }
+    setDSaving(true)
+    try {
+      const updated = await api(`/donations/${editDonation.id}`, { method:'PATCH', body:JSON.stringify({ amount, donorName: dForm.donorName, message: dForm.message, status: dForm.status }) })
+      setDonations(p=>p.map(d=>d.id===editDonation.id?{...d,...updated}:d))
+      showToast('Donation updated')
+      setEditDonation(null)
+    } catch (e:any) { showToast(e.message || 'Failed — donations already settled cannot have their amount changed') }
+    finally { setDSaving(false) }
+  }
+
+  // ── Balance adjustment ───────────────────────────────────────────────────────
+  async function saveAdjustment() {
+    if (!adjustTarget) return
+    const amount = Number(adjustForm.amount)
+    if (!Number.isInteger(amount) || amount === 0) { showToast('Enter a non-zero whole number'); return }
+    if (!adjustForm.reason.trim()) { showToast('A reason is required'); return }
+    setAdjustSaving(true)
+    try {
+      await api(`/streamers/${adjustTarget.id}/adjustment`, { method:'POST', body:JSON.stringify({ amount, reason: adjustForm.reason }) })
+      showToast(`${amount > 0 ? 'Credited' : 'Debited'} ${fmt(Math.abs(amount))}`)
+      setAdjustTarget(null)
+      reload()
+    } catch (e:any) { showToast(e.message || 'Adjustment failed') }
+    finally { setAdjustSaving(false) }
+  }
+
+  // ── Goal editing ─────────────────────────────────────────────────────────────
+  async function openGoal(s: Streamer) {
+    setGoalTarget(s)
+    setGoalLoading(true)
+    try {
+      const detail = await api(`/streamers/${s.id}`)
+      const g = detail.goals?.[0]
+      setGoalForm(g
+        ? { title: g.title, targetAmount: g.targetAmount, currentAmount: g.currentAmount, isActive: g.isActive }
+        : { title:'', targetAmount:1000, currentAmount:0, isActive:true })
+    } catch { showToast('Failed to load goal') }
+    finally { setGoalLoading(false) }
+  }
+  async function saveGoal() {
+    if (!goalTarget) return
+    if (!goalForm.title.trim()) { showToast('Goal needs a title'); return }
+    setGoalSaving(true)
+    try {
+      await api(`/streamers/${goalTarget.id}/goal`, { method:'PATCH', body:JSON.stringify(goalForm) })
+      showToast('Goal updated')
+      setGoalTarget(null)
+    } catch (e:any) { showToast(e.message || 'Failed to save goal') }
+    finally { setGoalSaving(false) }
+  }
+
+  // ── Per-creator 7-day trend ──────────────────────────────────────────────────
+  async function toggleStreamerTrend(id: string) {
+    if (streamerTrend?.id === id) { setStreamerTrend(null); return }
+    setStreamerTrendLoading(id)
+    try {
+      const d = await api(`/streamers/${id}/trend?days=7`)
+      setStreamerTrend({ id, data: d.trend })
+    } catch { showToast('Failed to load trend') }
+    finally { setStreamerTrendLoading(null) }
   }
 
   // ── User actions ─────────────────────────────────────────────────────────────
@@ -379,6 +535,25 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* Historical trend */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+              <h3 style={{margin:0,fontSize:13,fontWeight:700,color:'#888',textTransform:'uppercase',letterSpacing:.5}}>History</h3>
+              <div style={{display:'flex',gap:6}}>
+                {[7,14,30].map(d=>(
+                  <button key={d} onClick={()=>setTrendDays(d)} style={trendDays===d?btn('#7c3aed33','#a78bfa'):ghostBtn}>{d}d</button>
+                ))}
+              </div>
+            </div>
+            {trend.length > 0 && (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14,marginBottom:24}}>
+                <MiniAreaCard title="Revenue" data={trend} dataKey="revenue" color="#10b981" valueFmt={fmt}/>
+                <MiniAreaCard title="Donations" data={trend} dataKey="donationCount" color="#3b82f6"/>
+                <SignupsTrendCard data={trend}/>
+                <MiniAreaCard title="Settlements Paid" data={trend} dataKey="settlementsNet" color="#ec4899" valueFmt={fmt}/>
+              </div>
+            )}
+
             {/* Visitor Counter */}
             <div style={{...card,padding:'20px 24px',marginBottom:16}}>
               <p style={{color:'#888',fontSize:12,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,margin:'0 0 16px'}}>👁 Unique Visitors (by IP)</p>
@@ -555,8 +730,19 @@ export default function AdminDashboard() {
                     {s.isPremium ? '⭐ Premium' : '○ Premium'}
                   </button>
                   <button onClick={()=>resetOverlay(s.id)} style={ghostBtn}>Reset Overlay</button>
+                  <button onClick={()=>toggleStreamerTrend(s.id)} style={streamerTrend?.id===s.id?btn('#3b82f622','#60a5fa'):ghostBtn}>
+                    {streamerTrendLoading===s.id ? '…' : '📈 7-Day Trend'}
+                  </button>
+                  <button onClick={()=>{setAdjustTarget(s);setAdjustForm({amount:'',reason:''})}} style={btn('#f59e0b22','#f59e0b')}>💰 Adjust Balance</button>
+                  <button onClick={()=>openGoal(s)} style={btn('#06b6d422','#22d3ee')}>🎯 Goal</button>
                   <button onClick={()=>setConfirmDelete({id:s.userId,label:s.channelName??s.email,type:'user'})} style={dangerBtn}>Delete</button>
                 </div>
+                {streamerTrend?.id===s.id && (
+                  <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid #2d2d4e',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                    <MiniAreaCard title="Revenue (7d)" data={streamerTrend.data} dataKey="revenue" color="#10b981" valueFmt={fmt}/>
+                    <MiniAreaCard title="Donations (7d)" data={streamerTrend.data} dataKey="donationCount" color="#3b82f6"/>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -655,7 +841,7 @@ export default function AdminDashboard() {
             <div style={{...card,overflow:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse',fontSize:13,minWidth:800}}>
                 <thead><tr style={{background:'#0f0f1a',color:'#666'}}>
-                  {['Donor','Streamer','Amount','Message','Status','Settled','Date','Transaction ID'].map(h=><th key={h} style={{padding:'11px 16px',fontWeight:600,textAlign:'left',whiteSpace:'nowrap'}}>{h}</th>)}
+                  {['Donor','Streamer','Amount','Message','Status','Settled','Date','Transaction ID',''].map(h=><th key={h} style={{padding:'11px 16px',fontWeight:600,textAlign:'left',whiteSpace:'nowrap'}}>{h}</th>)}
                 </tr></thead>
                 <tbody>
                   {donations.map((d,i)=>(
@@ -678,6 +864,9 @@ export default function AdminDashboard() {
                             {d.cfOrderId ? <span title={d.cfOrderId} style={{color:'#475569'}}>Order: {d.cfOrderId.slice(-8)}</span> : '—'}
                           </span>
                         )}
+                      </td>
+                      <td style={{padding:'11px 16px'}}>
+                        <button onClick={()=>{setEditDonation(d);setDForm({amount:String(d.amount),donorName:d.donorName,message:d.message??'',status:d.status})}} style={{...ghostBtn,padding:'5px 12px',fontSize:12}}>✏ Edit</button>
                       </td>
                     </tr>
                   ))}
@@ -1199,6 +1388,63 @@ export default function AdminDashboard() {
           <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
             <button onClick={()=>setEditBank(null)} style={ghostBtn}>Cancel</button>
             <button onClick={saveBank} style={btn()}>Save Bank</button>
+          </div>
+        </Modal>
+      )}
+      {adjustTarget && (
+        <Modal title={`Adjust Balance — ${adjustTarget.channelName??adjustTarget.username}`} onClose={()=>setAdjustTarget(null)}>
+          <p style={{fontSize:12,color:'#888',marginBottom:16,lineHeight:1.5}}>
+            Adds a signed correction entry to this creator&apos;s ledger — positive credits their balance, negative debits it.
+            Current pending balance: <strong style={{color:'#f59e0b'}}>{fmt(adjustTarget.pendingBalance)}</strong>.
+          </p>
+          <Field label="Amount (₹) — negative to debit" value={adjustForm.amount} type="number" onChange={v=>setAdjustForm(p=>({...p,amount:v}))} />
+          <Field label="Reason (required, kept in the audit log)" value={adjustForm.reason} onChange={v=>setAdjustForm(p=>({...p,reason:v}))} />
+          <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+            <button onClick={()=>setAdjustTarget(null)} style={ghostBtn}>Cancel</button>
+            <button onClick={saveAdjustment} disabled={adjustSaving} style={btn('#f59e0b','#1a1206')}>{adjustSaving?'Saving…':'Apply Adjustment'}</button>
+          </div>
+        </Modal>
+      )}
+      {goalTarget && (
+        <Modal title={`Goal — ${goalTarget.channelName??goalTarget.username}`} onClose={()=>setGoalTarget(null)}>
+          {goalLoading ? <p style={{color:'#888',fontSize:13}}>Loading…</p> : (
+            <>
+              <Field label="Goal Title" value={goalForm.title} onChange={v=>setGoalForm(p=>({...p,title:v}))} />
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <Field label="Target Amount (₹)" type="number" value={String(goalForm.targetAmount)} onChange={v=>setGoalForm(p=>({...p,targetAmount:Number(v)||0}))} />
+                <Field label="Current Amount (₹)" type="number" value={String(goalForm.currentAmount)} onChange={v=>setGoalForm(p=>({...p,currentAmount:Number(v)||0}))} />
+              </div>
+              <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#ccc',marginBottom:16,cursor:'pointer'}}>
+                <input type="checkbox" checked={goalForm.isActive} onChange={e=>setGoalForm(p=>({...p,isActive:e.target.checked}))} style={{accentColor:'#06b6d4',width:16,height:16}}/>
+                Show on Overlay (donations only update the goal while this is on)
+              </label>
+              <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+                <button onClick={()=>setGoalTarget(null)} style={ghostBtn}>Cancel</button>
+                <button onClick={saveGoal} disabled={goalSaving} style={btn('#06b6d4','#04222a')}>{goalSaving?'Saving…':'Save Goal'}</button>
+              </div>
+            </>
+          )}
+        </Modal>
+      )}
+      {editDonation && (
+        <Modal title={`Donation — ${editDonation.donorName}`} onClose={()=>setEditDonation(null)}>
+          {editDonation.settled && (
+            <div style={{background:'#f59e0b11',border:'1px solid rgba(245,158,11,0.3)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'#f59e0b',marginBottom:14}}>
+              ⚠ Already settled — amount is locked to protect historical settlement/invoice totals. Use Adjust Balance on the streamer instead for corrections.
+            </div>
+          )}
+          <Field label="Donor Name" value={dForm.donorName} onChange={v=>setDForm(p=>({...p,donorName:v}))} />
+          <Field label="Amount (₹)" type="number" value={dForm.amount} onChange={v=>setDForm(p=>({...p,amount:v}))} readOnly={editDonation.settled} />
+          <Field label="Message" value={dForm.message} onChange={v=>setDForm(p=>({...p,message:v}))} />
+          <div style={{marginBottom:16}}>
+            <label style={{display:'block',color:'#888',fontSize:12,marginBottom:4}}>Status</label>
+            <StyledSelect value={dForm.status} onChange={e=>setDForm(p=>({...p,status:e.target.value}))}>
+              {['PENDING','SUCCESS','FAILED','REFUNDED'].map(s=><SelectOption key={s} value={s}>{s}</SelectOption>)}
+            </StyledSelect>
+          </div>
+          <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+            <button onClick={()=>setEditDonation(null)} style={ghostBtn}>Cancel</button>
+            <button onClick={saveDonation} disabled={dSaving} style={btn()}>{dSaving?'Saving…':'Save'}</button>
           </div>
         </Modal>
       )}
