@@ -53,6 +53,46 @@ router.get('/stats', requirePermission('overview'), async (_req: AdminRequest, r
   })
 })
 
+router.get('/stats/trend', requirePermission('overview'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const days = Math.min(30, Math.max(1, parseInt((req.query.days as string) ?? '7', 10) || 7))
+  const since = new Date()
+  since.setUTCHours(0, 0, 0, 0)
+  since.setUTCDate(since.getUTCDate() - (days - 1))
+
+  const dayKey = (d: Date) => d.toISOString().slice(0, 10)
+  const days_: string[] = []
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since); d.setUTCDate(d.getUTCDate() + i)
+    days_.push(dayKey(d))
+  }
+
+  const [donations, streamerSignups, viewerSignups, settlements] = await Promise.all([
+    prisma.donation.findMany({ where: { status: 'SUCCESS', createdAt: { gte: since } }, select: { amount: true, createdAt: true } }),
+    prisma.streamerProfile.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
+    prisma.viewerProfile.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
+    prisma.settlement.findMany({ where: { initiatedAt: { gte: since } }, select: { status: true, grossAmount: true, netAmount: true, initiatedAt: true } }),
+  ])
+
+  const buckets: Record<string, { day: string; donationCount: number; revenue: number; newStreamers: number; newViewers: number; settlementsRequested: number; settlementsGross: number; settlementsPaid: number; settlementsNet: number }> = {}
+  for (const d of days_) buckets[d] = { day: d, donationCount: 0, revenue: 0, newStreamers: 0, newViewers: 0, settlementsRequested: 0, settlementsGross: 0, settlementsPaid: 0, settlementsNet: 0 }
+
+  for (const d of donations) {
+    const k = dayKey(d.createdAt); if (!buckets[k]) continue
+    buckets[k].donationCount += 1
+    buckets[k].revenue += d.amount
+  }
+  for (const s of streamerSignups) { const k = dayKey(s.createdAt); if (buckets[k]) buckets[k].newStreamers += 1 }
+  for (const v of viewerSignups) { const k = dayKey(v.createdAt); if (buckets[k]) buckets[k].newViewers += 1 }
+  for (const s of settlements) {
+    const k = dayKey(s.initiatedAt); if (!buckets[k]) continue
+    buckets[k].settlementsRequested += 1
+    buckets[k].settlementsGross += s.grossAmount
+    if (s.status === 'SUCCESS') { buckets[k].settlementsPaid += 1; buckets[k].settlementsNet += Number(s.netAmount) }
+  }
+
+  res.json({ days, trend: days_.map(d => buckets[d]) })
+})
+
 // ── USERS ──────────────────────────────────────────────────────────────────
 router.get('/users', requirePermission('users'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { search } = req.query
@@ -180,6 +220,35 @@ router.get('/streamers/:id', requirePermission('streamers'), async (req: AdminRe
   })
   if (!streamer) { res.status(404).json({ error: 'Not found' }); return }
   res.json(streamer)
+})
+
+router.get('/streamers/:id/trend', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
+  const days = Math.min(30, Math.max(1, parseInt((req.query.days as string) ?? '7', 10) || 7))
+  const since = new Date()
+  since.setUTCHours(0, 0, 0, 0)
+  since.setUTCDate(since.getUTCDate() - (days - 1))
+
+  const dayKey = (d: Date) => d.toISOString().slice(0, 10)
+  const days_: string[] = []
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since); d.setUTCDate(d.getUTCDate() + i)
+    days_.push(dayKey(d))
+  }
+
+  const donations = await prisma.donation.findMany({
+    where: { streamerId: req.params.id, status: 'SUCCESS', createdAt: { gte: since } },
+    select: { amount: true, createdAt: true },
+  })
+
+  const buckets: Record<string, { day: string; donationCount: number; revenue: number }> = {}
+  for (const d of days_) buckets[d] = { day: d, donationCount: 0, revenue: 0 }
+  for (const d of donations) {
+    const k = dayKey(d.createdAt); if (!buckets[k]) continue
+    buckets[k].donationCount += 1
+    buckets[k].revenue += d.amount
+  }
+
+  res.json({ days, trend: days_.map(d => buckets[d]) })
 })
 
 router.patch('/streamers/:id', requirePermission('streamers'), auditLog('UPDATE_STREAMER','streamer',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
@@ -317,14 +386,83 @@ router.get('/donations', requirePermission('donations'), async (req: AdminReques
 })
 
 router.patch('/donations/:id', requirePermission('donations'), auditLog('UPDATE_DONATION','donation',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
-  const { status, message } = req.body as { status?: string; message?: string }
+  const { status, message, amount, donorName } = req.body as { status?: string; message?: string; amount?: number; donorName?: string }
+
+  let amountFields: Record<string, unknown> = {}
+  if (amount !== undefined) {
+    if (!Number.isInteger(amount) || amount <= 0) { res.status(400).json({ error: 'Amount must be a positive integer' }); return }
+    const existing = await prisma.donation.findUnique({ where: { id: req.params.id } })
+    if (!existing) { res.status(404).json({ error: 'Donation not found' }); return }
+    if (existing.settled) { res.status(400).json({ error: 'Cannot change the amount of a donation that has already been settled — use a balance adjustment instead' }); return }
+    const pct = Number(existing.platformFeePct)
+    const feeAmount = Math.round(amount * pct) / 100
+    amountFields = { amount, feeAmount, netAmount: amount - feeAmount }
+  }
+
   const updated = await prisma.donation.update({
     where: { id: req.params.id },
     data: {
       ...(status  && { status: status as 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED' }),
       ...(message !== undefined && { message }),
+      ...(donorName !== undefined && { donorName }),
+      ...amountFields,
     },
   })
+  res.json(updated)
+})
+
+// Manual ledger correction — adds a credit/debit entry to a streamer's balance rather
+// than mutating an aggregate, so pending/lifetime totals stay derived and auditable.
+router.post('/streamers/:id/adjustment', requirePermission('streamers'), auditLog('ADJUST_STREAMER_BALANCE','streamer',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { amount, reason } = req.body as { amount?: number; reason?: string }
+  if (!Number.isInteger(amount) || amount === 0) { res.status(400).json({ error: 'Amount must be a non-zero integer — positive to credit, negative to debit' }); return }
+  if (!reason?.trim()) { res.status(400).json({ error: 'A reason is required for the audit trail' }); return }
+
+  const streamer = await prisma.streamerProfile.findUnique({ where: { id: req.params.id } })
+  if (!streamer) { res.status(404).json({ error: 'Streamer not found' }); return }
+
+  const donation = await prisma.donation.create({
+    data: {
+      streamer: { connect: { id: streamer.id } },
+      donorName: amount > 0 ? 'Admin Credit' : 'Admin Debit',
+      message: reason,
+      amount,
+      platformFeePct: 0,
+      feeAmount: 0,
+      netAmount: amount,
+      cfOrderId: `admin_adj_${randomUUID()}`,
+      status: 'SUCCESS',
+      paidAt: new Date(),
+    },
+  })
+  res.json(donation)
+})
+
+// Let admin correct a streamer's overlay goal directly (support cases like a mistracked
+// or hidden goal) and push the new state live if their overlay is connected.
+router.patch('/streamers/:id/goal', requirePermission('streamers'), auditLog('UPDATE_STREAMER_GOAL','streamer',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const { title, targetAmount, currentAmount, isActive } = req.body as { title?: string; targetAmount?: number; currentAmount?: number; isActive?: boolean }
+  const streamer = await prisma.streamerProfile.findUnique({ where: { id: req.params.id } })
+  if (!streamer) { res.status(404).json({ error: 'Streamer not found' }); return }
+
+  const goal = await prisma.overlayGoal.findFirst({ where: { streamerId: streamer.id }, orderBy: { createdAt: 'desc' } })
+  if (!goal) { res.status(404).json({ error: 'This streamer has no goal set up yet' }); return }
+
+  const updated = await prisma.overlayGoal.update({
+    where: { id: goal.id },
+    data: {
+      ...(title !== undefined && { title }),
+      ...(targetAmount !== undefined && { targetAmount }),
+      ...(currentAmount !== undefined && { currentAmount }),
+      ...(isActive !== undefined && { isActive }),
+    },
+  })
+
+  if (streamer.overlayToken) {
+    emitToDonationOverlay(streamer.overlayToken, 'goal-updated', {
+      currentAmount: updated.currentAmount, targetAmount: updated.targetAmount, title: updated.title,
+    })
+  }
   res.json(updated)
 })
 
