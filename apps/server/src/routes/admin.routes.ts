@@ -300,6 +300,30 @@ router.post('/streamers/:id/reset-overlay', requirePermission('streamers'), asyn
   res.json({ overlayToken: updated.overlayToken })
 })
 
+// Permanently erase a creator's profile, bank details, alert/voice settings, goals,
+// followers, tickets and clips. Super-admin only, and blocked whenever any donation
+// or settlement history exists — those are financial records that must be retained
+// for tax/compliance purposes and cannot cascade-delete with the profile. In that
+// case, deactivating the account (already supported) is the correct action instead.
+router.delete('/streamers/:id/permanent', requireSuperAdmin, auditLog('HARD_DELETE_STREAMER','streamer',r=>r.params.id), async (req: AdminRequest, res: Response): Promise<void> => {
+  const streamer = await prisma.streamerProfile.findUnique({
+    where: { id: req.params.id },
+    include: { _count: { select: { donations: true, settlements: true } } },
+  })
+  if (!streamer) { res.status(404).json({ error: 'Streamer not found' }); return }
+
+  if (streamer._count.donations > 0 || streamer._count.settlements > 0) {
+    res.status(409).json({
+      error: `Cannot permanently delete — this creator has ${streamer._count.donations} donation(s) and ${streamer._count.settlements} settlement(s) that must be retained for financial and tax records. Deactivate the account instead.`,
+    })
+    return
+  }
+
+  await prisma.streamerProfile.delete({ where: { id: streamer.id } })
+  await prisma.user.update({ where: { id: streamer.userId }, data: { deletedAt: new Date() } })
+  res.json({ ok: true })
+})
+
 router.patch('/streamers/:id/bank', requirePermission('streamers'), async (req: AdminRequest, res: Response): Promise<void> => {
   const { id } = req.params
   const { accountHolderName, accountNumber, ifscCode, bankName, upiId, invoiceName, streetAddress, city, state, pincode } = req.body as {

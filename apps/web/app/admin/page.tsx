@@ -178,6 +178,9 @@ export default function AdminDashboard() {
   const [editBank, setEditBank]           = useState<Streamer|null>(null)
   const [editUser, setEditUser]           = useState<User|null>(null)
   const [confirmDelete, setConfirmDelete] = useState<{id:string;label:string;type:'user'}|null>(null)
+  const [hardDeleteTarget, setHardDeleteTarget]   = useState<Streamer|null>(null)
+  const [hardDeleteConfirmText, setHardDeleteConfirmText] = useState('')
+  const [hardDeleting, setHardDeleting]           = useState(false)
   const [sForm, setSForm]   = useState<Partial<Streamer>>({})
   const [bForm, setBForm]   = useState<Partial<BankDetails>>({})
   const [uForm, setUForm]   = useState<{email:string;displayName:string}>({email:'',displayName:''})
@@ -332,6 +335,19 @@ export default function AdminDashboard() {
     const res = await api(`/streamers/${id}/reset-overlay`, { method:'POST' })
     setStreamers(p=>p.map(s=>s.id===id?{...s,overlayToken:res.overlayToken}:s))
     showToast('Overlay token reset')
+  }
+
+  // ── Permanent deletion (super admin only) ───────────────────────────────────
+  async function hardDeleteStreamer() {
+    if (!hardDeleteTarget) return
+    setHardDeleting(true)
+    try {
+      await api(`/streamers/${hardDeleteTarget.id}/permanent`, { method:'DELETE' })
+      setStreamers(p=>p.filter(s=>s.id!==hardDeleteTarget.id))
+      showToast('Permanently deleted')
+      setHardDeleteTarget(null); setHardDeleteConfirmText('')
+    } catch (e:any) { showToast(e.message || 'Failed to delete') }
+    finally { setHardDeleting(false) }
   }
 
   // ── Donation editing ─────────────────────────────────────────────────────────
@@ -538,44 +554,55 @@ export default function AdminDashboard() {
         .admin-shell ::-webkit-scrollbar-track{background:#08080f;}
         .admin-shell ::-webkit-scrollbar-thumb{background:#252538;border-radius:8px;}
         .admin-shell ::-webkit-scrollbar-thumb:hover{background:#33334a;}
-        .adm-tab{display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#9a9cbe;background:transparent;white-space:nowrap;}
-        .adm-tab.active{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;box-shadow:0 2px 12px rgba(139,92,246,0.35);}
-        .adm-tab:not(.active):hover{background:rgba(255,255,255,0.05);color:#f5f6fb;}
+        .adm-nav{display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:600;color:#9a9cbe;background:transparent;white-space:nowrap;width:100%;text-align:left;position:relative;}
+        .adm-nav.active{background:linear-gradient(135deg,rgba(139,92,246,0.18),rgba(236,72,153,0.1));color:#fff;}
+        .adm-nav.active::before{content:'';position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,#8b5cf6,#ec4899);}
+        .adm-nav:not(.active):hover{background:rgba(255,255,255,0.05);color:#f5f6fb;}
+        .adm-sidebar{width:236px;flex-shrink:0;background:#0c0c17;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;}
+        @media (max-width:900px){.adm-sidebar{position:relative;height:auto;width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,0.08);}
+          .adm-sidebar .adm-nav-scroll{flex-direction:row!important;padding:8px!important;}
+          .adm-nav.active::before{display:none;}
+          .adm-sidebar-head,.adm-sidebar-foot{display:none!important;}}
       `}</style>
-      {toast && <div style={{position:'fixed',top:64,right:20,zIndex:200,background:'linear-gradient(135deg,#34d399,#10b981)',color:'#04150d',padding:'11px 20px',borderRadius:10,fontSize:14,fontWeight:700,boxShadow:'0 8px 28px rgba(52,211,153,0.35)'}}>{toast}</div>}
+      {toast && <div style={{position:'fixed',top:20,right:20,zIndex:200,background:'linear-gradient(135deg,#34d399,#10b981)',color:'#04150d',padding:'11px 20px',borderRadius:10,fontSize:14,fontWeight:700,boxShadow:'0 8px 28px rgba(52,211,153,0.35)'}}>{toast}</div>}
 
-      {/* top bar */}
-      <div style={{background:'#0c0c17',borderBottom:'1px solid rgba(255,255,255,0.08)',padding:'12px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <a href="/dashboard" style={{textDecoration:'none'}}><img src="/logo.png" alt="EzTips" style={{height:36,width:'auto',borderRadius:8,verticalAlign:'middle'}} /></a>
-          <span style={{display:'flex',alignItems:'center',gap:6,fontSize:11,fontWeight:700,letterSpacing:.06,textTransform:'uppercase',color:admin.isSuperAdmin?'#fbbf24':'#8b5cf6',background:admin.isSuperAdmin?'rgba(251,191,36,0.1)':'rgba(139,92,246,0.1)',padding:'4px 10px',borderRadius:20,border:`1px solid ${admin.isSuperAdmin?'rgba(251,191,36,0.25)':'rgba(139,92,246,0.25)'}`}}>
-            {admin.isSuperAdmin ? <Icon.star width={11} height={11}/> : <Icon.key width={12} height={12}/>}
-            {admin.isSuperAdmin ? 'Super Admin' : 'Admin'}
-          </span>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:14}}>
-          {admin.avatar && <img src={admin.avatar} alt="" style={{width:30,height:30,borderRadius:'50%',objectFit:'cover',border:'1px solid rgba(255,255,255,0.12)'}}/>}
-          <span style={{color:'#9a9cbe',fontSize:13,fontWeight:500}}>{admin.name ?? admin.email}</span>
-          <button onClick={reload} title="Refresh" style={{...ghostBtn,display:'flex',alignItems:'center',padding:'7px 9px'}}><Icon.refresh width={15} height={15}/></button>
-          <button onClick={signOut} style={ghostBtn}>Sign out</button>
-        </div>
-      </div>
+      <div style={{display:'flex',alignItems:'flex-start'}}>
+        {/* ═══ SIDEBAR ═══════════════════════════════════════════════════════════ */}
+        <aside className="adm-sidebar">
+          <div className="adm-sidebar-head" style={{padding:'18px 18px 14px',display:'flex',alignItems:'center',gap:10}}>
+            <a href="/dashboard"><img src="/logo.png" alt="EzTips" style={{height:34,width:'auto',borderRadius:8,verticalAlign:'middle'}} /></a>
+            <span style={{display:'flex',alignItems:'center',gap:5,fontSize:10.5,fontWeight:700,letterSpacing:.06,textTransform:'uppercase',color:admin.isSuperAdmin?'#fbbf24':'#8b5cf6',background:admin.isSuperAdmin?'rgba(251,191,36,0.1)':'rgba(139,92,246,0.1)',padding:'3px 9px',borderRadius:20,border:`1px solid ${admin.isSuperAdmin?'rgba(251,191,36,0.25)':'rgba(139,92,246,0.25)'}`}}>
+              {admin.isSuperAdmin ? <Icon.star width={10} height={10}/> : <Icon.key width={11} height={11}/>}
+              {admin.isSuperAdmin ? 'Super Admin' : 'Admin'}
+            </span>
+          </div>
+          <nav className="adm-nav-scroll" style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:2,padding:'8px 14px'}}>
+            {TABS.map(t=>{
+              const TIcon = TAB_ICONS[t.key]
+              return (
+                <button key={t.key} onClick={()=>setTab(t.key)} className={`adm-nav ${tab===t.key?'active':''}`}>
+                  <TIcon width={16} height={16}/>
+                  {TAB_LABELS[t.key]}
+                  {t.key==='settlements'&&stats?.pendingSettlements?<span style={{marginLeft:'auto',background:'#fbbf24',color:'#1a1206',borderRadius:10,padding:'1px 7px',fontSize:11,fontWeight:700}}>{stats.pendingSettlements}</span>:null}
+                  {t.key==='team'&&<span style={{marginLeft:'auto',fontSize:10,color:'#8b5cf6',fontWeight:700}}>SA</span>}
+                </button>
+              )
+            })}
+          </nav>
+          <div className="adm-sidebar-foot" style={{padding:14,borderTop:'1px solid rgba(255,255,255,0.08)',display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{display:'flex',alignItems:'center',gap:9}}>
+              {admin.avatar && <img src={admin.avatar} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:'1px solid rgba(255,255,255,0.12)',flexShrink:0}}/>}
+              <span style={{color:'#9a9cbe',fontSize:12.5,fontWeight:500,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{admin.name ?? admin.email}</span>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={reload} title="Refresh" style={{...ghostBtn,flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'7px 9px'}}><Icon.refresh width={14} height={14}/></button>
+              <button onClick={signOut} style={{...ghostBtn,flex:1}}>Sign out</button>
+            </div>
+          </div>
+        </aside>
 
-      <div style={{maxWidth:1280,margin:'0 auto',padding:'24px 20px'}}>
-        {/* tabs */}
-        <div style={{display:'flex',gap:4,marginBottom:24,background:'#131320',borderRadius:14,padding:4,width:'fit-content',border:'1px solid rgba(255,255,255,0.08)',flexWrap:'wrap'}}>
-          {TABS.map(t=>{
-            const TIcon = TAB_ICONS[t.key]
-            return (
-              <button key={t.key} onClick={()=>setTab(t.key)} className={`adm-tab ${tab===t.key?'active':''}`}>
-                <TIcon width={14} height={14}/>
-                {TAB_LABELS[t.key]}
-                {t.key==='settlements'&&stats?.pendingSettlements?<span style={{marginLeft:2,background:'#fbbf24',color:'#1a1206',borderRadius:10,padding:'1px 7px',fontSize:11,fontWeight:700}}>{stats.pendingSettlements}</span>:null}
-                {t.key==='team'&&<span style={{marginLeft:1,fontSize:10,color:tab===t.key?'#fff':'#8b5cf6',fontWeight:700,opacity:tab===t.key?0.85:1}}>SA</span>}
-              </button>
-            )
-          })}
-        </div>
+        {/* ═══ MAIN CONTENT ══════════════════════════════════════════════════════ */}
+        <main style={{flex:1,minWidth:0,padding:'24px 28px',maxWidth:1180}}>
 
         {/* ═══ OVERVIEW ══════════════════════════════════════════════════════════ */}
         {tab==='overview' && stats && (
@@ -797,7 +824,10 @@ export default function AdminDashboard() {
                   </button>
                   <button onClick={()=>{setAdjustTarget(s);setAdjustForm({amount:'',reason:''})}} style={btn('#f59e0b22','#f59e0b')}>💰 Adjust Balance</button>
                   <button onClick={()=>openGoal(s)} style={btn('#06b6d422','#22d3ee')}>🎯 Goal</button>
-                  <button onClick={()=>setConfirmDelete({id:s.userId,label:s.channelName??s.email,type:'user'})} style={dangerBtn}>Delete</button>
+                  <button onClick={()=>setConfirmDelete({id:s.userId,label:s.channelName??s.email,type:'user'})} style={dangerBtn}>Deactivate</button>
+                  {admin.isSuperAdmin && (
+                    <button onClick={()=>{setHardDeleteTarget(s);setHardDeleteConfirmText('')}} style={{...btn('#7f1d1d','#fca5a5'),border:'1px solid #ef444455'}}>🗑 Delete Permanently</button>
+                  )}
                 </div>
                 {streamerTrend?.id===s.id && (
                   <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid #2d2d4e',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
@@ -1403,6 +1433,7 @@ export default function AdminDashboard() {
           </div>
           </div>
         )}
+        </main>
       </div>
 
       {/* Modals */}
@@ -1546,6 +1577,30 @@ export default function AdminDashboard() {
           <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
             <button onClick={()=>setConfirmDelete(null)} style={ghostBtn}>Cancel</button>
             <button onClick={deleteUser} style={btn('#ef4444')}>Deactivate</button>
+          </div>
+        </Modal>
+      )}
+      {hardDeleteTarget && (
+        <Modal title={`Permanently Delete — ${hardDeleteTarget.channelName??hardDeleteTarget.username}`} onClose={()=>setHardDeleteTarget(null)}>
+          <div style={{background:'#7f1d1d22',border:'1px solid #ef444455',borderRadius:10,padding:'12px 14px',marginBottom:16}}>
+            <p style={{color:'#fca5a5',fontWeight:700,fontSize:13,margin:'0 0 6px'}}>⚠ This cannot be undone</p>
+            <p style={{color:'#f5f6fb',fontSize:12.5,margin:0,lineHeight:1.5}}>
+              Permanently erases this creator&apos;s profile, bank details, goal, alert/voice settings, followers, and tickets.
+              This is only possible when they have <strong>no donations or settlements</strong> on record (those must be retained
+              for financial and tax purposes) — if they do, this will fail and you should Deactivate instead.
+            </p>
+          </div>
+          <p style={{fontSize:13,color:'#9a9cbe',marginBottom:8}}>
+            Type <strong style={{color:'#f5f6fb',fontFamily:"'JetBrains Mono',monospace"}}>{hardDeleteTarget.channelName??hardDeleteTarget.username}</strong> to confirm:
+          </p>
+          <input value={hardDeleteConfirmText} onChange={e=>setHardDeleteConfirmText(e.target.value)} style={{...inp,marginBottom:16}} placeholder="Type the channel name…" />
+          <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+            <button onClick={()=>setHardDeleteTarget(null)} style={ghostBtn}>Cancel</button>
+            <button
+              onClick={hardDeleteStreamer}
+              disabled={hardDeleting || hardDeleteConfirmText !== (hardDeleteTarget.channelName??hardDeleteTarget.username)}
+              style={btn('#ef4444')}
+            >{hardDeleting?'Deleting…':'Permanently Delete'}</button>
           </div>
         </Modal>
       )}
