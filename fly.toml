@@ -22,7 +22,7 @@ primary_region = "bom"
     soft_limit = 80
 
 [[vm]]
-  memory = "256mb"
+  memory = "1024mb"
   cpu_kind = "shared"
   cpus = 1
 
