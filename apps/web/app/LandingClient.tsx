@@ -143,7 +143,8 @@ export default function LandingClient() {
           <img src="/logo.png" alt="eztips" style={{ height: 40, borderRadius: 10, filter: 'drop-shadow(0 0 12px rgba(124,58,237,0.7))' }} />
           <span style={{ fontWeight: 900, fontSize: 18, background: 'linear-gradient(135deg,#c4b5fd,#f9a8d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>eztips</span>
         </a>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Link href="/refer" style={{ padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: 600, color: '#22d3ee', textDecoration: 'none', border: '1px solid rgba(34,211,238,0.25)', background: 'rgba(34,211,238,0.08)' }}>💸 Refer & Earn</Link>
           <Link href="/login" style={{ padding: '8px 20px', borderRadius: 9, fontSize: 13, fontWeight: 600, color: '#94a3b8', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}>Login</Link>
           <Link href="/signup?type=streamer" style={{ padding: '8px 20px', borderRadius: 9, fontSize: 13, fontWeight: 700, color: 'white', textDecoration: 'none', background: 'linear-gradient(135deg,#7c3aed,#db2777)', boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}>Start Free →</Link>
         </div>
@@ -361,7 +362,7 @@ export default function LandingClient() {
         </div>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', margin: 0 }}>© 2026 eztips · Built for Indian Streamers</p>
         <div style={{ display: 'flex', gap: 24 }}>
-          {[['Login', '/login'], ['Sign Up', '/signup'], ['Privacy Policy', '/privacy'], ['Terms of Service', '/tos']].map(([l, h]) => (
+          {[['Login', '/login'], ['Sign Up', '/signup'], ['Refer & Earn', '/refer'], ['Privacy Policy', '/privacy'], ['Terms of Service', '/tos']].map(([l, h]) => (
             <Link key={l} href={h!} style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', textDecoration: 'none' }}>{l}</Link>
           ))}
         </div>
