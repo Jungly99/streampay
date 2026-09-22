@@ -1,10 +1,12 @@
 import { Router, Response } from 'express'
 import { customAlphabet } from 'nanoid'
 import { prisma } from '../db/prisma'
-import { requireReferral, AuthRequest } from '../middleware/auth'
+import { requireAuth, AuthRequest } from '../middleware/auth'
 
 const router = Router()
-router.use(requireReferral)
+// Any authenticated account (streamer, viewer, or referral) can hold a referral
+// partner profile — not gated on accountType, since a streamer can also refer.
+router.use(requireAuth)
 
 const genCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 7)
 const MIN_PAYOUT = 100

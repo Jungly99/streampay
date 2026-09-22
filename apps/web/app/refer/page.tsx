@@ -1,5 +1,7 @@
 'use client'
+import { Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 const BACKEND = process.env.NEXT_PUBLIC_SOCKET_URL ?? ''
 
@@ -14,7 +16,12 @@ function GoogleIcon() {
   )
 }
 
-export default function ReferSignupPage() {
+function ReferContent() {
+  const params = useSearchParams()
+  const error = params.get('error')
+  const errorMsg = error === 'no_referral_account'
+    ? 'No referral partner account found for that Google login — sign up below first.'
+    : error ? 'Sign-in was cancelled or failed. Please try again.' : null
   const googleUrl = `${BACKEND}/api/auth/google?mode=signup&accountType=referral`
 
   return (
@@ -52,6 +59,11 @@ export default function ReferSignupPage() {
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: '28px 28px' }}>
+          {errorMsg && (
+            <div style={{ marginBottom: 18, padding: '12px 16px', borderRadius: 10, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', fontSize: 13, color: '#f87171', textAlign: 'center' }}>
+              {errorMsg}
+            </div>
+          )}
           <a href={googleUrl} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
             width: '100%', padding: '13px 20px', borderRadius: 11, textDecoration: 'none',
@@ -68,7 +80,7 @@ export default function ReferSignupPage() {
 
         <p style={{ textAlign: 'center', fontSize: 13, color: '#475569', marginTop: 20 }}>
           Already a referral partner?{' '}
-          <Link href="/login" style={{ color: '#22d3ee', fontWeight: 600, textDecoration: 'none' }}>Sign in →</Link>
+          <a href={`${BACKEND}/api/auth/google?mode=login&accountType=referral`} style={{ color: '#22d3ee', fontWeight: 600, textDecoration: 'none' }}>Sign in →</a>
         </p>
         <p style={{ textAlign: 'center', fontSize: 12, color: '#334155', marginTop: 8 }}>
           Want to stream instead?{' '}
@@ -76,5 +88,13 @@ export default function ReferSignupPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function ReferSignupPage() {
+  return (
+    <Suspense>
+      <ReferContent />
+    </Suspense>
   )
 }

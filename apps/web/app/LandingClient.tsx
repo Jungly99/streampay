@@ -335,6 +335,43 @@ export default function LandingClient() {
         </div>
       </section>
 
+      {/* ── Refer & Earn ── */}
+      <section style={{ padding: '100px 40px', borderTop: '1px solid rgba(255,255,255,0.05)', position: 'relative', overflow: 'hidden' }}>
+        <div className="glow-orb" style={{ width: 500, height: 500, background: 'rgba(34,211,238,0.08)', top: '20%', right: '5%' }} />
+        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#22d3ee', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>Referral Program</p>
+            <h2 style={{ fontSize: 'clamp(26px,3.5vw,40px)', fontWeight: 900, letterSpacing: '-1.5px', color: '#f8fafc', marginBottom: 12 }}>
+              Know streamers? Get paid <span style={{ background: 'linear-gradient(135deg,#22d3ee,#818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>forever</span>
+            </h2>
+            <p style={{ fontSize: 15, color: '#475569', maxWidth: 560, margin: '0 auto' }}>
+              Refer a streamer to eztips and earn 1% of every donation they ever receive — no cap, no expiry, paid straight to your bank.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 48 }}>
+            {[
+              { val: '1%', label: 'Of every donation', sub: 'From every streamer you refer, for as long as they earn' },
+              { val: '∞', label: 'No expiry', sub: 'Attribution is permanent from the moment they sign up' },
+              { val: '₹100', label: 'Minimum payout', sub: 'Request a payout anytime you cross this' },
+              { val: '2 min', label: 'To get started', sub: 'Verify your bank details, get your code' },
+            ].map(c => (
+              <div key={c.label} style={{ padding: '26px 22px', background: 'rgba(34,211,238,0.04)', border: '1px solid rgba(34,211,238,0.15)', borderRadius: 16, textAlign: 'center' }}>
+                <p style={{ fontSize: 'clamp(24px,3vw,34px)', fontWeight: 900, margin: '0 0 4px', letterSpacing: '-1px', background: 'linear-gradient(135deg,#22d3ee,#818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{c.val}</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', margin: '0 0 6px' }}>{c.label}</p>
+                <p style={{ fontSize: 11, color: '#475569', margin: 0, lineHeight: 1.5 }}>{c.sub}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <Link href="/refer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 30px', borderRadius: 11, fontSize: 14, fontWeight: 700, color: '#04262b', textDecoration: 'none', background: 'linear-gradient(135deg,#22d3ee,#67e8f9)', boxShadow: '0 0 24px rgba(34,211,238,0.35)' }}>
+              Become a Referral Partner →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ── */}
       <section style={{ padding: '80px 40px 120px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div className="glow-orb" style={{ width: 700, height: 400, background: 'rgba(124,58,237,0.1)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />

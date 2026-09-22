@@ -139,13 +139,34 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
           : { viewerProfile: { create: { displayName: name } } }),
       },
     })
-  } else if (!user.googleId) {
-    await prisma.user.update({ where: { id: user.id }, data: { googleId, avatarUrl: user.avatarUrl ?? avatarUrl } })
+  } else {
+    if (!user.googleId) {
+      await prisma.user.update({ where: { id: user.id }, data: { googleId, avatarUrl: user.avatarUrl ?? avatarUrl } })
+    }
+    // An existing streamer/viewer account can ALSO become a referral partner —
+    // one Google login, multiple roles. We don't touch their primary accountType;
+    // we just attach a ReferralPartner profile to the same user if they don't have one yet.
+    if (mode === 'signup' && accountType === 'referral') {
+      const existingPartner = await prisma.referralPartner.findUnique({ where: { userId: user.id } })
+      if (!existingPartner) {
+        await prisma.referralPartner.create({ data: { userId: user.id, displayName: user.displayName ?? name } })
+      }
+    }
   }
 
   const token = signToken({ userId: user.id, accountType: user.accountType })
   res.cookie('eztips_token', token, COOKIE_OPTIONS)
-  const dest = user.accountType === 'streamer' ? '/dashboard' : user.accountType === 'referral' ? '/refer/dashboard' : '/fan'
+
+  let dest: string
+  if (accountType === 'referral') {
+    // Explicit referral intent (signup, or the dedicated referral sign-in link) —
+    // send them to the referral dashboard if that role exists on this account,
+    // regardless of what their primary accountType is.
+    const partner = await prisma.referralPartner.findUnique({ where: { userId: user.id } })
+    dest = partner ? '/refer/dashboard' : '/refer?error=no_referral_account'
+  } else {
+    dest = user.accountType === 'streamer' ? '/dashboard' : user.accountType === 'referral' ? '/refer/dashboard' : '/fan'
+  }
   res.redirect(`${env.FRONTEND_URL}${dest}`)
 })
 
