@@ -4,6 +4,9 @@ import { useRouter } from 'next/navigation'
 import StyledSelect, { SelectOption } from '../../components/ui/StyledSelect'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 
+const ADMIN_GFONTS_URL = 'https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap'
+const soraFont = "'Sora',system-ui,sans-serif"
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface AdminPerms { overview:boolean; streamers:boolean; users:boolean; donations:boolean; settlements:boolean; restore_accounts:boolean; tickets:boolean; support:boolean }
 interface AdminMe { adminId:string; email:string; name?:string; avatar?:string; isSuperAdmin:boolean; permissions:AdminPerms }
@@ -22,13 +25,31 @@ type TabType = 'overview'|'streamers'|'users'|'deleted'|'donations'|'settlements
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const fmt = (n:number) => `₹${n.toLocaleString('en-IN')}`
-const S_COLORS:Record<string,string> = { INITIATED:'#f59e0b', SUCCESS:'#10b981', FAILED:'#ef4444', PENDING:'#6b7280', REFUNDED:'#8b5cf6', streamer:'#7c3aed', viewer:'#06b6d4' }
-function Badge({v}:{v:string}){ return <span style={{padding:'2px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:(S_COLORS[v]??'#6b7280')+'22',color:S_COLORS[v]??'#6b7280',textTransform:'uppercase',letterSpacing:.5}}>{v}</span> }
-const card:React.CSSProperties = { background:'#1a1a2e', border:'1px solid #2d2d4e', borderRadius:14 }
-const inp:React.CSSProperties = { width:'100%', padding:'8px 12px', background:'#0f0f1a', border:'1px solid #2d2d4e', borderRadius:8, color:'#e2e8f0', fontSize:13, boxSizing:'border-box', colorScheme:'dark', WebkitTextFillColor:'#e2e8f0' }
-const btn = (bg='#7c3aed',c='#fff'):React.CSSProperties => ({ padding:'7px 16px', background:bg, color:c, border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600 })
-const ghostBtn:React.CSSProperties = { ...btn('transparent','#aaa'), border:'1px solid #2d2d4e' }
-const dangerBtn:React.CSSProperties = btn('#ef444422','#f87171')
+const S_COLORS:Record<string,string> = { INITIATED:'#fbbf24', SUCCESS:'#34d399', FAILED:'#f87171', PENDING:'#6b7280', REFUNDED:'#a78bfa', streamer:'#8b5cf6', viewer:'#22d3ee', verified:'#34d399' }
+function Badge({v}:{v:string}){ return <span style={{padding:'3px 11px',borderRadius:20,fontSize:11,fontWeight:700,background:(S_COLORS[v]??'#6b7280')+'1e',color:S_COLORS[v]??'#6b7280',textTransform:'uppercase',letterSpacing:.5,border:`1px solid ${(S_COLORS[v]??'#6b7280')}38`}}>{v}</span> }
+const card:React.CSSProperties = { background:'#131320', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, boxShadow:'0 1px 3px rgba(0,0,0,0.3)' }
+const inp:React.CSSProperties = { width:'100%', padding:'9px 13px', background:'#1a1a2b', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, color:'#f5f6fb', fontSize:13, boxSizing:'border-box', colorScheme:'dark', WebkitTextFillColor:'#f5f6fb' }
+const btn = (bg='#8b5cf6',c='#fff'):React.CSSProperties => ({ padding:'8px 16px', background:bg, color:c, border:'none', borderRadius:9, cursor:'pointer', fontSize:13, fontWeight:600 })
+const ghostBtn:React.CSSProperties = { ...btn('transparent','#9a9cbe'), border:'1px solid rgba(255,255,255,0.1)' }
+const dangerBtn:React.CSSProperties = btn('#f8717122','#f87171')
+const gradBtn:React.CSSProperties = { ...btn(), background:'linear-gradient(135deg,#8b5cf6,#ec4899)', boxShadow:'0 4px 16px rgba(139,92,246,0.25)' }
+
+// ─── Icons (lucide-style inline SVG, replaces emoji for a cleaner look) ─────────
+const Icon = {
+  overview:  (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="12" width="8" height="9" rx="1.5"/><rect x="3" y="15" width="8" height="6" rx="1.5"/></svg>,
+  streamers: (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M9 21h6M12 17v4"/></svg>,
+  users:     (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  deleted:   (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>,
+  donations: (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  settlements:(p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3H7a2 2 0 0 0-2 2v14l4-2 3 2 3-2 3 2V5a2 2 0 0 0-2-2Z"/><path d="M9 8h6M9 12h6"/></svg>,
+  support:   (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>,
+  tickets:   (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z"/></svg>,
+  logs:      (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2M8 3a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2M8 3a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2M9 12h6M9 16h6M9 8h2"/></svg>,
+  team:      (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>,
+  star:      (p:any)=><svg {...p} viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.9L6 21l1.6-7L2.2 9.2l7.1-.6z"/></svg>,
+  key:       (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 19 4M16 8l2 2M19 5l2 2"/></svg>,
+  refresh:   (p:any)=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg>,
+}
 const ALL_PERMS:Array<keyof AdminPerms> = ['overview','streamers','users','donations','settlements','restore_accounts','tickets','support']
 
 // ─── Trend charts ──────────────────────────────────────────────────────────────
@@ -53,7 +74,7 @@ function MiniAreaCard({title,data,dataKey,color,valueFmt}:{title:string;data:any
     <div style={{...card,padding:'16px 18px'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
         <p style={{color:'#888',fontSize:11,textTransform:'uppercase',letterSpacing:.5,margin:0}}>{title}</p>
-        <p style={{color,fontSize:17,fontWeight:800,margin:0}}>{valueFmt?valueFmt(total):total}</p>
+        <p style={{fontFamily:soraFont,color,fontSize:17,fontWeight:800,margin:0}}>{valueFmt?valueFmt(total):total}</p>
       </div>
       <ResponsiveContainer width="100%" height={64}>
         <AreaChart data={data} margin={{top:4,right:2,left:2,bottom:0}}>
@@ -485,36 +506,75 @@ export default function AdminDashboard() {
     { key:'team'        as TabType, label:'Team',        show:admin.isSuperAdmin },
   ] as Array<{key:TabType;label:string;show:boolean}>).filter(t=>t.show)
 
+  const TAB_ICONS: Record<TabType, (p:any)=>React.ReactElement> = {
+    overview:Icon.overview, streamers:Icon.streamers, users:Icon.users, deleted:Icon.deleted,
+    donations:Icon.donations, settlements:Icon.settlements, support:Icon.support,
+    tickets:Icon.tickets, logs:Icon.logs, team:Icon.team,
+  }
+  const TAB_LABELS: Record<TabType, string> = {
+    overview:'Overview', streamers:'Streamers', users:'Users', deleted:'Deleted',
+    donations:'Donations', settlements:'Settlements', support:'Support Us',
+    tickets:'Tickets', logs:'Logs', team:'Team',
+  }
+
   return (
-    <div style={{fontFamily:'system-ui,sans-serif',background:'#0f0f1a',minHeight:'100vh',color:'#e2e8f0'}}>
-      <style>{`input,textarea,select{color:#e2e8f0!important;-webkit-text-fill-color:#e2e8f0!important;background-color:#0f0f1a!important;}input::placeholder,textarea::placeholder{color:#555!important;-webkit-text-fill-color:#555!important;}input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px #0f0f1a inset!important;-webkit-text-fill-color:#e2e8f0!important;}`}</style>
-      {toast && <div style={{position:'fixed',top:64,right:20,zIndex:200,background:'#10b981',color:'#fff',padding:'10px 20px',borderRadius:10,fontSize:14,fontWeight:600,boxShadow:'0 4px 20px #0008'}}>{toast}</div>}
+    <div className="admin-shell" style={{fontFamily:'system-ui,sans-serif',background:'#08080f',minHeight:'100vh',color:'#f5f6fb'}}>
+      <link rel="stylesheet" href={ADMIN_GFONTS_URL} />
+      <style>{`
+        input,textarea,select{color:#f5f6fb!important;-webkit-text-fill-color:#f5f6fb!important;background-color:#1a1a2b!important;}
+        input::placeholder,textarea::placeholder{color:#5c5e80!important;-webkit-text-fill-color:#5c5e80!important;}
+        input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px #1a1a2b inset!important;-webkit-text-fill-color:#f5f6fb!important;}
+        .admin-shell h1,.admin-shell h2,.admin-shell h3{font-family:'Sora',system-ui,sans-serif;letter-spacing:-0.01em;}
+        .admin-shell button:not(:disabled){transition:filter .12s,transform .12s,opacity .12s,box-shadow .12s;}
+        .admin-shell button:not(:disabled):hover{filter:brightness(1.15);}
+        .admin-shell button:not(:disabled):active{transform:scale(0.97);}
+        .admin-shell button:disabled{opacity:.6;cursor:not-allowed;}
+        .admin-shell input:focus-visible,.admin-shell textarea:focus-visible,.admin-shell select:focus-visible,.admin-shell button:focus-visible{
+          outline:2px solid #a78bfa;outline-offset:2px;
+        }
+        .admin-shell table tbody tr{transition:background-color .12s;}
+        .admin-shell table tbody tr:hover{background-color:rgba(139,92,246,0.07)!important;}
+        .admin-shell ::-webkit-scrollbar{width:8px;height:8px;}
+        .admin-shell ::-webkit-scrollbar-track{background:#08080f;}
+        .admin-shell ::-webkit-scrollbar-thumb{background:#252538;border-radius:8px;}
+        .admin-shell ::-webkit-scrollbar-thumb:hover{background:#33334a;}
+        .adm-tab{display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#9a9cbe;background:transparent;white-space:nowrap;}
+        .adm-tab.active{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;box-shadow:0 2px 12px rgba(139,92,246,0.35);}
+        .adm-tab:not(.active):hover{background:rgba(255,255,255,0.05);color:#f5f6fb;}
+      `}</style>
+      {toast && <div style={{position:'fixed',top:64,right:20,zIndex:200,background:'linear-gradient(135deg,#34d399,#10b981)',color:'#04150d',padding:'11px 20px',borderRadius:10,fontSize:14,fontWeight:700,boxShadow:'0 8px 28px rgba(52,211,153,0.35)'}}>{toast}</div>}
 
       {/* top bar */}
-      <div style={{background:'#1a1a2e',borderBottom:'1px solid #2d2d4e',padding:'12px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <a href="/dashboard" style={{textDecoration:'none'}}><img src="/logo.png" alt="EzTips" style={{height:36,width:'auto',borderRadius:6,verticalAlign:'middle'}} /></a>
-          <span style={{color:'#555',fontSize:12}}>{admin.isSuperAdmin ? '⭐ Super Admin' : '🔑 Admin'}</span>
+      <div style={{background:'#0c0c17',borderBottom:'1px solid rgba(255,255,255,0.08)',padding:'12px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14}}>
+          <a href="/dashboard" style={{textDecoration:'none'}}><img src="/logo.png" alt="EzTips" style={{height:36,width:'auto',borderRadius:8,verticalAlign:'middle'}} /></a>
+          <span style={{display:'flex',alignItems:'center',gap:6,fontSize:11,fontWeight:700,letterSpacing:.06,textTransform:'uppercase',color:admin.isSuperAdmin?'#fbbf24':'#8b5cf6',background:admin.isSuperAdmin?'rgba(251,191,36,0.1)':'rgba(139,92,246,0.1)',padding:'4px 10px',borderRadius:20,border:`1px solid ${admin.isSuperAdmin?'rgba(251,191,36,0.25)':'rgba(139,92,246,0.25)'}`}}>
+            {admin.isSuperAdmin ? <Icon.star width={11} height={11}/> : <Icon.key width={12} height={12}/>}
+            {admin.isSuperAdmin ? 'Super Admin' : 'Admin'}
+          </span>
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          {admin.avatar && <img src={admin.avatar} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover'}}/>}
-          <span style={{color:'#aaa',fontSize:13}}>{admin.name ?? admin.email}</span>
-          <button onClick={reload} style={ghostBtn}>↻</button>
+        <div style={{display:'flex',alignItems:'center',gap:14}}>
+          {admin.avatar && <img src={admin.avatar} alt="" style={{width:30,height:30,borderRadius:'50%',objectFit:'cover',border:'1px solid rgba(255,255,255,0.12)'}}/>}
+          <span style={{color:'#9a9cbe',fontSize:13,fontWeight:500}}>{admin.name ?? admin.email}</span>
+          <button onClick={reload} title="Refresh" style={{...ghostBtn,display:'flex',alignItems:'center',padding:'7px 9px'}}><Icon.refresh width={15} height={15}/></button>
           <button onClick={signOut} style={ghostBtn}>Sign out</button>
         </div>
       </div>
 
       <div style={{maxWidth:1280,margin:'0 auto',padding:'24px 20px'}}>
         {/* tabs */}
-        <div style={{display:'flex',gap:4,marginBottom:24,background:'#1a1a2e',borderRadius:12,padding:4,width:'fit-content',border:'1px solid #2d2d4e',flexWrap:'wrap'}}>
-          {TABS.map(t=>(
-            <button key={t.key} onClick={()=>setTab(t.key)} style={{padding:'8px 18px',borderRadius:9,border:'none',cursor:'pointer',fontSize:13,fontWeight:600,
-              background:tab===t.key?'#7c3aed':'transparent',color:tab===t.key?'#fff':'#888',transition:'all .15s'}}>
-              {t.label}
-              {t.key==='settlements'&&stats?.pendingSettlements?<span style={{marginLeft:6,background:'#f59e0b',color:'#000',borderRadius:10,padding:'1px 7px',fontSize:11,fontWeight:700}}>{stats.pendingSettlements}</span>:null}
-              {t.key==='team'&&<span style={{marginLeft:5,fontSize:10,color:'#7c3aed',fontWeight:700}}>SA</span>}
-            </button>
-          ))}
+        <div style={{display:'flex',gap:4,marginBottom:24,background:'#131320',borderRadius:14,padding:4,width:'fit-content',border:'1px solid rgba(255,255,255,0.08)',flexWrap:'wrap'}}>
+          {TABS.map(t=>{
+            const TIcon = TAB_ICONS[t.key]
+            return (
+              <button key={t.key} onClick={()=>setTab(t.key)} className={`adm-tab ${tab===t.key?'active':''}`}>
+                <TIcon width={14} height={14}/>
+                {TAB_LABELS[t.key]}
+                {t.key==='settlements'&&stats?.pendingSettlements?<span style={{marginLeft:2,background:'#fbbf24',color:'#1a1206',borderRadius:10,padding:'1px 7px',fontSize:11,fontWeight:700}}>{stats.pendingSettlements}</span>:null}
+                {t.key==='team'&&<span style={{marginLeft:1,fontSize:10,color:tab===t.key?'#fff':'#8b5cf6',fontWeight:700,opacity:tab===t.key?0.85:1}}>SA</span>}
+              </button>
+            )
+          })}
         </div>
 
         {/* ═══ OVERVIEW ══════════════════════════════════════════════════════════ */}
@@ -522,16 +582,18 @@ export default function AdminDashboard() {
           <div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:14,marginBottom:24}}>
               {[
-                {label:'Streamers',   value:stats.totalStreamers,      color:'#7c3aed'},
-                {label:'Viewers',     value:stats.totalViewers,        color:'#06b6d4'},
-                {label:'Donations',   value:stats.totalDonations,      color:'#3b82f6'},
-                {label:'Collected',   value:fmt(stats.totalCollected),  color:'#10b981'},
-                {label:'Pending Pay', value:stats.pendingSettlements,  color:'#f59e0b'},
+                {label:'Streamers',   value:stats.totalStreamers,      color:'#8b5cf6'},
+                {label:'Viewers',     value:stats.totalViewers,        color:'#22d3ee'},
+                {label:'Donations',   value:stats.totalDonations,      color:'#60a5fa'},
+                {label:'Collected',   value:fmt(stats.totalCollected),  color:'#34d399'},
+                {label:'Pending Pay', value:stats.pendingSettlements,  color:'#fbbf24'},
                 {label:'Paid Out',    value:fmt(stats.totalPaidOut),   color:'#ec4899'},
               ].map(c=>(
-                <div key={c.label} style={{...card,padding:'18px 22px'}}>
-                  <p style={{color:'#666',fontSize:12,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:.5}}>{c.label}</p>
-                  <p style={{color:c.color,fontSize:24,fontWeight:800,margin:0}}>{c.value}</p>
+                <div key={c.label} style={{...card,padding:'18px 22px',transition:'transform .15s,box-shadow .15s'}}
+                  onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.35)'}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.3)'}}>
+                  <p style={{color:'#5c5e80',fontSize:11,fontWeight:600,margin:'0 0 8px',textTransform:'uppercase',letterSpacing:.6}}>{c.label}</p>
+                  <p style={{fontFamily:soraFont,color:c.color,fontSize:26,fontWeight:800,margin:0,letterSpacing:'-0.01em'}}>{c.value}</p>
                 </div>
               ))}
             </div>
@@ -708,10 +770,10 @@ export default function AdminDashboard() {
                 {s.bankDetails?.accountNumber ? (
                   <div style={{background:'#0f0f1a',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#aaa',display:'flex',gap:20,flexWrap:'wrap',marginBottom:12}}>
                     <span>🏦 <strong style={{color:'#fff'}}>{s.bankDetails.bankName??'—'}</strong></span>
-                    <span>Acc: <strong style={{color:'#fff',fontFamily:'monospace'}}>{s.bankDetails.accountNumber}</strong></span>
-                    <span>IFSC: <strong style={{color:'#fff',fontFamily:'monospace'}}>{s.bankDetails.ifscCode}</strong></span>
+                    <span>Acc: <strong style={{color:'#fff',fontFamily:"'JetBrains Mono',monospace"}}>{s.bankDetails.accountNumber}</strong></span>
+                    <span>IFSC: <strong style={{color:'#fff',fontFamily:"'JetBrains Mono',monospace"}}>{s.bankDetails.ifscCode}</strong></span>
                     <span>Name: <strong style={{color:'#fff'}}>{s.bankDetails.accountHolderName}</strong></span>
-                    {s.bankDetails.upiId && <span>UPI: <strong style={{color:'#fff',fontFamily:'monospace'}}>{s.bankDetails.upiId}</strong></span>}
+                    {s.bankDetails.upiId && <span>UPI: <strong style={{color:'#fff',fontFamily:"'JetBrains Mono',monospace"}}>{s.bankDetails.upiId}</strong></span>}
                   </div>
                 ) : (
                   <div style={{background:'#ef444411',borderRadius:8,padding:'8px 14px',fontSize:12,color:'#f87171',marginBottom:12}}>⚠ No bank details</div>
@@ -857,10 +919,10 @@ export default function AdminDashboard() {
                         {d.cfPaymentId ? (
                           <div>
                             <p style={{fontSize:10,color:'#475569',margin:'0 0 2px',letterSpacing:.3}}>Pay ID</p>
-                            <span style={{fontSize:11,fontFamily:'monospace',color:'#a78bfa',background:'rgba(124,58,237,0.08)',padding:'2px 6px',borderRadius:4}}>{d.cfPaymentId}</span>
+                            <span style={{fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:'#a78bfa',background:'rgba(124,58,237,0.08)',padding:'2px 6px',borderRadius:4}}>{d.cfPaymentId}</span>
                           </div>
                         ) : (
-                          <span style={{fontSize:11,color:'#334155',fontFamily:'monospace'}}>
+                          <span style={{fontSize:11,color:'#334155',fontFamily:"'JetBrains Mono',monospace"}}>
                             {d.cfOrderId ? <span title={d.cfOrderId} style={{color:'#475569'}}>Order: {d.cfOrderId.slice(-8)}</span> : '—'}
                           </span>
                         )}
@@ -912,8 +974,8 @@ export default function AdminDashboard() {
                       <div style={{background:'#0f0f1a',border:'1px solid #2d2d4e',borderRadius:10,padding:'14px 18px',minWidth:240}}>
                         <p style={{color:'#7c3aed',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,margin:'0 0 8px'}}>Bank</p>
                         <p style={{margin:'0 0 3px',fontSize:13}}><span style={{color:'#888'}}>Name: </span><strong>{b.accountHolderName}</strong></p>
-                        <p style={{margin:'0 0 3px',fontSize:13,fontFamily:'monospace'}}><span style={{color:'#888'}}>Acc: </span><strong>{b.accountNumber}</strong></p>
-                        <p style={{margin:0,fontSize:13,fontFamily:'monospace'}}><span style={{color:'#888'}}>IFSC: </span><strong>{b.ifscCode}</strong></p>
+                        <p style={{margin:'0 0 3px',fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}><span style={{color:'#888'}}>Acc: </span><strong>{b.accountNumber}</strong></p>
+                        <p style={{margin:0,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}><span style={{color:'#888'}}>IFSC: </span><strong>{b.ifscCode}</strong></p>
                       </div>
                     ) : <div style={{background:'#ef444411',borderRadius:10,padding:'14px 18px',color:'#f87171',fontSize:13,alignSelf:'flex-start'}}>⚠ No bank details</div>}
                   </div>
@@ -964,7 +1026,7 @@ export default function AdminDashboard() {
                       <td style={{ padding:'12px 16px', color:'#a78bfa', fontWeight:700 }}>{fmt(p.amount)}</td>
                       <td style={{ padding:'12px 16px', color:'#64748b', maxWidth:200 }}>{p.message||'—'}</td>
                       <td style={{ padding:'12px 16px' }}><Badge v={p.status}/></td>
-                      <td style={{ padding:'12px 16px', color:'#334155', fontSize:11, fontFamily:'monospace' }}>{p.paymentId||'—'}</td>
+                      <td style={{ padding:'12px 16px', color:'#334155', fontSize:11, fontFamily:"'JetBrains Mono',monospace" }}>{p.paymentId||'—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1128,11 +1190,11 @@ export default function AdminDashboard() {
                         <div style={{color:'#64748b',fontSize:11}}>{l.adminEmail}</div>
                       </td>
                       <td style={{padding:'10px 14px'}}>
-                        <span style={{background:'rgba(124,58,237,0.12)',color:'#a78bfa',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:600,fontFamily:'monospace'}}>{l.action}</span>
+                        <span style={{background:'rgba(124,58,237,0.12)',color:'#a78bfa',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:600,fontFamily:"'JetBrains Mono',monospace"}}>{l.action}</span>
                       </td>
-                      <td style={{padding:'10px 14px',color:'#94a3b8',fontSize:12}}>{l.entity??'—'}{l.entityId?<span style={{color:'#475569',fontSize:10,display:'block',fontFamily:'monospace'}}>{l.entityId.slice(0,12)}…</span>:null}</td>
+                      <td style={{padding:'10px 14px',color:'#94a3b8',fontSize:12}}>{l.entity??'—'}{l.entityId?<span style={{color:'#475569',fontSize:10,display:'block',fontFamily:"'JetBrains Mono',monospace"}}>{l.entityId.slice(0,12)}…</span>:null}</td>
                       <td style={{padding:'10px 14px',color:'#64748b',fontSize:11,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.detail&&l.detail!=='null'?l.detail.slice(0,80):'—'}</td>
-                      <td style={{padding:'10px 14px',color:'#475569',fontSize:11,fontFamily:'monospace'}}>{l.ip||'—'}</td>
+                      <td style={{padding:'10px 14px',color:'#475569',fontSize:11,fontFamily:"'JetBrains Mono',monospace"}}>{l.ip||'—'}</td>
                     </tr>
                   ))}
                 </tbody>
