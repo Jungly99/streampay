@@ -602,7 +602,7 @@ export default function AdminDashboard() {
         </aside>
 
         {/* ═══ MAIN CONTENT ══════════════════════════════════════════════════════ */}
-        <main style={{flex:1,minWidth:0,padding:'24px 28px',maxWidth:1180}}>
+        <main style={{flex:1,minWidth:0,padding:'24px 32px',maxWidth:1440,margin:'0 auto'}}>
 
         {/* ═══ OVERVIEW ══════════════════════════════════════════════════════════ */}
         {tab==='overview' && stats && (
